@@ -5,18 +5,45 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="{DynamicResource lang_wintitle_main}" Height="450" Width="800"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
-        
+        <RoutedUICommand x:Key="Settings" Text="SettingsCommand" />
     </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="ApplicationCommands.New" />
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="ApplicationCommands.Open" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="ApplicationCommands.Save" />
+        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="ApplicationCommands.SaveAs" />
+        <KeyBinding Key="F4" Modifiers="Alt" Command="ApplicationCommands.Close" />
+    </Window.InputBindings>
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.New" Executed="NewScript" />
+        <CommandBinding Command="ApplicationCommands.Open" Executed="OpenScript" />
+        <CommandBinding Command="ApplicationCommands.Save" Executed="SaveScript" />
+        <CommandBinding Command="ApplicationCommands.SaveAs" Executed="SaveScriptAs" />
+        <CommandBinding Command="ApplicationCommands.Close" Executed="QuitApplication" />
+        <CommandBinding Command="{StaticResource Settings}" Executed="OpenSettings" />
+    </Window.CommandBindings>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
         <Menu Grid.Row="0">
-            <MenuItem Header="File">
-                <MenuItem Header="Open" />
+            <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_file}">
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_new}">
+                    <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_new_script}" InputGestureText="Ctrl+N" Command="ApplicationCommands.New" />
+                </MenuItem>
+                <Separator />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_open}" InputGestureText="Ctrl+O" Command="ApplicationCommands.Open" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_save}" InputGestureText="Ctrl+S" Command="ApplicationCommands.Save" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_save_as}" InputGestureText="Ctrl+Shift+S" Command="ApplicationCommands.SaveAs" />
+                <Separator />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_exit}" InputGestureText="Alt+F4" Command="ApplicationCommands.Close" />
+            </MenuItem>
+            <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_tools}">
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
         <TextBox x:Name="lbTest" Grid.Row="1" TextWrapping="Wrap" />

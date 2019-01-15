@@ -34,6 +34,11 @@ namespace UltraEmeraldScriptEditor.DataStructure
             public ITreeNode<T> Parent { get; set; }
             public ITreeNode<T> LeftChild { get; set; }
             public ITreeNode<T> RightChild { get; set; }
+
+            public override string ToString()
+            {
+                return Data.ToString();
+            }
         }
 
         #region CONSTRUCTOR

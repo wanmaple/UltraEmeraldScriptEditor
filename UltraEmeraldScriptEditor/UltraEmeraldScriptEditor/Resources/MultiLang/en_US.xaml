@@ -1,0 +1,16 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--Window Titles-->
+    <sys:String x:Key="lang_wintitle_main">UltraEmerald Script Editor</sys:String>
+    <!--MenuItem Headers-->
+    <sys:String x:Key="lang_mi_file">File</sys:String>
+    <sys:String x:Key="lang_mi_new">New</sys:String>
+    <sys:String x:Key="lang_mi_new_script">New Script</sys:String>
+    <sys:String x:Key="lang_mi_open">Open</sys:String>
+    <sys:String x:Key="lang_mi_save">Save</sys:String>
+    <sys:String x:Key="lang_mi_save_as">Save As</sys:String>
+    <sys:String x:Key="lang_mi_exit">Exit</sys:String>
+    <sys:String x:Key="lang_mi_tools">Tools</sys:String>
+    <sys:String x:Key="lang_mi_settings">Settings</sys:String>
+</ResourceDictionary>

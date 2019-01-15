@@ -45,6 +45,11 @@ namespace UltraEmeraldScriptEditor.DataStructure
             public ITreeNode<T> LeftChild { get; set; }
             public ITreeNode<T> RightChild { get; set; }
             public NodeColor Color { get; set; }
+
+            public override string ToString()
+            {
+                return Data.ToString() + "\tColor = " + Color.ToString();
+            }
         }
 
         #region CONSTRUCTOR
@@ -322,7 +327,7 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     {
                         RotateLeft(parent);
                         SwapColors(parent, sibling);
-                        PullBlack(sibling);
+                        PushBlack(sibling);
                     }
                     else if (sibling.LeftChild == null && sibling.RightChild == null)
                     {
@@ -354,7 +359,7 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     {
                         RotateLeft(parent);
                         SwapColors(parent, sibling);
-                        PushBlack(parent);
+                        PushBlack(sibling);
                     }
                     else if (sibling.LeftChild == null && sibling.RightChild == null)
                     {
@@ -379,7 +384,7 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     // 此时sibling一定有两个黑色的子节点
                     RotateLeft(parent);
                     SwapColors(parent, sibling);
-                    FixTree4Deletion(node);
+                    FixTree4Deletion(node, false);
                 }
             }
             else
@@ -409,10 +414,11 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     else
                     {
                         // 和插入操作相同
+                        TreeNode siblingRight = sibling.RightChild as TreeNode;
                         RotateLeftRight(parent);
-                        SwapColors(sibling.RightChild as TreeNode, parent);
+                        SwapColors(siblingRight, parent);
                         // 将Double-Black push到两个红色节点即可达成修复
-                        PushBlack(sibling.RightChild as TreeNode);
+                        PushBlack(siblingRight);
                     }
                 }
                 else if (parent.Color == NodeColor.RED && sibling.Color == NodeColor.BLACK)
@@ -423,7 +429,7 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     {
                         RotateRight(parent);
                         SwapColors(parent, sibling);
-                        PushBlack(parent);
+                        PushBlack(sibling);
                     }
                     else if (sibling.LeftChild == null && sibling.RightChild == null)
                     {
@@ -448,7 +454,7 @@ namespace UltraEmeraldScriptEditor.DataStructure
                     // 此时sibling一定有两个黑色的子节点
                     RotateRight(parent);
                     SwapColors(parent, sibling);
-                    FixTree4Deletion(node);
+                    FixTree4Deletion(node, false);
                 }
             }
             if (remove)

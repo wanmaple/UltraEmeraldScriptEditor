@@ -35,6 +35,11 @@ namespace UltraEmeraldScriptEditor.DataStructure
             public ITreeNode<T> LeftChild { get; set; }
             public ITreeNode<T> RightChild { get; set; }
             public Int32 Balance { get; set; }
+
+            public override string ToString()
+            {
+                return Data.ToString() + "\tBalance = " + Balance.ToString();
+            }
         }
 
         #region CONSTRUCTOR

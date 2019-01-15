@@ -16,6 +16,10 @@ namespace UltraEmeraldScriptEditor.Mvvm
 
         public bool CanExecute(object parameter)
         {
+            if (_canExecute == null)
+            {
+                return true;
+            }
             Boolean old = _canExecute(parameter);
             if (old != _lastCanExecute)
             {
