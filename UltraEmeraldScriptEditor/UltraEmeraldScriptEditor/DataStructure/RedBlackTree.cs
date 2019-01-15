@@ -22,7 +22,10 @@ namespace UltraEmeraldScriptEditor.DataStructure
         }
         private class TreeNode : ITreeNode<T>
         {
-            public static TreeNode DoubleBlackNilNode => new TreeNode { Color = NodeColor.DOUBLE_BLACK, };
+            public static TreeNode DoubleBlackNilNode
+            {
+                get { return new TreeNode { Color = NodeColor.DOUBLE_BLACK, }; }
+            }
             public Boolean IsLeftChild
             {
                 get
@@ -342,6 +345,41 @@ namespace UltraEmeraldScriptEditor.DataStructure
                         // 将Double-Black push到两个红色节点即可达成修复
                         PushBlack(sibling);
                     }
+                }
+                else if (parent.Color == NodeColor.RED && sibling.Color == NodeColor.BLACK)
+                {
+                    PullBlack(parent);
+                    // 如果sibling有子节点，那么子节点一定是红色
+                    if (sibling.LeftChild != null && sibling.RightChild != null)
+                    {
+                        RotateLeft(parent);
+                        SwapColors(parent, sibling);
+                        PushBlack(parent);
+                    }
+                    else if (sibling.LeftChild == null && sibling.RightChild == null)
+                    {
+                        // 已经修复了，无需做事
+                    }
+                    else if (sibling.LeftChild != null)
+                    {
+                        TreeNode siblingLeft = sibling.LeftChild as TreeNode;
+                        RotateRightLeft(parent);
+                        SwapColors(parent, siblingLeft);
+                        PushBlack(siblingLeft);
+                    }
+                    else
+                    {
+                        RotateLeft(parent);
+                        SwapColors(parent, sibling);
+                        PushBlack(sibling);
+                    }
+                }
+                else if (parent.Color == NodeColor.BLACK && sibling.Color == NodeColor.RED)
+                {
+                    // 此时sibling一定有两个黑色的子节点
+                    RotateLeft(parent);
+                    SwapColors(parent, sibling);
+                    FixTree4Deletion(node);
                 }
             }
             else
