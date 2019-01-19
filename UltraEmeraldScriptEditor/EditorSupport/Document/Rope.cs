@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -14,23 +15,24 @@ namespace EditorSupport.Document
     /// 靠左的叶子节点的起始偏移小于靠右的叶子节点的起始偏移
     /// 优点在于寻找偏移的时候效率为O(log N)，删除数据的时候不需要做数据移动
     /// 插入操作略微复杂一些，当插入数据的时候，需要将子节点与新的子树重新设置一个父节点，然后自平衡，在插入的数据量比较大时，会经过多次自平衡
-    /// 而且插入数据量比较大的时候，还有O(N)的复制消耗，插入操作也许还有优化的空间？？？
     /// 综上所述，对于频繁插入/删除字符，且数据量很大的时候会有比较客观的性能
-    /// 缺点：查找性能欠缺
+    /// 缺点：查找性能欠缺，为O(N)
     /// </summary>
     /// <remarks>
     /// 线程不安全
     /// </remarks>
     /// <typeparam name="T"></typeparam>
+    [Serializable]
     public sealed class Rope<T> : IList<T>, ICloneable
     {
         /// <summary>
         /// RopeNode只有叶子结点才负责存储数据，任何高度>0的节点只是负责存储所有子树的总长度
         /// 从左到右依次列出的叶子节点的数据连起来就是根节点所表示的连续数据
         /// </summary>
+        [Serializable]
         internal sealed class RopeNode
         {
-            internal static readonly Int32 NODE_SIZE = 2;
+            internal static readonly Int32 NODE_SIZE = 256;
 
             internal RopeNode Parent { get; set; }
             internal RopeNode Left { get; set; }
@@ -86,6 +88,31 @@ namespace EditorSupport.Document
                 }
             }
 
+            internal RopeNode Clone()
+            {
+                var ret = new RopeNode();
+                if (Parent != null)
+                {
+                    ret.Parent = Parent.Clone();
+                }
+                if (Left != null)
+                {
+                    ret.Left = Left.Clone();
+                }
+                if (Right != null)
+                {
+                    ret.Right = Right.Clone();
+                }
+                ret.Length = Length;
+                ret.Height = Height;
+                if (_contents != null)
+                {
+                    ret.GenerateContentsIfRequired();
+                    Array.Copy(_contents, ret._contents, Length);
+                }
+                return ret;
+            }
+
             internal T[] _contents;
         }
 
@@ -100,7 +127,7 @@ namespace EditorSupport.Document
             {
                 throw new ArgumentNullException("input");
             }
-        } 
+        }
         #endregion
 
         #region IList<T>
@@ -133,7 +160,7 @@ namespace EditorSupport.Document
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            CopyTo(0, array, arrayIndex, Count);
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -180,7 +207,9 @@ namespace EditorSupport.Document
         #region ICloneable
         public object Clone()
         {
-            throw new NotImplementedException();
+            var ret = new Rope<T>();
+            ret._root = _root.Clone();
+            return ret;
         }
         #endregion
 
@@ -199,29 +228,78 @@ namespace EditorSupport.Document
         {
 
         }
+
+        public void CopyTo(Int32 index, T[] array, Int32 arrayIndex, Int32 length)
+        {
+            VerifyRange(index, length);
+            InnerCopyTo(_root, index, array, arrayIndex, length);
+        }
         #endregion
 
         #region Private
-        private void InnerInsert(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 count)
+        private void VerifyRange(Int32 startIndex, Int32 length)
         {
-            if (count <= 0)
+            if (startIndex < 0 || startIndex >= Count)
+            {
+                throw new ArgumentOutOfRangeException("startIndex", startIndex, "0 <= startIndex <= " + this.Count.ToString(CultureInfo.InvariantCulture));
+            }
+            if (length < 0 || startIndex + length > Count)
+            {
+                throw new ArgumentOutOfRangeException("length", length, "0 <= length, startIndex(" + startIndex + ") + length <= " + Count.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        private void InnerCopyTo(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
+        {
+            if (length <= 0)
             {
                 return;
             }
-            if (node.Length + count < RopeNode.NODE_SIZE)
+            if (node.IsLeaf)
+            {
+                node.GenerateContentsIfRequired();
+                Array.Copy(node._contents, offset, array, arrayIndex, length);
+            }
+            else
+            {
+                if (node.Left.Length > offset)
+                {
+                    Int32 leftSize = Math.Min(length, node.Left.Length - offset);
+                    InnerCopyTo(node.Left, offset, array, arrayIndex, leftSize);
+                    if (node.Left.Length < offset + length)
+                    {
+                        Int32 rightSize = offset + length - node.Left.Length;
+                        InnerCopyTo(node.Right, 0, array, arrayIndex + leftSize, rightSize);
+                    }
+                }
+                else
+                {
+                    offset -= node.Left.Length;
+                    InnerCopyTo(node.Right, offset, array, arrayIndex, length);
+                }
+            }
+        }
+
+        private void InnerInsert(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
+        {
+            if (length <= 0)
+            {
+                return;
+            }
+            if (node.Length + length < RopeNode.NODE_SIZE)
             {
                 // 一定为叶子节点
                 node.GenerateContentsIfRequired();
                 // 先数据后移
                 for (int i = node.Length - 1; i >= offset; i--)
                 {
-                    node._contents[i + count] = node._contents[i];
+                    node._contents[i + length] = node._contents[i];
                 }
                 // 再拷贝数据
-                Array.Copy(array, arrayIndex, node._contents, offset, count);
-                node.Length += count;
+                Array.Copy(array, arrayIndex, node._contents, offset, length);
+                node.Length += length;
             }
-            else if (node.Height == 0)
+            else if (node.IsLeaf)
             {
                 // 叶子节点，且当前叶子节点存储不下的情况
                 node.GenerateContentsIfRequired();
@@ -265,28 +343,28 @@ namespace EditorSupport.Document
                     }
                     a.Length -= distributeLeft;
                 }
-                Int32 rest = Math.Min(count, RopeNode.NODE_SIZE - distributeLeft);
+                Int32 rest = Math.Min(length, RopeNode.NODE_SIZE - distributeLeft);
                 Array.Copy(array, arrayIndex, b._contents, distributeLeft, rest);
                 b.Length = distributeLeft + rest;
                 arrayIndex += rest;
-                count -= rest;
+                length -= rest;
                 offset = 0;
-                InnerInsert(node, offset, array, arrayIndex, count);
+                InnerInsert(node, offset, array, arrayIndex, length);
                 // 自平衡
                 Rebalance(c);
             }
             else
             {
-                node.Length += count;
+                node.Length += length;
                 // 非叶子节点不存储数据，只用来二分
                 if (offset < node.Left.Length)
                 {
-                    InnerInsert(node.Left, offset, array, arrayIndex, count);
+                    InnerInsert(node.Left, offset, array, arrayIndex, length);
                 }
                 else
                 {
                     offset -= node.Left.Length;
-                    InnerInsert(node.Right, offset, array, arrayIndex, count);
+                    InnerInsert(node.Right, offset, array, arrayIndex, length);
                 }
                 // 只有非叶子节点才需要重新平衡
                 Rebalance(node);
@@ -416,7 +494,7 @@ namespace EditorSupport.Document
                     node = null;
                 }
             }
-        } 
+        }
         #endregion
 
         #region Debug
@@ -436,7 +514,7 @@ namespace EditorSupport.Document
             Debug.Assert(node.IsLeaf || node.Length == node.Left.Length + node.Right.Length);
             VerifyNode(node.Left);
             VerifyNode(node.Right);
-        } 
+        }
         #endregion
 
         private RopeNode _root;

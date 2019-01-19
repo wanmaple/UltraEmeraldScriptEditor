@@ -24,14 +24,15 @@ namespace UltraEmeraldScriptEditor
         {
             InitializeComponent();
 
-            //EditorSupport.Document.Rope<Char> rope = new EditorSupport.Document.Rope<char>();
-            //String test = "1234567890abcdefghijk";
-            //rope.InsertRange(0, test.ToArray());
-            //rope.AddRange("lmnopqrstuvwxyz".ToArray());
-            //foreach (var item in rope)
-            //{
-            //    System.Diagnostics.Debug.WriteLine(item);
-            //}
+            EditorSupport.Document.Rope<Char> rope = new EditorSupport.Document.Rope<char>();
+            String test = "1234567890abcdefghijk";
+            rope.InsertRange(0, test.ToArray());
+            rope.AddRange("lmnopqrstuvwxyz".ToArray());
+            var rope2 = rope.Clone() as EditorSupport.Document.Rope<Char>;
+            foreach (var item in rope2)
+            {
+                System.Diagnostics.Debug.WriteLine(item);
+            }
         }
 
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)
