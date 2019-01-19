@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace UltraEmeraldScriptEditor.Editor.Document
+namespace EditorSupport.Document
 {
     /// <summary>
     /// 表示Document中的位置信息
@@ -32,7 +32,7 @@ namespace UltraEmeraldScriptEditor.Editor.Document
             }
             _x = line;
             _y = column;
-        } 
+        }
         #endregion
 
         #region Overrides

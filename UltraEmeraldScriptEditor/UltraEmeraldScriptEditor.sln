@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraEmeraldScriptEditor", "UltraEmeraldScriptEditor\UltraEmeraldScriptEditor.csproj", "{5981EBE1-7C76-4217-B6EB-B1856CE9F06E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorSupport", "EditorSupport\EditorSupport.csproj", "{8F29407D-F5A7-40D8-A20B-8F8DC303B5FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{5981EBE1-7C76-4217-B6EB-B1856CE9F06E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5981EBE1-7C76-4217-B6EB-B1856CE9F06E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5981EBE1-7C76-4217-B6EB-B1856CE9F06E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F29407D-F5A7-40D8-A20B-8F8DC303B5FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F29407D-F5A7-40D8-A20B-8F8DC303B5FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F29407D-F5A7-40D8-A20B-8F8DC303B5FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F29407D-F5A7-40D8-A20B-8F8DC303B5FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
