@@ -11,6 +11,14 @@
     <sys:String x:Key="lang_mi_save">Save</sys:String>
     <sys:String x:Key="lang_mi_save_as">Save As</sys:String>
     <sys:String x:Key="lang_mi_exit">Exit</sys:String>
+    <sys:String x:Key="lang_mi_edit">Edit</sys:String>
+    <sys:String x:Key="lang_mi_undo">Undo</sys:String>
+    <sys:String x:Key="lang_mi_redo">Redo</sys:String>
+    <sys:String x:Key="lang_mi_cut">Cut</sys:String>
+    <sys:String x:Key="lang_mi_copy">Copy</sys:String>
+    <sys:String x:Key="lang_mi_paste">Paste</sys:String>
+    <sys:String x:Key="lang_mi_delete">Delete</sys:String>
+    <sys:String x:Key="lang_mi_select_all">Select All</sys:String>
     <sys:String x:Key="lang_mi_tools">Tools</sys:String>
     <sys:String x:Key="lang_mi_settings">Settings</sys:String>
 </ResourceDictionary>

@@ -42,6 +42,17 @@
                 <Separator />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_exit}" InputGestureText="Alt+F4" Command="ApplicationCommands.Close" />
             </MenuItem>
+            <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_edit}">
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_undo}" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_redo}" />
+                <Separator />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_cut}" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_copy}" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_paste}" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_delete}" />
+                <Separator />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_select_all}" />
+            </MenuItem>
             <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_tools}">
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>

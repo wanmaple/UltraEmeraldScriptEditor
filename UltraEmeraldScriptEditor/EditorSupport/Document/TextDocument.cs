@@ -8,18 +8,18 @@ using System.Threading;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 文本model的核心类，本质是一个带事件的<see cref="System.Text.StringBuilder"/>
+    /// 文本model的核心类
     /// </summary>
     public sealed class TextDocument : ITextSource
     {
         #region Constructor
         public TextDocument()
         {
-
+            _rope = new Rope<char>();
         }
         public TextDocument(IEnumerable<Char> initialText)
         {
-
+            _rope = new Rope<char>(initialText);
         }
         #endregion
 
@@ -71,5 +71,7 @@ namespace EditorSupport.Document
             throw new NotImplementedException();
         }
         #endregion
+
+        private Rope<Char> _rope;
     }
 }

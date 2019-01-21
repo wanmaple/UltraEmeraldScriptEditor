@@ -28,8 +28,10 @@ namespace UltraEmeraldScriptEditor
             String test = "1234567890abcdefghijk";
             rope.InsertRange(0, test.ToArray());
             rope.AddRange("lmnopqrstuvwxyz".ToArray());
-            var rope2 = rope.Clone() as EditorSupport.Document.Rope<Char>;
-            foreach (var item in rope2)
+            System.Diagnostics.Debug.WriteLine(rope[3]);
+            System.Diagnostics.Debug.WriteLine(rope[15]);
+            rope.RemoveRange(0, rope.Count);
+            foreach (var item in rope)
             {
                 System.Diagnostics.Debug.WriteLine(item);
             }

@@ -13,7 +13,7 @@ namespace EditorSupport.Document
     /// 我们用一颗自平衡的二叉树来解决这个问题
     /// 我们将数据只存储到叶子节点中，每个节点记录自己子树的总长度
     /// 靠左的叶子节点的起始偏移小于靠右的叶子节点的起始偏移
-    /// 优点在于寻找偏移的时候效率为O(log N)，删除数据的时候不需要做数据移动
+    /// 优点在于寻找偏移的时候效率为O(log N)，删除数据的时候只需做少量的数据移动，但是需要合并节点和自平衡
     /// 插入操作略微复杂一些，当插入数据的时候，需要将子节点与新的子树重新设置一个父节点，然后自平衡，在插入的数据量比较大时，会经过多次自平衡
     /// 综上所述，对于频繁插入/删除字符，且数据量很大的时候会有比较客观的性能
     /// 缺点：查找性能欠缺，为O(N)
@@ -32,7 +32,7 @@ namespace EditorSupport.Document
         [Serializable]
         internal sealed class RopeNode
         {
-            internal static readonly Int32 NODE_SIZE = 256;
+            internal static readonly Int32 NODE_SIZE = 4;
 
             internal RopeNode Parent { get; set; }
             internal RopeNode Left { get; set; }
@@ -131,7 +131,17 @@ namespace EditorSupport.Document
         #endregion
 
         #region IList<T>
-        public T this[int index] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public T this[int index]
+        {
+            get
+            {
+                return InnerGetElement(_root, index);
+            }
+            set
+            {
+                InnerSetElement(_root, index, value);
+            }
+        }
 
         public int Count
         {
@@ -190,12 +200,18 @@ namespace EditorSupport.Document
 
         public bool Remove(T item)
         {
-            throw new NotImplementedException();
+            Int32 idx = IndexOf(item);
+            if (idx >= 0)
+            {
+                RemoveAt(idx);
+                return true;
+            }
+            return false;
         }
 
         public void RemoveAt(int index)
         {
-            throw new NotImplementedException();
+            RemoveRange(index, 1);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -217,16 +233,20 @@ namespace EditorSupport.Document
         public void AddRange(T[] items)
         {
             InsertRange(_root.Length, items);
+            VerifySelf();
         }
 
         public void InsertRange(Int32 index, T[] items)
         {
             InnerInsert(_root, index, items, 0, items.Length);
+            VerifySelf();
         }
 
         public void RemoveRange(Int32 index, Int32 length)
         {
-
+            VerifyRange(index, length);
+            InnerRemove(_root, index, length);
+            VerifySelf();
         }
 
         public void CopyTo(Int32 index, T[] array, Int32 arrayIndex, Int32 length)
@@ -237,11 +257,11 @@ namespace EditorSupport.Document
         #endregion
 
         #region Private
-        private void VerifyRange(Int32 startIndex, Int32 length)
+        internal void VerifyRange(Int32 startIndex, Int32 length)
         {
             if (startIndex < 0 || startIndex >= Count)
             {
-                throw new ArgumentOutOfRangeException("startIndex", startIndex, "0 <= startIndex <= " + this.Count.ToString(CultureInfo.InvariantCulture));
+                throw new ArgumentOutOfRangeException("startIndex", startIndex, "0 <= startIndex <= " + Count.ToString(CultureInfo.InvariantCulture));
             }
             if (length < 0 || startIndex + length > Count)
             {
@@ -249,7 +269,19 @@ namespace EditorSupport.Document
             }
         }
 
-        private void InnerCopyTo(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
+        internal void VerifyNodeRange(RopeNode node, Int32 startIndex, Int32 length)
+        {
+            if (startIndex < 0 || startIndex >= node.Length)
+            {
+                throw new ArgumentOutOfRangeException("startIndex", startIndex, "0 <= startIndex <= " + node.Length.ToString(CultureInfo.InvariantCulture));
+            }
+            if (length < 0 || startIndex + length > node.Length)
+            {
+                throw new ArgumentOutOfRangeException("length", length, "0 <= length, startIndex(" + startIndex + ") + length <= " + node.Length.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        internal void InnerCopyTo(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
         {
             if (length <= 0)
             {
@@ -262,7 +294,7 @@ namespace EditorSupport.Document
             }
             else
             {
-                if (node.Left.Length > offset)
+                if (offset < node.Left.Length)
                 {
                     Int32 leftSize = Math.Min(length, node.Left.Length - offset);
                     InnerCopyTo(node.Left, offset, array, arrayIndex, leftSize);
@@ -280,7 +312,7 @@ namespace EditorSupport.Document
             }
         }
 
-        private void InnerInsert(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
+        internal void InnerInsert(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
         {
             if (length <= 0)
             {
@@ -371,7 +403,176 @@ namespace EditorSupport.Document
             }
         }
 
-        private void Rebalance(RopeNode node)
+        internal void InnerRemove(RopeNode node, Int32 offset, Int32 length)
+        {
+            if (length <= 0)
+            {
+                return;
+            }
+            if (node.IsLeaf)
+            {
+                // 叶子节点，直接数据前移
+                for (int i = offset + length; i < node.Length; i++)
+                {
+                    node._contents[i - length] = node._contents[i];
+                }
+                node.Length -= length;
+            }
+            else
+            {
+                node.Length -= length;
+                Int32 leftLength = node.Left.Length;
+                if (offset < leftLength)
+                {
+                    Int32 leftSize = Math.Min(length, leftLength - offset);
+                    InnerRemove(node.Left, offset, leftSize);
+                    if (leftLength < offset + length)
+                    {
+                        Int32 rightSize = offset + length - leftLength;
+                        InnerRemove(node.Right, 0, rightSize);
+                    }
+                }
+                else
+                {
+                    offset -= leftLength;
+                    InnerRemove(node.Right, offset, length);
+                }
+                //  合并节点
+                RopeNode mergedNode = Merge(node);
+                // 自平衡
+                Rebalance(mergedNode);
+            }
+        }
+
+        internal T InnerGetElement(RopeNode node, Int32 offset)
+        {
+            VerifyNodeRange(node, offset, 1);
+            if (node.IsLeaf)
+            {
+                return node._contents[offset];
+            }
+            if (offset < node.Left.Length)
+            {
+                return InnerGetElement(node.Left, offset);
+            }
+            offset -= node.Left.Length;
+            return InnerGetElement(node.Right, offset);
+        }
+
+        internal void InnerSetElement(RopeNode node, Int32 offset, T elem)
+        {
+            VerifyNodeRange(node, offset, 1);
+            if (node.IsLeaf)
+            {
+                node._contents[offset] = elem;
+            }
+            if (offset < node.Left.Length)
+            {
+                InnerSetElement(node.Left, offset, elem);
+            }
+            offset -= node.Left.Length;
+            InnerSetElement(node.Right, offset, elem);
+        }
+
+        internal RopeNode Merge(RopeNode node)
+        {
+            if (node.IsLeaf)
+            {
+                return node;
+            }
+            // 如果左右孩子长度都不为0，则分两种情况
+            if (node.Left.Length > 0 && node.Right.Length > 0)
+            {
+                // 长度和不大于NODE_SIZE，则将所有数据合并到最左侧节点，并用最左侧节点替换原节点
+                if (node.Left.Length + node.Right.Length <= RopeNode.NODE_SIZE)
+                {
+                    var stack = new Stack<RopeNode>();
+                    var curNode = node;
+                    RopeNode leftMost = null;
+                    Int32 offset = 0;
+                    while (curNode != null)
+                    {
+                        while (!curNode.IsLeaf)
+                        {
+                            stack.Push(curNode.Right);
+                            curNode = curNode.Left;
+                        }
+                        if (leftMost == null)
+                        {
+                            leftMost = curNode;
+                            offset = curNode.Length;
+                        }
+                        else
+                        {
+                            Array.Copy(curNode._contents, 0, leftMost._contents, offset, curNode.Length);
+                            offset += curNode.Length;
+                        }
+                    }
+                    Debug.Assert(leftMost != null, "LeftMost couldn't be null.");
+                    leftMost.Length = node.Left.Length + node.Right.Length;
+                    if (node.IsLeft)
+                    {
+                        node.Parent.Left = leftMost;
+                        leftMost.Parent = node.Parent;
+                    }
+                    else if (node.IsRight)
+                    {
+                        node.Parent.Right = leftMost;
+                        leftMost.Parent = node.Parent;
+                    }
+                    else
+                    {
+                        _root = leftMost;
+                        leftMost.Parent = null;
+                    }
+                    return leftMost;
+                }
+                // 如果大于NODE_SIZE则不做处理
+            }
+            else if (node.Left.Length > 0)
+            {
+                // 左孩子长度大于0，则用左孩子代替原节点
+                if (node.IsLeft)
+                {
+                    node.Parent.Left = node.Left;
+                    node.Left.Parent = node.Parent;
+                }
+                else if (node.IsRight)
+                {
+                    node.Parent.Right = node.Left;
+                    node.Left.Parent = node.Parent;
+                }
+                else
+                {
+                    _root = node.Left;
+                    node.Left.Parent = null;
+                }
+                return node.Left;
+            }
+            else
+            {
+                // 右孩子长度大于0或两个孩子都为空，则用右孩子代替原节点
+                if (node.IsLeft)
+                {
+                    node.Parent.Left = node.Right;
+                    node.Right.Parent = node.Parent;
+                }
+                else if (node.IsRight)
+                {
+                    node.Parent.Right = node.Right;
+                    node.Right.Parent = node.Parent;
+                }
+                else
+                {
+                    _root = node.Right;
+                    node.Right.Parent = null;
+                }
+                return node.Right;
+            }
+            return node;
+        }
+
+        internal void Rebalance(RopeNode node)
         {
             if (node.IsLeaf)
             {
@@ -402,7 +603,7 @@ namespace EditorSupport.Document
             node.Length = node.Left.Length + node.Right.Length;
         }
 
-        private void RotateLeft(RopeNode node)
+        internal void RotateLeft(RopeNode node)
         {
             Debug.Assert(!node.IsLeaf);
             /* 和二叉搜索树的左旋不同，它只需要保证叶子节点的顺序一致
@@ -435,7 +636,7 @@ namespace EditorSupport.Document
             right.Length = right.Left.Length + right.Right.Length;
         }
 
-        private void RotateRight(RopeNode node)
+        internal void RotateRight(RopeNode node)
         {
             Debug.Assert(!node.IsLeaf);
             /* 和二叉搜索树的右旋不同，它只需要保证叶子节点的顺序一致

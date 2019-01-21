@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Document\CharRopeExtensions.cs" />
     <Compile Include="Document\ITextSource.cs" />
     <Compile Include="Document\Rope.cs" />
     <Compile Include="Document\TextAnchor.cs" />
