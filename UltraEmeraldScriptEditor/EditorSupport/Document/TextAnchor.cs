@@ -5,8 +5,20 @@ using System.Text;
 
 namespace EditorSupport.Document
 {
+    public enum AnchorMovementType
+    {
+        /// <summary>
+        /// 在锚点处插入文本时，锚点始终在插入文本之前
+        /// </summary>
+        BeforeInsertion,
+        /// <summary>
+        /// 在锚点处插入文本时，锚点始终在插入文本之后
+        /// </summary>
+        AfterInsertion,
+    }
+
     /// <summary>
-    /// 一段文本，只记录长度，在该偏移之前插入/删除文本的时候，会自动更新偏移值。
+    /// 这里我称之为锚点，两个锚点组成一段文本；插入/删除文本的时候，会自动更新长度。
     /// </summary>
     /// <remarks>
     /// 在文本编辑中，偏移是会经常变化的，如果逐个去修改偏移的话，将会有非常大的计算量O(N)
@@ -22,7 +34,7 @@ namespace EditorSupport.Document
         public Int32 TotalLength { get; set; }
 
         #region Constructor
-        public TextAnchor()
+        internal TextAnchor()
         {
             Length = TotalLength = 0;
         }
@@ -89,7 +101,7 @@ namespace EditorSupport.Document
                 }
                 // 不存在左子树，前驱节点则为向上第一个左子树中不存在该节点的节点
                 TextAnchor node = this;
-                while (node.Parent != null && node.Parent.Left == node)
+                while (node.IsLeft)
                 {
                     node = node.Parent;
                 }
@@ -107,7 +119,7 @@ namespace EditorSupport.Document
                 }
                 // 不存在右子树，后继节点则为向上第一个右子树中不能存在该节点的节点
                 TextAnchor node = this;
-                while (node.Parent != null && node.Parent.Right == node)
+                while (node.IsRight)
                 {
                     node = node.Parent;
                 }
