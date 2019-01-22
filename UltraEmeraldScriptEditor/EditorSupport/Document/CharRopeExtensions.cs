@@ -43,7 +43,7 @@ namespace EditorSupport.Document
             rope.InsertRange(offset, text.ToArray());
         }
 
-        public static Int32 IndexOf(this Rope<Char> rope, String text)
+        public static Int32 IndexOfText(this Rope<Char> rope, String text, Int32 offset, Int32 length)
         {
             if (rope == null)
             {
@@ -52,11 +52,56 @@ namespace EditorSupport.Document
             if (text.Length <= 0)
             {
                 throw new ArgumentOutOfRangeException("text");
+            }
+            Int32 idx = 0;
+            Int32 foundIdx = -1;
+            Int32 textIdx = 0;
+            foreach (var node in rope.Leaves(rope._root))
+            {
+                if (idx > rope.Count - text.Length)
+                {
+                    break;
+                }
+                if (node.Length > 0)
+                {
+                    for (int i = 0; i < node.Length; i++)
+                    {
+                        if (idx >= offset && idx < offset + length)
+                        {
+                            Char ch = node._contents[i];
+                            if (ch == text[textIdx])
+                            {
+                                if (foundIdx < 0)
+                                {
+                                    foundIdx = idx;
+                                }
+                                ++textIdx;
+                            }
+                            else
+                            {
+                                foundIdx = -1;
+                                textIdx = 0;
+                            }
+                            if (textIdx >= text.Length)
+                            {
+                                return foundIdx;
+                            }
+                        }
+                        ++idx;
+                    }
+                }
             }
             return -1;
         }
 
-        public static ICollection<Int32> IndexOfAll(this Rope<Char> rope, String text)
+        /// <summary>
+        /// 该查找函数不会寻找重复部分的字符
+        /// 比如在"abcabcabc"中查找"abcabc"则只会返回0
+        /// </summary>
+        /// <param name="rope"></param>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static ICollection<Int32> AllIndexesOfText(this Rope<Char> rope, String text, Int32 offset, Int32 length)
         {
             if (rope == null)
             {
@@ -66,8 +111,48 @@ namespace EditorSupport.Document
             {
                 throw new ArgumentOutOfRangeException("text");
             }
-            var ret = new List<Int32>();
-            return ret;
+            var foundIdxes = new List<Int32>();
+            Int32 idx = 0;
+            Int32 textIdx = 0;
+            Int32 foundIdx = -1;
+            foreach (var node in rope.Leaves(rope._root))
+            {
+                if (idx > rope.Count - text.Length)
+                {
+                    break;
+                }
+                if (node.Length > 0)
+                {
+                    for (int i = 0; i < node.Length; i++)
+                    {
+                        if (idx >= offset && idx < offset + length)
+                        {
+                            Char ch = node._contents[i];
+                            if (ch == text[textIdx])
+                            {
+                                if (foundIdx < 0)
+                                {
+                                    foundIdx = idx;
+                                }
+                                ++textIdx;
+                            }
+                            else
+                            {
+                                foundIdx = -1;
+                                textIdx = 0;
+                            }
+                            if (textIdx >= text.Length)
+                            {
+                                foundIdxes.Add(foundIdx);
+                                foundIdx = -1;
+                                textIdx = 0;
+                            }
+                        }
+                        ++idx;
+                    }
+                }
+            }
+            return foundIdxes;
         }
     }
 }

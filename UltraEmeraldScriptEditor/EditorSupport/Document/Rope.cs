@@ -13,10 +13,10 @@ namespace EditorSupport.Document
     /// 我们用一颗自平衡的二叉树来解决这个问题
     /// 我们将数据只存储到叶子节点中，每个节点记录自己子树的总长度
     /// 靠左的叶子节点的起始偏移小于靠右的叶子节点的起始偏移
-    /// 优点在于寻找偏移的时候效率为O(log N)，删除数据的时候只需做少量的数据移动，但是需要合并节点和自平衡
-    /// 插入操作略微复杂一些，当插入数据的时候，需要将子节点与新的子树重新设置一个父节点，然后自平衡，在插入的数据量比较大时，会经过多次自平衡
+    /// 优点在于寻找偏移的时候效率为O(log N)，
+    /// 删除数据的时候，只需做少量的数据移动，但是需要合并节点和自平衡
+    /// 插入数据的时候，需要将子节点与新的子树重新设置一个父节点，然后自平衡，在插入的数据量比较大时，会经过多次自平衡
     /// 综上所述，对于频繁插入/删除字符，且数据量很大的时候会有比较客观的性能
-    /// 缺点：查找性能欠缺，为O(N)
     /// </summary>
     /// <remarks>
     /// 线程不安全
@@ -127,6 +127,8 @@ namespace EditorSupport.Document
             {
                 throw new ArgumentNullException("input");
             }
+            _root = new RopeNode();
+            AddRange(input.ToArray());
         }
         #endregion
 
@@ -229,7 +231,7 @@ namespace EditorSupport.Document
         }
         #endregion
 
-        #region Other extension operations
+        #region Other operations
         public void AddRange(T[] items)
         {
             InsertRange(_root.Length, items);
@@ -466,12 +468,39 @@ namespace EditorSupport.Document
             {
                 node._contents[offset] = elem;
             }
-            if (offset < node.Left.Length)
+            else if (offset < node.Left.Length)
             {
                 InnerSetElement(node.Left, offset, elem);
             }
-            offset -= node.Left.Length;
-            InnerSetElement(node.Right, offset, elem);
+            else
+            {
+                offset -= node.Left.Length;
+                InnerSetElement(node.Right, offset, elem);
+            }
+        }
+
+        internal IEnumerable<RopeNode> Leaves(RopeNode node)
+        {
+            var ret = new List<RopeNode>();
+            var stack = new Stack<RopeNode>();
+            while (node != null)
+            {
+                while (!node.IsLeaf)
+                {
+                    stack.Push(node.Right);
+                    node = node.Left;
+                }
+                ret.Add(node);
+                if (stack.Count > 0)
+                {
+                    node = stack.Pop();
+                }
+                else
+                {
+                    node = null;
+                }
+            }
+            return ret;
         }
 
         internal RopeNode Merge(RopeNode node)
@@ -718,6 +747,6 @@ namespace EditorSupport.Document
         }
         #endregion
 
-        private RopeNode _root;
+        internal RopeNode _root;
     }
 }

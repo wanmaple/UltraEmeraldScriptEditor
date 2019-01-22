@@ -12,11 +12,6 @@ namespace EditorSupport.Document
     public interface ITextSource
     {
         /// <summary>
-        /// 文本发生变化的事件
-        /// </summary>
-        event EventHandler TextChanged;
-
-        /// <summary>
         /// 所有文本
         /// </summary>
         String Text { get; }
@@ -39,13 +34,21 @@ namespace EditorSupport.Document
         /// <returns></returns>
         String GetTextAt(Int32 offset, Int32 length);
         /// <summary>
-        /// 获取字符的偏移
+        /// 获取字符串的偏移
         /// </summary>
         /// <param name="anyOf">需要获取的字符列表</param>
         /// <param name="startIndex">搜索的起始偏移</param>
         /// <param name="length">搜索的长度</param>
         /// <returns></returns>
-        Int32 IndexOfAny(Char[] anyOf, Int32 startIndex, Int32 length);
+        Int32 IndexOf(String content, Int32 startIndex, Int32 length);
+        /// <summary>
+        /// 获取所有该字符串的偏移
+        /// </summary>
+        /// <param name="content"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        ICollection<Int32> AllIndexesOf(String content, Int32 startIndex, Int32 length);
         /// <summary>
         /// 获取一个快照
         /// </summary>

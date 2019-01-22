@@ -40,38 +40,69 @@ namespace EditorSupport.Document
         #endregion
 
         #region ITextSource
-        public string Text => throw new NotImplementedException();
+        public string Text
+        {
+            get
+            {
+                VerifyAccess();
+                return _rope.ToString(0, _rope.Count);
+            }
+        }
 
-        public int Length => throw new NotImplementedException();
-
-        public event EventHandler TextChanged;
+        public int Length
+        {
+            get
+            {
+                VerifyAccess();
+                return _rope.Count;
+            }
+        }
 
         public TextReader CreateReader()
         {
-            throw new NotImplementedException();
+            lock (_lockObj)
+            {
+                return new RopeTextReader(_rope);
+            }
         }
 
         public ITextSource CreateSnapshot()
         {
-            throw new NotImplementedException();
+            lock (_lockObj)
+            {
+                return new RopeTextSource(_rope);
+            }
         }
 
         public char GetCharacterAt(int offset)
         {
-            throw new NotImplementedException();
+            VerifyAccess();
+            return _rope[offset];
         }
 
         public string GetTextAt(int offset, int length)
         {
-            throw new NotImplementedException();
+            VerifyAccess();
+            return _rope.ToString(offset, length);
         }
 
-        public int IndexOfAny(char[] anyOf, int startIndex, int length)
+        public int IndexOf(String content, int startIndex, int length)
         {
-            throw new NotImplementedException();
+            VerifyAccess();
+            return _rope.IndexOfText(content, startIndex, length);
+        }
+
+        public ICollection<int> AllIndexesOf(String content, int startIndex, int length)
+        {
+            VerifyAccess();
+            return _rope.AllIndexesOfText(content, startIndex, length);
         }
         #endregion
 
-        private Rope<Char> _rope;
+        private void OnTextChanged()
+        {
+        }
+
+        private readonly Rope<Char> _rope;
     }
 }
