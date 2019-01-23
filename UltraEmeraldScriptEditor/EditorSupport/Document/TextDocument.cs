@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,12 +15,13 @@ namespace EditorSupport.Document
     {
         #region Constructor
         public TextDocument()
+            : this(String.Empty)
         {
-            _rope = new Rope<char>();
         }
         public TextDocument(IEnumerable<Char> initialText)
         {
             _rope = new Rope<char>(initialText);
+            _anchorTree = new TextAnchorTree(this);
         }
         #endregion
 
@@ -99,10 +101,26 @@ namespace EditorSupport.Document
         }
         #endregion
 
+        public TextAnchor CreateAnchor(Int32 offset)
+        {
+            VerifyAccess();
+            VerifyOffsetRange(offset);
+            return _anchorTree.CreateAnchor(offset);
+        }
+
         private void OnTextChanged()
         {
         }
 
+        private void VerifyOffsetRange(Int32 offset)
+        {
+            if (offset < 0 || offset > Length)
+            {
+                throw new ArgumentOutOfRangeException("offset", offset, "0 <= offset <= " + Length.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
         private readonly Rope<Char> _rope;
+        private readonly TextAnchorTree _anchorTree;
     }
 }

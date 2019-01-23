@@ -9,6 +9,9 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
+    /// 插入删除性能较高的List
+    /// </summary>
+    /// <remarks>
     /// 由于需要快速插入/删除字符，List的插入和删除性能是满足不了的
     /// 我们用一颗自平衡的二叉树来解决这个问题
     /// 我们将数据只存储到叶子节点中，每个节点记录自己子树的总长度
@@ -16,9 +19,7 @@ namespace EditorSupport.Document
     /// 优点在于寻找偏移的时候效率为O(log N)，
     /// 删除数据的时候，只需做少量的数据移动，但是需要合并节点和自平衡
     /// 插入数据的时候，需要将子节点与新的子树重新设置一个父节点，然后自平衡，在插入的数据量比较大时，会经过多次自平衡
-    /// 综上所述，对于频繁插入/删除字符，且数据量很大的时候会有比较客观的性能
-    /// </summary>
-    /// <remarks>
+    /// 综上所述，对于频繁插入/删除字符，且数据量很大的时候会有比较可观的性能
     /// 线程不安全
     /// </remarks>
     /// <typeparam name="T"></typeparam>
@@ -32,7 +33,7 @@ namespace EditorSupport.Document
         [Serializable]
         internal sealed class RopeNode
         {
-            internal static readonly Int32 NODE_SIZE = 4;
+            internal static readonly Int32 NODE_SIZE = 256;
 
             internal RopeNode Parent { get; set; }
             internal RopeNode Left { get; set; }
