@@ -49,6 +49,8 @@
     <Compile Include="Document\TextDocument.cs" />
     <Compile Include="Document\TextLocation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Syntax\ILexicalAnalyzer.cs" />
+    <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Rendering\" />
