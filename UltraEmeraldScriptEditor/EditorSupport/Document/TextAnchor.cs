@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -28,6 +29,35 @@ namespace EditorSupport.Document
             _doc = document ?? throw new ArgumentNullException("document");
         }
         #endregion
+
+        public Int32 Offset
+        {
+            get
+            {
+                Debug.Assert(_node != null);
+                Int32 offset = 0;
+                TextAnchorTree.TextAnchorNode curNode = _node;
+                TextAnchorTree.TextAnchorNode prevNode = null;
+                do
+                {
+                    offset += curNode.Length;
+                    if (curNode.Left != null)
+                    {
+                        offset += curNode.Left.TotalLength;
+                    }
+                    do
+                    {
+                        prevNode = curNode;
+                        curNode = curNode.Parent;
+                        if (curNode == null || prevNode.IsRight)
+                        {
+                            break;
+                        }
+                    } while (true);
+                } while (curNode != null);
+                return offset;
+            }
+        }
 
         internal TextAnchorTree.TextAnchorNode _node;
         internal TextDocument _doc;

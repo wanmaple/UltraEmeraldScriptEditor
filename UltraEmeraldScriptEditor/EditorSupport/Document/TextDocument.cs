@@ -108,6 +108,12 @@ namespace EditorSupport.Document
             return _anchorTree.CreateAnchor(offset);
         }
 
+        public void RemoveAnchor(TextAnchor anchor)
+        {
+            VerifyAccess();
+            _anchorTree.RemoveAnchor(anchor);
+        }
+
         private void OnTextChanged()
         {
         }
