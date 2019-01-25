@@ -185,21 +185,32 @@ namespace EditorSupport.Document
         {
             TextAnchorNode toReplace = null;
             TextAnchorNode replaced = null;
+            TextAnchorNode successor = node.Successor;
+            TextAnchorNode updateNode = null;
             if (node.Left != null && node.Right != null)
             {
                 // 用后继节点替换
-                var successor = node.Successor;
                 node.Anchor = successor.Anchor;
+                updateNode = successor.Parent;
                 // 转换为删除successor
                 toReplace = FindNodeToReplace(successor);
                 replaced = ReplaceNode(successor, toReplace);
             }
             else
             {
+                updateNode = node.Parent;
                 toReplace = FindNodeToReplace(node);
                 replaced = ReplaceNode(node, toReplace);
             }
-            
+
+            if (successor != null)
+            {
+                successor.Length += node.Length;
+            }
+            if (updateNode != null)
+            {
+                UpdateTotalLength(updateNode);
+            }
             // 如果替换的节点是双黑节点，则需要修复
             if (replaced != null && replaced.Color == NodeColor.DOUBLE_BLACK)
             {
