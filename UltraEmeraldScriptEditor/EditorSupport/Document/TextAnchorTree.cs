@@ -18,6 +18,7 @@ namespace EditorSupport.Document
     /// TotalLength的数学意义是该锚点所覆盖的所有子锚点（把该锚点想象成它周围其他子锚点的管理者）的总长度
     /// 每次插入新锚点的时候，只需要找到靠后的最近一个锚点，将新锚点设置为该锚点的前驱，而且由于记录了TotalLength可以快速找到偏移的位置，复杂度为O(log N)
     /// 计算偏移值也只需要找到所有左子树、父节点左子树的totallength以及自身length，就可以快速计算出偏移值，复杂度也为O(log N)
+    /// 不能存在重复偏移的锚点
     /// </remarks>
     internal sealed class TextAnchorTree
     {
@@ -106,7 +107,7 @@ namespace EditorSupport.Document
                     {
                         return Right.LeftMost;
                     }
-                    // 不存在右子树，后继节点则为向上第一个右子树中不能存在该节点的节点
+                    // 不存在右子树，后继节点则为向上第一个右子树中不存在该节点的节点
                     TextAnchorNode node = this;
                     while (node.IsRight)
                     {
@@ -178,6 +179,7 @@ namespace EditorSupport.Document
 
         internal void RemoveAnchor(TextAnchor anchor)
         {
+            Debug.WriteLine("Remove " + anchor.Offset.ToString());
             RemoveNode(anchor._node);
         }
 
@@ -187,25 +189,46 @@ namespace EditorSupport.Document
             TextAnchorNode replaced = null;
             TextAnchorNode successor = node.Successor;
             TextAnchorNode updateNode = null;
+            Int32 nodeLength = node.Length;
             if (node.Left != null && node.Right != null)
             {
                 // 用后继节点替换
                 node.Anchor = successor.Anchor;
+                node.Anchor._node = node;
+                node.Length = successor.Length;
+                node.TotalLength = successor.TotalLength;
                 updateNode = successor.Parent;
                 // 转换为删除successor
                 toReplace = FindNodeToReplace(successor);
                 replaced = ReplaceNode(successor, toReplace);
+                successor = node;
             }
             else
             {
-                updateNode = node.Parent;
                 toReplace = FindNodeToReplace(node);
                 replaced = ReplaceNode(node, toReplace);
+                if (toReplace == null)
+                {
+                    updateNode = node.Parent;
+                }
+                else
+                {
+                    if (toReplace == successor)
+                    {
+                        updateNode = node;
+                        successor = node;
+                    }
+                    else
+                    {
+                        updateNode = node.Parent;
+                    }
+                }
             }
 
+            // 后继节点长度增加
             if (successor != null)
             {
-                successor.Length += node.Length;
+                successor.Length += nodeLength;
             }
             if (updateNode != null)
             {
@@ -250,6 +273,7 @@ namespace EditorSupport.Document
                     }
                 }
                 // 如果相对的offset已经在当前锚点的左侧，那么该节点就是要找的节点（因为当前锚点的右锚点都在更后面）
+                Debug.Assert(offset != node.Length);
                 if (offset < node.Length)
                 {
                     return node;
@@ -383,35 +407,34 @@ namespace EditorSupport.Document
         internal void FixTree4Deletion(TextAnchorNode node, Boolean remove = true)
         {
             // 其他情况已经在FindNodeToReplace中正确处理
-            Debug.Assert(node.Color == NodeColor.DOUBLE_BLACK);
+            if (node.Color != NodeColor.DOUBLE_BLACK)
+            {
+                // 只可能是递归修复的时候，遇到父节点pull为黑色，这个时候已经修复完成
+                return;
+            }
             TextAnchorNode parent = node.Parent;
             if (parent == null)
             {
-                // 如果根节点是双黑节点，此时只可能有一个孩子节点，且孩子节点一定为叶子节点
-                // 直接将孩子节点涂红即可
-                TextAnchorNode child = parent.Left ?? parent.Right;
-                child.Color = NodeColor.RED;
+                // 如果根节点是双黑节点，变黑即可
+                node.Color = NodeColor.BLACK;
                 return;
             }
             TextAnchorNode sibling = node.IsLeft ? parent.Right : parent.Left;
-            if (node.IsLeft)
+            NodeColor siblingLeftColor = GetNodeColor(sibling.Left);
+            NodeColor siblingRightColor = GetNodeColor(sibling.Right);
+            if (sibling.Color == NodeColor.BLACK)
             {
-                if (sibling.Color == NodeColor.BLACK && parent.Color == NodeColor.BLACK)
+                if (siblingLeftColor == NodeColor.BLACK && siblingRightColor == NodeColor.BLACK)
                 {
+                    // 如果sibling的孩子均为黑色
                     PullBlack(parent);
-                    // 此时parent变为双黑节点
-                    // 如果sibling存在子节点，则一定为红色，且一定为叶子节点
-                    if (sibling.Left != null && sibling.Right != null)
-                    {
-                        RotateLeft(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                    else if (sibling.Left == null && sibling.Right == null)
-                    {
-                        FixTree4Deletion(parent, false);
-                    }
-                    else if (sibling.Left != null)
+                    FixTree4Deletion(parent, false);
+                }
+                else
+                {
+                    // sibling的孩子至少有一个红色
+                    PullBlack(parent);
+                    if (node.IsLeft && siblingLeftColor == NodeColor.RED)
                     {
                         // sibling只有左孩子，先对sibling右旋，再对parent左旋
                         RotateRight(sibling);
@@ -419,124 +442,43 @@ namespace EditorSupport.Document
                         sibling = sibling.Parent;
                         RotateLeft(parent);
                         SwapColor(parent, sibling);
-                        // sibling变为parent
-                        PushBlack(sibling);
                     }
-                    else
+                    else if (node.IsLeft && siblingRightColor == NodeColor.RED)
                     {
                         // sibling只有右孩子，直接左旋parent
                         RotateLeft(parent);
                         SwapColor(parent, sibling);
-                        // sibling变为parent
-                        PushBlack(sibling);
                     }
-                }
-                else if (sibling.Color == NodeColor.BLACK && parent.Color == NodeColor.RED)
-                {
-                    PullBlack(parent);
-                    // 如果sibling为叶子节点，则已经平衡
-                    // 如果sibling存在子节点，则一定为红色，且一定为叶子节点
-                    if (sibling.Left != null && sibling.Right != null)
+                    else if (node.IsRight && siblingRightColor == NodeColor.RED)
                     {
-                        // 左旋parent
-                        RotateLeft(parent);
-                        SwapColor(parent, sibling);
-                        // sibling变为parent
-                        PushBlack(sibling);
-                    }
-                    else if (sibling.Left != null)
-                    {
-                        // 右旋sibling
-                        RotateRight(sibling);
-                        // sibling变更
+                        RotateLeft(sibling);
                         sibling = sibling.Parent;
-                        // 左旋parent
-                        RotateLeft(parent);
+                        RotateRight(parent);
                         SwapColor(parent, sibling);
-                        // sibling变为parent
-                        PushBlack(sibling);
                     }
-                    else if (sibling.Right != null)
+                    else
                     {
-                        // 左旋parent
-                        RotateLeft(parent);
+                        RotateRight(parent);
                         SwapColor(parent, sibling);
-                        // sibling变为parent
-                        // 这里push与否都可以，push的话可以让之后插入新节点时不需要修复
-                        PushBlack(sibling);
                     }
-                }
-                else
-                {
-                    // 剩下的情况，sibling为红色，parent一定为黑色，且sibling一定有两个黑色子节点
-                    // 我们需要想办法转到以上两种情况继续修复
-                    RotateLeft(parent);
-                    SwapColor(parent, sibling);
-                    // 这个时候该分支的黑色数目和旋转前一致，但是已经变更为前两种情况，继续处理
-                    FixTree4Deletion(node, false);
+                    // 平衡颜色
+                    PushBlack(sibling);
                 }
             }
             else
             {
-                // 反过来的情况基本一样，就不写注释了
-                if (sibling.Color == NodeColor.BLACK && parent.Color == NodeColor.BLACK)
+                // 我们需要想办法转到sibling为黑色的情况继续修复
+                if (node.IsLeft)
                 {
-                    PullBlack(parent);
-                    if (sibling.Left != null && sibling.Right != null)
-                    {
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                    else if (sibling.Left == null && sibling.Right == null)
-                    {
-                        FixTree4Deletion(parent, false);
-                    }
-                    else if (sibling.Left != null)
-                    {
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                    else
-                    {
-                        RotateLeft(sibling);
-                        sibling = sibling.Parent;
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                }
-                else if (sibling.Color == NodeColor.BLACK && parent.Color == NodeColor.RED)
-                {
-                    PullBlack(parent);
-                    if (sibling.Left != null && sibling.Right != null)
-                    {
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                    else if (sibling.Left != null)
-                    {
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
-                    else if (sibling.Right != null)
-                    {
-                        RotateLeft(sibling);
-                        sibling = sibling.Parent;
-                        RotateRight(parent);
-                        SwapColor(parent, sibling);
-                        PushBlack(sibling);
-                    }
+                    RotateLeft(parent);
+                    SwapColor(parent, sibling);
                 }
                 else
                 {
                     RotateRight(parent);
                     SwapColor(parent, sibling);
-                    FixTree4Deletion(node, false);
                 }
+                FixTree4Deletion(node, false);
             }
             if (remove)
             {
@@ -654,6 +596,7 @@ namespace EditorSupport.Document
 
         internal TextAnchorNode ReplaceNode(TextAnchorNode orig, TextAnchorNode dest)
         {
+            Debug.Assert(orig != dest);
             TextAnchorNode parent = orig.Parent;
             if (dest == null)
             {
@@ -675,8 +618,15 @@ namespace EditorSupport.Document
             {
                 orig.Left = dest.Left;
                 orig.Right = dest.Right;
-                orig.Anchor = dest.Anchor;
                 orig.Color = dest.Color;
+                orig.Anchor = dest.Anchor;
+                if (orig.Anchor != null)
+                {
+                    // dest可能为双黑节点，双黑节点没有anchor
+                    orig.Anchor._node = orig;
+                }
+                orig.Length = dest.Length;
+                orig.TotalLength = dest.TotalLength;
                 return orig;
             }
         }
@@ -685,7 +635,7 @@ namespace EditorSupport.Document
         {
             Debug.Assert(node.Left == null || node.Right == null);
             // 如果是根节点直接用nil节点替换
-            if (node.Parent == null)
+            if (node.Parent == null && node.IsLeaf)
             {
                 return null;
             }
@@ -764,8 +714,13 @@ namespace EditorSupport.Document
         internal void VerifySelf()
         {
             var blackNodeCnt = new HashSet<Int32>();
+            Int32 totalLen = 0;
             LevelTraversal(node =>
             {
+                if (node.Color == NodeColor.DOUBLE_BLACK)
+                {
+                    throw new Exception("Invalid TextAnchorTree");
+                }
                 if (node == _root && node.Color != NodeColor.BLACK)
                 {
                     throw new Exception("Invalid TextAnchorTree");
@@ -802,10 +757,19 @@ namespace EditorSupport.Document
                 {
                     throw new Exception("Invalid TextAnchorTree");
                 }
+                if (node.Anchor._node != node)
+                {
+                    throw new Exception("Invalid TextAnchorTree");
+                }
+                totalLen += node.Length;
             });
             if (blackNodeCnt.Count > 1)
             {
-                throw new Exception("Invalid BSTree");
+                throw new Exception("Invalid TextAnchorTree");
+            }
+            if (_root != null && totalLen != _root.TotalLength)
+            {
+                throw new Exception("Invalid TextAnchorTree");
             }
         }
         #endregion

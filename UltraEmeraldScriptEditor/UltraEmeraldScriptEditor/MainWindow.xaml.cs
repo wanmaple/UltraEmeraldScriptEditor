@@ -22,25 +22,6 @@ namespace UltraEmeraldScriptEditor
         public MainWindow()
         {
             InitializeComponent();
-
-            Int32 len = 10000;
-            Char[] chars = new char[len];
-            var rd = new Random();
-            for (int i = 0; i < len; i++)
-            {
-                chars[i] = (Char)rd.Next(97, 122);
-            }
-            var doc = new EditorSupport.Document.TextDocument(chars);
-            var anchors = new List<EditorSupport.Document.TextAnchor>();
-            for (int i = 0; i < 20; i++)
-            {
-                Int32 offset = rd.Next(0, len);
-                anchors.Add(doc.CreateAnchor(offset));
-            }
-            foreach (var anchor in anchors)
-            {
-                doc.RemoveAnchor(anchor);
-            }
         }
 
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)
