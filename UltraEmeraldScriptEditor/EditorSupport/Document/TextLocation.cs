@@ -6,7 +6,7 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 表示Document中的位置信息
+    /// 表示Document中的位置信息。
     /// </summary>
     public struct TextLocation : IComparable<TextLocation>, IEquatable<TextLocation>
     {

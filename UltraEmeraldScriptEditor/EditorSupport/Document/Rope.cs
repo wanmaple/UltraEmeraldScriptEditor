@@ -9,7 +9,7 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 插入删除性能较高的List
+    /// 插入删除性能较高的List。
     /// </summary>
     /// <remarks>
     /// 由于需要快速插入/删除字符，List的插入和删除性能是满足不了的
@@ -33,7 +33,7 @@ namespace EditorSupport.Document
         [Serializable]
         internal sealed class RopeNode
         {
-            internal static readonly Int32 NODE_SIZE = 256;
+            internal static readonly Int16 NODE_SIZE = 256;
 
             internal RopeNode Parent { get; set; }
             internal RopeNode Left { get; set; }
@@ -236,20 +236,26 @@ namespace EditorSupport.Document
         public void AddRange(T[] items)
         {
             InsertRange(_root.Length, items);
+#if DEBUG
             VerifySelf();
+#endif
         }
 
         public void InsertRange(Int32 index, T[] items)
         {
             InnerInsert(_root, index, items, 0, items.Length);
+#if DEBUG
             VerifySelf();
+#endif
         }
 
         public void RemoveRange(Int32 index, Int32 length)
         {
             VerifyRange(index, length);
             InnerRemove(_root, index, length);
+#if DEBUG
             VerifySelf();
+#endif
         }
 
         public void CopyTo(Int32 index, T[] array, Int32 arrayIndex, Int32 length)

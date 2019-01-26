@@ -7,7 +7,7 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 可以快速使用的轻量文本源，不保证线程安全
+    /// 可以快速使用的轻量文本源，不保证线程安全。
     /// </summary>
     public sealed class RopeTextSource : ITextSource
     {
@@ -55,6 +55,11 @@ namespace EditorSupport.Document
         public int IndexOf(string content, int startIndex, int length)
         {
             return _rope.IndexOfText(content, startIndex, length);
+        }
+
+        public int IndexOfAny(char[] chars, int startIndex, int length)
+        {
+            return _rope.IndexOfAny(chars, startIndex, length);
         }
         #endregion
 

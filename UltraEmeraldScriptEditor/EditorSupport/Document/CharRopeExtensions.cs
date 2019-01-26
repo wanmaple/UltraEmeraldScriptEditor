@@ -6,7 +6,7 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// Rope<Char>的扩展方法，<see cref="Rope{T}"/>
+    /// Rope<Char>的扩展方法。<see cref="Rope{T}"/>
     /// </summary>
     public static class CharRopeExtensions
     {
@@ -43,6 +43,52 @@ namespace EditorSupport.Document
             rope.InsertRange(offset, text.ToArray());
         }
 
+        public static Int32 IndexOfAny(this Rope<Char> rope, Char[] chars, Int32 offset, Int32 length)
+        {
+            if (rope == null)
+            {
+                throw new ArgumentNullException("rope");
+            }
+            if (chars.Length <= 0)
+            {
+                return -1;
+            }
+            Int32 idx = 0;
+            foreach (var node in rope.Leaves(rope._root))
+            {
+                if (idx + node.Length <= offset)
+                {
+                    idx += node.Length;
+                }
+                else
+                {
+                    Int32 relativeOffset = offset - idx;
+                    if (relativeOffset >= 0)
+                    {
+                        idx += relativeOffset;
+                    }
+                    else
+                    {
+                        relativeOffset = 0;
+                    }
+                    for (int i = relativeOffset; i < node.Length; i++)
+                    {
+                        Char ch = node._contents[i];
+                        if (chars.Contains(ch))
+                        {
+                            return idx;
+                        }
+                        ++idx;
+                        if (idx > offset + length - 1)
+                        {
+                            return -1;
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+
         public static Int32 IndexOfText(this Rope<Char> rope, String text, Int32 offset, Int32 length)
         {
             if (rope == null)
@@ -54,40 +100,44 @@ namespace EditorSupport.Document
                 throw new ArgumentOutOfRangeException("text");
             }
             Int32 idx = 0;
-            Int32 foundIdx = -1;
-            Int32 textIdx = 0;
             foreach (var node in rope.Leaves(rope._root))
             {
-                if (idx > rope.Count - text.Length)
+                if (idx + node.Length <= offset)
                 {
-                    break;
+                    idx += node.Length;
                 }
-                if (node.Length > 0)
+                else
                 {
-                    for (int i = 0; i < node.Length; i++)
+                    Int32 relativeOffset = offset - idx;
+                    if (relativeOffset >= 0)
                     {
-                        if (idx >= offset && idx < offset + length)
+                        idx += relativeOffset;
+                    }
+                    else
+                    {
+                        relativeOffset = 0;
+                    }
+                    for (int i = relativeOffset; i < node.Length; i++)
+                    {
+                        Boolean found = true;
+                        for (int j = 0; j < text.Length; j++)
                         {
-                            Char ch = node._contents[i];
-                            if (ch == text[textIdx])
+                            Char ch = node._contents[i + j];
+                            if (ch != text[j])
                             {
-                                if (foundIdx < 0)
-                                {
-                                    foundIdx = idx;
-                                }
-                                ++textIdx;
-                            }
-                            else
-                            {
-                                foundIdx = -1;
-                                textIdx = 0;
-                            }
-                            if (textIdx >= text.Length)
-                            {
-                                return foundIdx;
+                                found = false;
+                                break;
                             }
                         }
+                        if (found)
+                        {
+                            return idx;
+                        }
                         ++idx;
+                        if (idx > offset + length - text.Length)
+                        {
+                            return -1;
+                        }
                     }
                 }
             }
@@ -95,7 +145,7 @@ namespace EditorSupport.Document
         }
 
         /// <summary>
-        /// 该查找函数不会寻找重复部分的字符
+        /// 该查找函数会寻找重复部分的字符
         /// 比如在"abcabcabc"中查找"abcabc"则只会返回0
         /// </summary>
         /// <param name="rope"></param>
@@ -113,42 +163,48 @@ namespace EditorSupport.Document
             }
             var foundIdxes = new List<Int32>();
             Int32 idx = 0;
-            Int32 textIdx = 0;
-            Int32 foundIdx = -1;
             foreach (var node in rope.Leaves(rope._root))
             {
-                if (idx > rope.Count - text.Length)
+                if (idx + node.Length <= offset)
                 {
-                    break;
+                    idx += node.Length;
                 }
-                if (node.Length > 0)
+                else
                 {
-                    for (int i = 0; i < node.Length; i++)
+                    Int32 relativeOffset = offset - idx;
+                    if (relativeOffset >= 0)
                     {
-                        if (idx >= offset && idx < offset + length)
+                        idx += relativeOffset;
+                    }
+                    else
+                    {
+                        relativeOffset = 0;
+                    }
+                    for (int i = relativeOffset; i < node.Length; i++)
+                    {
+                        Boolean found = true;
+                        for (int j = 0; j < text.Length; j++)
                         {
-                            Char ch = node._contents[i];
-                            if (ch == text[textIdx])
+                            Char ch = node._contents[i + j];
+                            if (ch != text[j])
                             {
-                                if (foundIdx < 0)
-                                {
-                                    foundIdx = idx;
-                                }
-                                ++textIdx;
-                            }
-                            else
-                            {
-                                foundIdx = -1;
-                                textIdx = 0;
-                            }
-                            if (textIdx >= text.Length)
-                            {
-                                foundIdxes.Add(foundIdx);
-                                foundIdx = -1;
-                                textIdx = 0;
+                                found = false;
+                                break;
                             }
                         }
-                        ++idx;
+                        if (found)
+                        {
+                            foundIdxes.Add(idx);
+                            idx += text.Length;
+                        }
+                        else
+                        {
+                            ++idx;
+                        }
+                        if (idx > offset + length - text.Length)
+                        {
+                            break;
+                        }
                     }
                 }
             }

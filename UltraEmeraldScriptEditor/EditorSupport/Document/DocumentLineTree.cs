@@ -2,43 +2,37 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace EditorSupport.Document
 {
-    internal enum NodeColor
-    {
-        RED = 0,
-        BLACK = 1,
-        DOUBLE_BLACK = 2,
-    }
-
     /// <summary>
-    /// 存储TextAnchor节点的改良版红黑树，该红黑树是按照实际的offset排序。
+    /// 存储DocumentLine节点的红黑树，按照行号排序。
     /// </summary>
     /// <remarks>
-    /// 在文本编辑中，偏移是会经常变化的，如果逐个去修改偏移的话，将会有非常大的计算量O(N)
-    /// 所以这里用改良版的红黑树去对所有anchor进行维护，<see cref="TextAnchorNode"/>用两个属性来快速计算偏移，Length和TotalLength。
-    /// Length:指该anchor自身的长度（自身到前一个anchor位置的长度）
-    /// TotalLength:指该anchor子树的总长度（包含自身的长度）
-    /// TotalLength的数学意义是该锚点所覆盖的所有子锚点（把该锚点想象成它周围其他子锚点的管理者）的总长度
-    /// 每次插入新锚点的时候，只需要找到靠后的最近一个锚点，将新锚点设置为该锚点的前驱，而且由于记录了TotalLength可以快速找到偏移的位置，复杂度为O(log N)
-    /// 计算偏移值也只需要找到所有左子树、父节点左子树的totallength以及自身length，就可以快速计算出偏移值，复杂度也为O(log N)
-    /// 不能存在重复偏移的锚点
+    /// 大部分操作均为O(log N)
+    /// 维护一系列<see cref="DocumentLineNode"/>节点。
+    /// 节点的TotalCount表示包括自身的所有子节点的个数，TotalLength表示包括自身所有的子节点的总长度(_exactLength)
+    /// TotalCount的数学意义：该节点覆盖的周围的子节点个数。
+    /// TotalLength的数学意义：该节点覆盖的周围的子节点的总长度。
+    /// 树永远不可能为空，起始为一个空行。
     /// </remarks>
-    internal sealed class TextAnchorTree
+    internal sealed class DocumentLineTree : IEnumerable<DocumentLine>
     {
-        internal sealed class TextAnchorNode
+        internal sealed class DocumentLineNode
         {
-            internal static TextAnchorNode DoubleBlackNilNode
+            internal static DocumentLineNode DoubleBlackNilNode
             {
-                get { return new TextAnchorNode(null) { Color = NodeColor.DOUBLE_BLACK, }; }
+                get { return new DocumentLineNode(null) { Color = NodeColor.DOUBLE_BLACK, }; }
             }
 
-            internal TextAnchorNode(TextAnchor anchor)
+            internal DocumentLineNode(DocumentLine line)
             {
-                Anchor = anchor;
+                TotalCount = 1;
+                TotalLength = line._exactLength;
+                Line = line;
                 Color = NodeColor.RED;
             }
 
@@ -56,11 +50,11 @@ namespace EditorSupport.Document
                     return Parent != null && Parent.Right == this;
                 }
             }
-            internal TextAnchorNode LeftMost
+            internal DocumentLineNode LeftMost
             {
                 get
                 {
-                    TextAnchorNode node = this;
+                    DocumentLineNode node = this;
                     while (node.Left != null)
                     {
                         node = node.Left;
@@ -68,11 +62,11 @@ namespace EditorSupport.Document
                     return node;
                 }
             }
-            internal TextAnchorNode RightMost
+            internal DocumentLineNode RightMost
             {
                 get
                 {
-                    TextAnchorNode node = this;
+                    DocumentLineNode node = this;
                     while (node.Right != null)
                     {
                         node = node.Right;
@@ -80,7 +74,7 @@ namespace EditorSupport.Document
                     return node;
                 }
             }
-            internal TextAnchorNode Predecessor
+            internal DocumentLineNode Predecessor
             {
                 get
                 {
@@ -90,7 +84,7 @@ namespace EditorSupport.Document
                         return Left.RightMost;
                     }
                     // 不存在左子树，前驱节点则为向上第一个左子树中不存在该节点的节点
-                    TextAnchorNode node = this;
+                    DocumentLineNode node = this;
                     while (node.IsLeft)
                     {
                         node = node.Parent;
@@ -98,7 +92,7 @@ namespace EditorSupport.Document
                     return node.Parent;
                 }
             }
-            internal TextAnchorNode Successor
+            internal DocumentLineNode Successor
             {
                 get
                 {
@@ -108,7 +102,7 @@ namespace EditorSupport.Document
                         return Right.LeftMost;
                     }
                     // 不存在右子树，后继节点则为向上第一个右子树中不存在该节点的节点
-                    TextAnchorNode node = this;
+                    DocumentLineNode node = this;
                     while (node.IsRight)
                     {
                         node = node.Parent;
@@ -120,84 +114,326 @@ namespace EditorSupport.Document
             {
                 get { return Left == null && Right == null; }
             }
-            internal TextAnchorNode Parent { get; set; }
-            internal TextAnchorNode Left { get; set; }
-            internal TextAnchorNode Right { get; set; }
+            internal DocumentLineNode Parent { get; set; }
+            internal DocumentLineNode Left { get; set; }
+            internal DocumentLineNode Right { get; set; }
             internal NodeColor Color { get; set; }
 
-            public Int32 Length { get; set; }
-            public Int32 TotalLength { get; set; }
-            internal TextAnchor Anchor { get; set; }
+            internal DocumentLine Line { get; set; }
+            /// <summary>
+            /// 所有子节点的个数（包括自身）
+            /// </summary>
+            internal Int32 TotalCount { get; set; }
+            /// <summary>
+            /// 子树的所有TotalLength，包括自身的line的_exactLength。
+            /// </summary>
+            internal Int32 TotalLength { get; set; }
+
+            internal void Reset()
+            {
+                TotalCount = TotalLength = 0;
+                Color = NodeColor.RED;
+                Left = Right = Parent = null;
+            }
         }
 
         #region Constructor
-        internal TextAnchorTree(TextDocument document)
+        internal DocumentLineTree(TextDocument document)
         {
             _doc = document ?? throw new ArgumentNullException("document");
+            var emptyLine = new DocumentLine();
+            _root = new DocumentLineNode(emptyLine);
+            emptyLine._node = _root;
+        }
+        #endregion
+
+        #region Line getters
+        internal Int32 LineCount
+        {
+            get { return _root.TotalCount; }
+        }
+
+        public DocumentLine GetLineByNumber(Int32 number)
+        {
+            var node = GetNodeByIndex(number - 1);
+            if (node != null)
+            {
+                return node.Line;
+            }
+            return null;
+        }
+
+        public DocumentLine GetLineByOffset(Int32 offset)
+        {
+            var node = GetNodeByOffset(offset);
+            if (node != null)
+            {
+                return node.Line;
+            }
+            return null;
+        }
+
+        internal DocumentLineNode GetNodeByIndex(Int32 index)
+        {
+#if DEBUG
+            VerifyIndexRange(index);
+#endif
+            DocumentLineNode curNode = _root;
+            while (true)
+            {
+                if (curNode.Left != null)
+                {
+                    if (index < curNode.Left.TotalCount)
+                    {
+                        // 在左节点覆盖范围内
+                        curNode = curNode.Left;
+                        continue;
+                    }
+                    else
+                    {
+                        index = index - curNode.Left.TotalCount;
+                    }
+                }
+                // 如果index是0，则当前节点即为所找
+                if (index == 0)
+                {
+                    return curNode;
+                }
+                --index;
+                // 去右节点继续寻找
+                if (curNode.Right != null)
+                {
+                    curNode = curNode.Right;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        internal DocumentLineNode GetNodeByOffset(Int32 offset)
+        {
+#if DEBUG
+            VerifyOffsetRange(offset);
+#endif
+            // 如果是最后位置，直接返回最后一行
+            if (offset == _root.TotalLength)
+            {
+                return _root.RightMost;
+            }
+            DocumentLineNode curNode = _root;
+            while (true)
+            {
+                if (curNode.Left != null)
+                {
+                    if (offset < curNode.Left.TotalLength)
+                    {
+                        // 在左节点覆盖范围内
+                        curNode = curNode.Left;
+                    }
+                    else
+                    {
+                        offset -= curNode.Left.TotalLength;
+                    }
+                }
+                if (offset < curNode.Line._exactLength)
+                {
+                    return curNode;
+                }
+                offset -= curNode.Line._exactLength;
+                if (curNode.Right != null)
+                {
+                    curNode = curNode.Right;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        internal static Int32 GetIndexFromNode(DocumentLineNode node)
+        {
+            if (node == null)
+            {
+                throw new ArgumentNullException("node");
+            }
+            Int32 index = node.Left != null ? node.Left.TotalCount : 0;
+            while (node.Parent != null)
+            {
+                node = node.Parent;
+                if (node.Left != null)
+                {
+                    index += node.Left.TotalCount;
+                }
+                ++index;
+            }
+            return index;
+        }
+
+        internal static Int32 GetOffsetFromNode(DocumentLineNode node)
+        {
+            if (node == null)
+            {
+                throw new ArgumentNullException("node");
+            }
+            Int32 offset = node.Left != null ? node.Left.TotalLength : 0;
+            while (node.Parent != null)
+            {
+                node = node.Parent;
+                if (node.Left != null)
+                {
+                    offset += node.Left.TotalLength;
+                }
+                offset += node.Line._exactLength;
+            }
+            return offset;
+        }
+
+        private void VerifyIndexRange(Int32 index)
+        {
+            if (index < 0 || index >= LineCount)
+            {
+                throw new ArgumentOutOfRangeException("index", index, "0 <= index < " + LineCount.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        private void VerifyOffsetRange(Int32 offset)
+        {
+            Int32 docLength = _doc.Length;
+            if (offset < 0 || offset > docLength)
+            {
+                throw new ArgumentOutOfRangeException("offset", offset, "0 <= offset <= " + docLength.ToString(CultureInfo.InvariantCulture));
+            }
         }
         #endregion
 
         #region Tree operations
-        internal TextAnchor CreateAnchor(Int32 offset)
+        internal static Int32 GetHeightBySize(Int32 size)
         {
-            var anchor = new TextAnchor(_doc);
-            anchor._node = new TextAnchorNode(anchor);
-            if (_root == null)
+            if (size == 0)
             {
-                // 第一个锚点
-                _root = anchor._node;
-                _root.TotalLength = _root.Length = offset;
-                FixTree4Insertion(_root);
+                return 0;
             }
-            else if (offset > _root.TotalLength)
+            return GetHeightBySize(size / 2) + 1;
+        }
+
+        /// <summary>
+        /// 直接创建一颗平衡的红黑树
+        /// </summary>
+        /// <param name="lines"></param>
+        public void RebuildTree(IList<DocumentLine> lines)
+        {
+            Debug.Assert(lines.Count > 0);
+            var nodes = new DocumentLineNode[lines.Count];
+            for (int i = 0; i < lines.Count; i++)
             {
-                // 超过了整棵树覆盖的范围，所以直接加入尾部
-                anchor._node.TotalLength = anchor._node.Length = offset - _root.TotalLength;
-                InsertAsRight(_root.RightMost, anchor._node);
+                var line = lines[i];
+                var node = new DocumentLineNode(line);
+                line._node = node;
+                nodes[i] = node;
+            }
+            Int32 treeHeight = GetHeightBySize(nodes.Length);
+            _root = BuildTree(nodes, 0, nodes.Length, treeHeight);
+            _root.Color = NodeColor.BLACK;
+#if DEBUG
+            VerifySelf();
+#endif
+        }
+
+        internal DocumentLineNode BuildTree(DocumentLineNode[] nodes, Int32 start, Int32 end, Int32 treeHeight)
+        {
+            Debug.Assert(start <= end);
+            if (start == end)
+            {
+                return null;
+            }
+            Int32 middle = (start + end) / 2;
+            DocumentLineNode middleNode = nodes[middle];
+            middleNode.Left = BuildTree(nodes, start, middle, treeHeight - 1);
+            middleNode.Right = BuildTree(nodes, middle + 1, end, treeHeight - 1);
+            if (middleNode.Left != null)
+            {
+                middleNode.Left.Parent = middleNode;
+            }
+            if (middleNode.Right != null)
+            {
+                middleNode.Right.Parent = middleNode;
+            }
+            // 我们只把高度为1的节点染成红色，这样是最方便快捷的一颗红黑树
+            middleNode.Color = treeHeight == 1 ? NodeColor.RED : NodeColor.BLACK;
+            UpdateNodeData(middleNode);
+            return middleNode;
+        }
+
+        public void InsertLineAfter(DocumentLine line, DocumentLine newLine)
+        {
+            if (line == null)
+            {
+                throw new ArgumentNullException("line");
+            }
+            if (newLine == null)
+            {
+                throw new ArgumentNullException("newLine");
+            }
+            var newNode = new DocumentLineNode(newLine);
+            newLine._node = newNode;
+            if (line._node.Right == null)
+            {
+                InsertAsRight(line._node, newNode);
             }
             else
             {
-                // 锚点在整棵树覆盖的范围内，先找到该offset靠后的最近锚点
-                TextAnchorNode nearestAfter = FindNode(_root, ref offset);
-                // 找不到后置锚点的情况已经在前面一个分支处理过了
-                Debug.Assert(nearestAfter != null);
-                anchor._node.TotalLength = anchor._node.Length = offset;
-                nearestAfter.Length -= offset;
-                // 在后置锚点前插入这个锚点，该锚点就是后置锚点的前驱
-                if (nearestAfter.Left == null)
-                {
-                    InsertAsLeft(nearestAfter, anchor._node);
-                }
-                else
-                {
-                    InsertAsRight(nearestAfter.Predecessor, anchor._node);
-                }
+                InsertAsLeft(line._node.Successor, newNode);
             }
 #if DEBUG
             VerifySelf();
 #endif
-            return anchor;
         }
 
-        internal void RemoveAnchor(TextAnchor anchor)
+        public void RemoveLine(DocumentLine line)
         {
-            RemoveNode(anchor._node);
+            if (line == null)
+            {
+                throw new ArgumentNullException("line");
+            }
+            RemoveNode(line._node);
         }
 
-        internal void RemoveNode(TextAnchorNode node)
+        internal void InsertAsLeft(DocumentLineNode node, DocumentLineNode newNode)
         {
-            TextAnchorNode toReplace = null;
-            TextAnchorNode replaced = null;
-            TextAnchorNode successor = node.Successor;
-            TextAnchorNode updateNode = null;
-            Int32 nodeLength = node.Length;
+            Debug.Assert(node.Left == null);
+            node.Left = newNode;
+            newNode.Parent = node;
+            UpdateNodeData(node);
+            FixTree4Insertion(newNode);
+        }
+
+        internal void InsertAsRight(DocumentLineNode node, DocumentLineNode newNode)
+        {
+            Debug.Assert(node.Right == null);
+            node.Right = newNode;
+            newNode.Parent = node;
+            UpdateNodeData(node);
+            FixTree4Insertion(newNode);
+        }
+
+        internal void RemoveNode(DocumentLineNode node)
+        {
+            DocumentLineNode toReplace = null;
+            DocumentLineNode replaced = null;
+            DocumentLineNode successor = node.Successor;
+            DocumentLineNode updateNode = null;
+            Int32 nodeLength = node.Line._exactLength;
             if (node.Left != null && node.Right != null)
             {
                 // 用后继节点替换
-                node.Anchor = successor.Anchor;
-                node.Anchor._node = node;
-                node.Length = successor.Length;
+                node.Line = successor.Line;
+                node.Line._node = node;
+                node.Line._exactLength = successor.Line._exactLength;
                 node.TotalLength = successor.TotalLength;
+                node.TotalCount = successor.TotalCount;
                 updateNode = successor.Parent;
                 // 转换为删除successor
                 toReplace = FindNodeToReplace(successor);
@@ -226,14 +462,9 @@ namespace EditorSupport.Document
                 }
             }
 
-            // 后继节点长度增加
-            if (successor != null)
-            {
-                successor.Length += nodeLength;
-            }
             if (updateNode != null)
             {
-                UpdateTotalLength(updateNode);
+                UpdateNodeData(updateNode);
             }
             // 如果替换的节点是双黑节点，则需要修复
             if (replaced != null && replaced.Color == NodeColor.DOUBLE_BLACK)
@@ -249,96 +480,34 @@ namespace EditorSupport.Document
 #endif
         }
 
-        /// <summary>
-        /// 寻找node下offset处的后置锚点，offset会被修改为该节点的相对偏移
-        /// </summary>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        internal TextAnchorNode FindNode(TextAnchorNode node, ref Int32 offset)
+        internal void UpdateNodeData(DocumentLineNode node)
         {
-            while (true)
-            {
-                // 如果存在左侧锚点
-                if (node.Left != null)
-                {
-                    // offset在左锚点覆盖范围内
-                    if (offset < node.Left.TotalLength)
-                    {
-                        // 继续判断offset是否在更左侧
-                        node = node.Left;
-                        continue;
-                    }
-                    // offset在右锚点覆盖范围内
-                    else
-                    {
-                        // 转为相对该锚点的偏移
-                        offset -= node.Left.TotalLength;
-                    }
-                }
-                // 如果相对的offset已经在当前锚点的左侧，那么该节点就是要找的节点（因为当前锚点的右锚点都在更后面）
-                Debug.Assert(offset != node.Length);
-                if (offset < node.Length)
-                {
-                    return node;
-                }
-                // 在当前节点右侧，则继续转成相对右锚点的相对偏移
-                offset -= node.Length;
-                if (node.Right != null)
-                {
-                    // 在右锚点覆盖范围内，继续寻找
-                    node = node.Right;
-                }
-                else
-                {
-                    // 如果没有右锚点了，说明不存在该offset的后置锚点
-                    return null;
-                }
-            }
-        }
-
-        internal void InsertAsLeft(TextAnchorNode node, TextAnchorNode newNode)
-        {
-            Debug.Assert(node.Left == null);
-            node.Left = newNode;
-            newNode.Parent = node;
-            UpdateTotalLength(node);
-            FixTree4Insertion(newNode);
-        }
-
-        internal void InsertAsRight(TextAnchorNode node, TextAnchorNode newNode)
-        {
-            Debug.Assert(node.Right == null);
-            node.Right = newNode;
-            newNode.Parent = node;
-            UpdateTotalLength(node);
-            FixTree4Insertion(newNode);
-        }
-
-        internal void UpdateTotalLength(TextAnchorNode node)
-        {
-            Int32 totalLength = node.Length;
+            Int32 totalCnt = 1;
+            Int32 totalLength = node.Line._exactLength;
             if (node.Left != null)
             {
+                totalCnt += node.Left.TotalCount;
                 totalLength += node.Left.TotalLength;
             }
             if (node.Right != null)
             {
+                totalCnt += node.Right.TotalCount;
                 totalLength += node.Right.TotalLength;
             }
-            if (node.TotalLength != totalLength)
+            if (totalCnt != node.TotalCount || totalLength != node.TotalLength)
             {
-                // 如果总长度发生变化，则不断更新父节点的总长度
+                node.TotalCount = totalCnt;
                 node.TotalLength = totalLength;
                 if (node.Parent != null)
                 {
-                    UpdateTotalLength(node.Parent);
+                    UpdateNodeData(node.Parent);
                 }
             }
-        } 
+        }
         #endregion
 
         #region Red-Black Tree Fix
-        internal void FixTree4Insertion(TextAnchorNode node)
+        internal void FixTree4Insertion(DocumentLineNode node)
         {
             Debug.Assert(node.Color == NodeColor.RED);
             if (node.Parent == null)
@@ -347,14 +516,14 @@ namespace EditorSupport.Document
                 node.Color = NodeColor.BLACK;
                 return;
             }
-            TextAnchorNode parent = node.Parent;
+            DocumentLineNode parent = node.Parent;
             if (parent.Color == NodeColor.BLACK)
             {
                 // 父节点为黑色则不需要修复
                 return;
             }
-            TextAnchorNode grandParent = parent.Parent;
-            TextAnchorNode uncle = parent.IsLeft ? grandParent.Right : grandParent.Left;
+            DocumentLineNode grandParent = parent.Parent;
+            DocumentLineNode uncle = parent.IsLeft ? grandParent.Right : grandParent.Left;
             NodeColor uncleColor = GetNodeColor(uncle);
             if (uncleColor == NodeColor.RED)
             {
@@ -408,7 +577,7 @@ namespace EditorSupport.Document
             }
         }
 
-        internal void FixTree4Deletion(TextAnchorNode node, Boolean remove = true)
+        internal void FixTree4Deletion(DocumentLineNode node, Boolean remove = true)
         {
             // 其他情况已经在FindNodeToReplace中正确处理
             if (node.Color != NodeColor.DOUBLE_BLACK)
@@ -416,14 +585,14 @@ namespace EditorSupport.Document
                 // 只可能是递归修复的时候，遇到父节点pull为黑色，这个时候已经修复完成
                 return;
             }
-            TextAnchorNode parent = node.Parent;
+            DocumentLineNode parent = node.Parent;
             if (parent == null)
             {
                 // 如果根节点是双黑节点，变黑即可
                 node.Color = NodeColor.BLACK;
                 return;
             }
-            TextAnchorNode sibling = node.IsLeft ? parent.Right : parent.Left;
+            DocumentLineNode sibling = node.IsLeft ? parent.Right : parent.Left;
             NodeColor siblingLeftColor = GetNodeColor(sibling.Left);
             NodeColor siblingRightColor = GetNodeColor(sibling.Right);
             if (sibling.Color == NodeColor.BLACK)
@@ -491,27 +660,27 @@ namespace EditorSupport.Document
             }
         }
 
-        private void PullBlack(TextAnchorNode node)
+        private void PullBlack(DocumentLineNode node)
         {
             Debug.Assert(node.Left != null && node.Right != null);
             node.Color = node.Color + 1;
-            TextAnchorNode left = node.Left;
-            TextAnchorNode right = node.Right;
+            DocumentLineNode left = node.Left;
+            DocumentLineNode right = node.Right;
             left.Color = left.Color - 1;
             right.Color = right.Color - 1;
         }
 
-        private void PushBlack(TextAnchorNode node)
+        private void PushBlack(DocumentLineNode node)
         {
             Debug.Assert(node.Left != null && node.Right != null);
             node.Color = node.Color - 1;
-            TextAnchorNode left = node.Left;
-            TextAnchorNode right = node.Right;
+            DocumentLineNode left = node.Left;
+            DocumentLineNode right = node.Right;
             left.Color = left.Color + 1;
             right.Color = right.Color + 1;
         }
 
-        internal void RotateLeft(TextAnchorNode node)
+        internal void RotateLeft(DocumentLineNode node)
         {
             /* 左旋
              *         N            R
@@ -520,10 +689,10 @@ namespace EditorSupport.Document
              *          / \      / \
              *         T  T1    L   T
              */
-            TextAnchorNode left = node.Left;
-            TextAnchorNode right = node.Right;
-            TextAnchorNode t = right.Left;
-            TextAnchorNode parent = node.Parent;
+            DocumentLineNode left = node.Left;
+            DocumentLineNode right = node.Right;
+            DocumentLineNode t = right.Left;
+            DocumentLineNode parent = node.Parent;
 
             right.Parent = parent;
             if (node.IsLeft)
@@ -547,11 +716,11 @@ namespace EditorSupport.Document
                 _root = right;
             }
             // 更新锚点覆盖范围
-            UpdateTotalLength(node);
-            UpdateTotalLength(right);
+            UpdateNodeData(node);
+            UpdateNodeData(right);
         }
 
-        internal void RotateRight(TextAnchorNode node)
+        internal void RotateRight(DocumentLineNode node)
         {
             /* 右旋
              *         N            L
@@ -560,10 +729,10 @@ namespace EditorSupport.Document
              *      / \              / \
              *     T1  T            T   R
              */
-            TextAnchorNode left = node.Left;
-            TextAnchorNode right = node.Right;
-            TextAnchorNode t = left.Right;
-            TextAnchorNode parent = node.Parent;
+            DocumentLineNode left = node.Left;
+            DocumentLineNode right = node.Right;
+            DocumentLineNode t = left.Right;
+            DocumentLineNode parent = node.Parent;
 
             left.Parent = parent;
             if (node.IsLeft)
@@ -587,21 +756,21 @@ namespace EditorSupport.Document
                 _root = left;
             }
             // 更新锚点覆盖范围
-            UpdateTotalLength(node);
-            UpdateTotalLength(left);
+            UpdateNodeData(node);
+            UpdateNodeData(left);
         }
 
-        internal void SwapColor(TextAnchorNode node1, TextAnchorNode node2)
+        internal void SwapColor(DocumentLineNode node1, DocumentLineNode node2)
         {
             NodeColor tmp = node1.Color;
             node1.Color = node2.Color;
             node2.Color = tmp;
         }
 
-        internal TextAnchorNode ReplaceNode(TextAnchorNode orig, TextAnchorNode dest)
+        internal DocumentLineNode ReplaceNode(DocumentLineNode orig, DocumentLineNode dest)
         {
             Debug.Assert(orig != dest);
-            TextAnchorNode parent = orig.Parent;
+            DocumentLineNode parent = orig.Parent;
             if (dest == null)
             {
                 if (parent == null)
@@ -623,19 +792,19 @@ namespace EditorSupport.Document
                 orig.Left = dest.Left;
                 orig.Right = dest.Right;
                 orig.Color = dest.Color;
-                orig.Anchor = dest.Anchor;
-                if (orig.Anchor != null)
+                orig.Line = dest.Line;
+                if (orig.Line != null)
                 {
                     // dest可能为双黑节点，双黑节点没有anchor
-                    orig.Anchor._node = orig;
+                    orig.Line._node = orig;
                 }
-                orig.Length = dest.Length;
+                orig.TotalCount = dest.TotalCount;
                 orig.TotalLength = dest.TotalLength;
                 return orig;
             }
         }
 
-        internal TextAnchorNode FindNodeToReplace(TextAnchorNode node)
+        internal DocumentLineNode FindNodeToReplace(DocumentLineNode node)
         {
             Debug.Assert(node.Left == null || node.Right == null);
             // 如果是根节点直接用nil节点替换
@@ -655,11 +824,11 @@ namespace EditorSupport.Document
             if (node.IsLeaf)
             {
                 // 删除后是一个Double-Black节点，需要修复
-                return TextAnchorNode.DoubleBlackNilNode;
+                return DocumentLineNode.DoubleBlackNilNode;
             }
             else
             {
-                TextAnchorNode ret = null;
+                DocumentLineNode ret = null;
                 // 子节点只可能是红色节点，并且一定是叶子节点，直接涂黑替换即可
                 if (node.Left != null)
                 {
@@ -674,7 +843,7 @@ namespace EditorSupport.Document
             }
         }
 
-        internal NodeColor GetNodeColor(TextAnchorNode node)
+        internal NodeColor GetNodeColor(DocumentLineNode node)
         {
             if (node == null)
             {
@@ -685,19 +854,42 @@ namespace EditorSupport.Document
         }
         #endregion
 
+        #region IEnumerable<DocumentLine>
+        public IEnumerator<DocumentLine> GetEnumerator()
+        {
+            return Enumerate();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        } 
+
+        private IEnumerator<DocumentLine> Enumerate()
+        {
+            DocumentLineNode node = _root.LeftMost;
+            DocumentLine line = node.Line;
+            while (line != null)
+            {
+                yield return line;
+                line = line.NextLine;
+            }
+        }
+        #endregion
+
         #region Debug
         [Conditional("DEBUG")]
         /// <summary>
         /// 层次遍历
         /// </summary>
         /// <param name="action"></param>
-        internal void LevelTraversal(Action<TextAnchorNode> action)
+        internal void LevelTraversal(Action<DocumentLineNode> action)
         {
             if (_root == null || action == null)
             {
                 return;
             }
-            var nodeQueue = new Queue<TextAnchorNode>();
+            var nodeQueue = new Queue<DocumentLineNode>();
             nodeQueue.Enqueue(_root);
             while (nodeQueue.Count > 0)
             {
@@ -717,25 +909,29 @@ namespace EditorSupport.Document
         [Conditional("DEBUG")]
         internal void VerifySelf()
         {
+            if (_root.TotalLength != _doc.Length)
+            {
+                throw new Exception("Invalid DocumentLineTree");
+            }
             var blackNodeCnt = new HashSet<Int32>();
-            Int32 totalLen = 0;
+            Int32 totalLen = 0, totalCnt = 0;
             LevelTraversal(node =>
             {
                 if (node.Color == NodeColor.DOUBLE_BLACK)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
                 if (node == _root && node.Color != NodeColor.BLACK)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
                 if (node.Parent == null && node != _root)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
                 if (node.Parent != null && !node.IsLeft && !node.IsRight)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
                 if (node.Left == null && node.Right == null)
                 {
@@ -753,32 +949,43 @@ namespace EditorSupport.Document
                 }
                 if (node.Parent != null && node.Color == NodeColor.RED && node.Parent.Color == NodeColor.RED)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
                 Int32 leftLen = node.Left == null ? 0 : node.Left.TotalLength;
                 Int32 rightLen = node.Right == null ? 0 : node.Right.TotalLength;
-                if (node.TotalLength != node.Length + leftLen + rightLen)
+                if (node.TotalLength != node.Line._exactLength + leftLen + rightLen)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
-                if (node.Anchor._node != node)
+                totalLen += node.Line._exactLength;
+                Int32 leftCnt = node.Left == null ? 0 : node.Left.TotalCount;
+                Int32 rightCnt = node.Right == null ? 0 : node.Right.TotalCount;
+                if (node.TotalCount != 1 + leftCnt + rightCnt)
                 {
-                    throw new Exception("Invalid TextAnchorTree");
+                    throw new Exception("Invalid DocumentLineTree");
                 }
-                totalLen += node.Length;
+                if (node.Line._node != node)
+                {
+                    throw new Exception("Invalid DocumentLineTree");
+                }
+                totalCnt += 1;
             });
             if (blackNodeCnt.Count > 1)
             {
-                throw new Exception("Invalid TextAnchorTree");
+                throw new Exception("Invalid DocumentLineTree");
             }
             if (_root != null && totalLen != _root.TotalLength)
             {
-                throw new Exception("Invalid TextAnchorTree");
+                throw new Exception("Invalid DocumentLineTree");
+            }
+            if (_root != null && totalCnt != _root.TotalCount)
+            {
+                throw new Exception("Invalid DocumentLineTree");
             }
         }
         #endregion
 
-        private TextAnchorNode _root;
+        private DocumentLineNode _root;
         private TextDocument _doc;
     }
 }

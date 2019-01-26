@@ -7,7 +7,7 @@ using System.Text;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 可读的文本对象
+    /// 可读的文本对象。
     /// </summary>
     public interface ITextSource
     {
@@ -33,6 +33,14 @@ namespace EditorSupport.Document
         /// <param name="length">获取长度</param>
         /// <returns></returns>
         String GetTextAt(Int32 offset, Int32 length);
+        /// <summary>
+        /// 获取任意一个存在于chars内的字符的偏移
+        /// </summary>
+        /// <param name="chars"></param>
+        /// <param name="startIndex"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        Int32 IndexOfAny(Char[] chars, Int32 startIndex, Int32 length);
         /// <summary>
         /// 获取字符串的偏移
         /// </summary>

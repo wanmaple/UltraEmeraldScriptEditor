@@ -9,7 +9,7 @@ using System.Threading;
 namespace EditorSupport.Document
 {
     /// <summary>
-    /// 文本model的核心类
+    /// 文本model的核心类。
     /// </summary>
     public sealed class TextDocument : ITextSource
     {
@@ -22,6 +22,8 @@ namespace EditorSupport.Document
         {
             _rope = new Rope<char>(initialText);
             _anchorTree = new TextAnchorTree(this);
+            _lineTree = new DocumentLineTree(this);
+            _lineMgr = new DocumentLineManager(this, _lineTree);
         }
         #endregion
 
@@ -88,6 +90,12 @@ namespace EditorSupport.Document
             return _rope.ToString(offset, length);
         }
 
+        public int IndexOfAny(char[] chars, int startIndex, int length)
+        {
+            VerifyAccess();
+            return _rope.IndexOfAny(chars, startIndex, length);
+        }
+
         public int IndexOf(String content, int startIndex, int length)
         {
             VerifyAccess();
@@ -99,6 +107,35 @@ namespace EditorSupport.Document
             VerifyAccess();
             return _rope.AllIndexesOfText(content, startIndex, length);
         }
+        #endregion
+
+        #region Text modification
+        public void Append(String content)
+        {
+            Replace(Length, 0, content);
+        }
+
+        public void Insert(Int32 offset, String content)
+        {
+            Replace(offset, 0, content);
+        }
+
+        public void Remove(Int32 offset, Int32 length)
+        {
+            Replace(offset, length, String.Empty);
+        }
+
+        public void Replace(Int32 offset, Int32 length, String content)
+        {
+            if (content == null)
+            {
+                throw new ArgumentNullException("content");
+            }
+            VerifyOffsetRange(offset);
+            VerifyLengthRange(offset, length);
+        }
+
+        private Boolean _documentChanging;
         #endregion
 
         public TextAnchor CreateAnchor(Int32 offset)
@@ -125,8 +162,18 @@ namespace EditorSupport.Document
                 throw new ArgumentOutOfRangeException("offset", offset, "0 <= offset <= " + Length.ToString(CultureInfo.InvariantCulture));
             }
         }
+        
+        private void VerifyLengthRange(Int32 offset, Int32 length)
+        {
+            if (length < 0 || offset + length > Length)
+            {
+                throw new ArgumentOutOfRangeException("length", length, "0 <= length, offset(" + offset + ") + length <= " + Length.ToString(CultureInfo.InvariantCulture));
+            }
+        }
 
         private readonly Rope<Char> _rope;
         private readonly TextAnchorTree _anchorTree;
+        private readonly DocumentLineTree _lineTree;
+        private readonly DocumentLineManager _lineMgr;
     }
 }
