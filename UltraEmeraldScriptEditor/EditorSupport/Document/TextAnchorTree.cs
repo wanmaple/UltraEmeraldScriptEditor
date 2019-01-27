@@ -184,6 +184,22 @@ namespace EditorSupport.Document
             RemoveNode(anchor._node);
         }
 
+        /// <summary>
+        /// 插入文本的时候修复Anchor的偏移
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <param name="ahchorMoveAfterInsertion">表示如果offset正好为anchor的偏移时，anchor是前移还是后移</param>
+        internal void InsertText(Int32 offset, Int32 length, Boolean ahchorMoveAfterInsertion = true)
+        {
+
+        }
+
+        internal void RemoveText(Int32 offset, Int32 length)
+        {
+
+        }
+
         internal void RemoveNode(TextAnchorNode node)
         {
             TextAnchorNode toReplace = null;

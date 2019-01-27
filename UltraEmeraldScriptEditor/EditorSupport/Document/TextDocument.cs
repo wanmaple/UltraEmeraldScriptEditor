@@ -114,8 +114,16 @@ namespace EditorSupport.Document
         {
             Replace(Length, 0, content);
         }
+        public void Append(ITextSource content)
+        {
+            Replace(Length, 0, content);
+        }
 
         public void Insert(Int32 offset, String content)
+        {
+            Replace(offset, 0, content);
+        }
+        public void Insert(Int32 offset, ITextSource content)
         {
             Replace(offset, 0, content);
         }
@@ -133,11 +141,21 @@ namespace EditorSupport.Document
             }
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
+            _rope.Replace(offset, length, content.ToArray());
+        }
+        public void Replace(Int32 offset, Int32 length, ITextSource content)
+        {
+            if (content == null)
+            {
+                throw new ArgumentNullException("content");
+            }
+            Replace(offset, length, content.Text);
         }
 
         private Boolean _documentChanging;
         #endregion
 
+        #region Anchor operations
         public TextAnchor CreateAnchor(Int32 offset)
         {
             VerifyAccess();
@@ -149,12 +167,10 @@ namespace EditorSupport.Document
         {
             VerifyAccess();
             _anchorTree.RemoveAnchor(anchor);
-        }
+        } 
+        #endregion
 
-        private void OnTextChanged()
-        {
-        }
-
+        #region Validation
         private void VerifyOffsetRange(Int32 offset)
         {
             if (offset < 0 || offset > Length)
@@ -162,14 +178,15 @@ namespace EditorSupport.Document
                 throw new ArgumentOutOfRangeException("offset", offset, "0 <= offset <= " + Length.ToString(CultureInfo.InvariantCulture));
             }
         }
-        
+
         private void VerifyLengthRange(Int32 offset, Int32 length)
         {
             if (length < 0 || offset + length > Length)
             {
                 throw new ArgumentOutOfRangeException("length", length, "0 <= length, offset(" + offset + ") + length <= " + Length.ToString(CultureInfo.InvariantCulture));
             }
-        }
+        } 
+        #endregion
 
         private readonly Rope<Char> _rope;
         private readonly TextAnchorTree _anchorTree;

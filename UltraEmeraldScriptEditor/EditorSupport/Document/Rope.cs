@@ -258,6 +258,34 @@ namespace EditorSupport.Document
 #endif
         }
 
+        public void Replace(Int32 index, Int32 length, T[] items)
+        {
+            if (items == null)
+            {
+                throw new ArgumentNullException("items");
+            }
+            VerifyRange(index, length);
+            if (length == 0 && items.Length == 0)
+            {
+                return;
+            }
+            if (length == 0 && items.Length > 0)
+            {
+                InsertRange(index, items);
+            }
+            else if (length > 0 && items.Length == 0)
+            {
+                RemoveRange(index, length);
+            }
+            else
+            {
+                InnerReplace(_root, index, items, 0, items.Length);
+            }
+#if DEBUG
+            VerifySelf();
+#endif
+        }
+
         public void CopyTo(Int32 index, T[] array, Int32 arrayIndex, Int32 length)
         {
             VerifyRange(index, length);
@@ -450,6 +478,37 @@ namespace EditorSupport.Document
                 RopeNode mergedNode = Merge(node);
                 // 自平衡
                 Rebalance(mergedNode);
+            }
+        }
+
+        internal void InnerReplace(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
+        {
+            if (length <= 0)
+            {
+                return;
+            }
+            if (node.IsLeaf)
+            {
+                node.GenerateContentsIfRequired();
+                Array.Copy(array, arrayIndex, node._contents, offset, length);
+            }
+            else
+            {
+                if (offset < node.Left.Length)
+                {
+                    Int32 leftSize = Math.Min(length, node.Left.Length - offset);
+                    InnerReplace(node.Left, offset, array, arrayIndex, leftSize);
+                    if (node.Left.Length < offset + length)
+                    {
+                        Int32 rightSize = offset + length - node.Left.Length;
+                        InnerReplace(node.Right, 0, array, arrayIndex + leftSize, rightSize);
+                    }
+                }
+                else
+                {
+                    offset -= node.Left.Length;
+                    InnerReplace(node.Right, offset, array, arrayIndex, length);
+                }
             }
         }
 
