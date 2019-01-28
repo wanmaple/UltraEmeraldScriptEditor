@@ -149,7 +149,7 @@ namespace EditorSupport.Document
                 _root.TotalLength = _root.Length = offset;
                 FixTree4Insertion(_root);
             }
-            else if (offset > _root.TotalLength)
+            else if (offset >= _root.TotalLength)
             {
                 // 超过了整棵树覆盖的范围，所以直接加入尾部
                 anchor._node.TotalLength = anchor._node.Length = offset - _root.TotalLength;

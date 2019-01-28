@@ -6,6 +6,12 @@ using System.Text;
 
 namespace EditorSupport.Document
 {
+    public enum AnchorMovementType
+    {
+        BeforeInsertion,
+        AfterInsertion,
+    }
+
     /// <summary>
     /// 这里我称之为锚点，两个锚点组成一段文本；插入/删除文本的时候，会自动更新长度。
     /// </summary>
@@ -47,6 +53,12 @@ namespace EditorSupport.Document
             }
         }
 
+        internal AnchorMovementType MovementType
+        {
+            get { return _movementType; }
+            set { _movementType = value; }
+        }
+
         internal Boolean Alive
         {
             get { return _alive; }
@@ -54,6 +66,7 @@ namespace EditorSupport.Document
         }
 
         private Boolean _alive;
+        private AnchorMovementType _movementType;
 
         internal TextAnchorTree.TextAnchorNode _node;
         internal TextDocument _doc;
