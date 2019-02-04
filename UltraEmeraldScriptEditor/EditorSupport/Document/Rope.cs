@@ -296,7 +296,7 @@ namespace EditorSupport.Document
         #region Private
         internal void VerifyRange(Int32 startIndex, Int32 length)
         {
-            if (startIndex < 0 || startIndex >= Count)
+            if (startIndex < 0 || startIndex > Count)
             {
                 throw new ArgumentOutOfRangeException("startIndex", startIndex, "0 <= startIndex <= " + Count.ToString(CultureInfo.InvariantCulture));
             }
@@ -355,7 +355,7 @@ namespace EditorSupport.Document
             {
                 return;
             }
-            if (node.Length + length < RopeNode.NODE_SIZE)
+            if (node.IsLeaf && node.Length + length < RopeNode.NODE_SIZE)
             {
                 // 一定为叶子节点
                 node.GenerateContentsIfRequired();

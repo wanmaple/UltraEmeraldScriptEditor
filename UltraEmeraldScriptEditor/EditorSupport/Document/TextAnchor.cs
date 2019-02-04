@@ -24,6 +24,7 @@ namespace EditorSupport.Document
         }
         #endregion
 
+        #region Properties
         public Int32 Offset
         {
             get
@@ -53,7 +54,7 @@ namespace EditorSupport.Document
             }
         }
 
-        internal AnchorMovementType MovementType
+        public AnchorMovementType MovementType
         {
             get { return _movementType; }
             set { _movementType = value; }
@@ -63,7 +64,15 @@ namespace EditorSupport.Document
         {
             get { return _alive; }
             set { _alive = value; }
-        }
+        } 
+        #endregion
+
+        #region Overrides
+        public override string ToString()
+        {
+            return String.Format("[offset = {0}, type = {1}]", Offset, MovementType);
+        } 
+        #endregion
 
         private Boolean _alive;
         private AnchorMovementType _movementType;

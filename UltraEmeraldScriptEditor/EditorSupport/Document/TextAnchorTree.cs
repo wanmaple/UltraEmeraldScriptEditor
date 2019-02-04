@@ -185,19 +185,74 @@ namespace EditorSupport.Document
         }
 
         /// <summary>
-        /// 插入文本的时候修复Anchor的偏移
+        /// 插入文本的时候修复Anchor的偏移f
         /// </summary>
         /// <param name="offset"></param>
         /// <param name="length"></param>
-        /// <param name="ahchorMoveAfterInsertion">表示如果offset正好为anchor的偏移时，anchor是前移还是后移</param>
-        internal void InsertText(Int32 offset, Int32 length, Boolean ahchorMoveAfterInsertion = true)
+        internal void InsertText(Int32 offset, Int32 length)
         {
-
+            // 空树或者不在插入范围内则不作处理
+            if (length <= 0 || _root == null || offset > _root.TotalLength)
+            {
+                return;
+            }
+            TextAnchorNode nearestAfter = FindNode(_root, ref offset);
+            Debug.Assert(nearestAfter != null);
+            if (offset == 0)
+            {
+                // 如果正好是锚点的偏移，由于树在自身的修复中可能左旋，确认前驱节点是否是同一位置的锚点
+                while (nearestAfter.Length == 0 && nearestAfter.Predecessor != null)
+                {
+                    nearestAfter = nearestAfter.Predecessor;
+                }
+            }
+            TextAnchorNode curNode = nearestAfter;
+            while (curNode.Anchor.MovementType == AnchorMovementType.BeforeInsertion && curNode.Length == 0)
+            {
+                curNode = curNode.Successor;
+            }
+            // 只有第一个有效锚点需要加长度
+            if (curNode != null)
+            {
+                curNode.Length += length;
+                UpdateTotalLength(curNode);
+            }
         }
 
         internal void RemoveText(Int32 offset, Int32 length)
         {
-
+            // 空树或者不在插入范围内则不作处理
+            if (length <= 0 || _root == null || offset >= _root.TotalLength)
+            {
+                return;
+            }
+            TextAnchorNode nearestAfter = FindNode(_root, ref offset);
+            Debug.Assert(nearestAfter != null);
+            if (offset == 0)
+            {
+                // 踩点的锚点不做处理
+                while (nearestAfter.Length == 0 && nearestAfter.Successor != null)
+                {
+                    nearestAfter = nearestAfter.Successor;
+                }
+            }
+            // 删除锚点
+            var nodes4removal = new List<TextAnchorNode>();
+            TextAnchorNode curNode = nearestAfter;
+            while (length > curNode.Length)
+            {
+                nodes4removal.Add(curNode);
+                curNode.Anchor.Alive = false;
+                length -= curNode.Length;
+                curNode = curNode.Successor;
+            }
+            // 必须要倒着删除
+            for (int i = nodes4removal.Count - 1; i >= 0; --i)
+            {
+                RemoveNode(nodes4removal[i]);
+            }
+            curNode.Length -= length;
+            UpdateTotalLength(curNode);
         }
 
         internal void RemoveNode(TextAnchorNode node)
@@ -292,8 +347,8 @@ namespace EditorSupport.Document
                     }
                 }
                 // 如果相对的offset已经在当前锚点的左侧，那么该节点就是要找的节点（因为当前锚点的右锚点都在更后面）
-                Debug.Assert(offset != node.Length);
-                if (offset < node.Length)
+                //Debug.Assert(offset != node.Length);
+                if (offset <= node.Length)
                 {
                     return node;
                 }
@@ -350,7 +405,7 @@ namespace EditorSupport.Document
                     UpdateTotalLength(node.Parent);
                 }
             }
-        } 
+        }
         #endregion
 
         #region Red-Black Tree Fix

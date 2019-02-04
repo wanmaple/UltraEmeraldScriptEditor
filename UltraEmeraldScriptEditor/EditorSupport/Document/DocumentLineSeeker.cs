@@ -10,7 +10,7 @@ namespace EditorSupport.Document
         internal static readonly Char[] LineChars = new Char[] { '\r', '\n', };
         internal static readonly String[] LineStrings = new String[] { "\r\n", "\r", "\n", };
 
-        internal static SimpleSegment NextLine(String content, Int32 offset)
+        internal static SimpleSegment NextLineDelimiter(String content, Int32 offset)
         {
             if (content == null)
             {
@@ -28,7 +28,7 @@ namespace EditorSupport.Document
             return SimpleSegment.Invalid;
         }
 
-        internal static SimpleSegment NextLine(ITextSource content, Int32 offset)
+        internal static SimpleSegment NextLineDelimiter(ITextSource content, Int32 offset)
         {
             if (content == null)
             {

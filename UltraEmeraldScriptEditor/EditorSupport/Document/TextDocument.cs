@@ -142,6 +142,20 @@ namespace EditorSupport.Document
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
             _rope.Replace(offset, length, content.ToArray());
+            if (length > 0)
+            {
+                _anchorTree.RemoveText(offset, length);
+                _lineMgr.Remove(offset, length);
+            }
+            if (content.Length > 0)
+            {
+                _anchorTree.InsertText(offset, content.Length);
+                _lineMgr.Insert(offset, content);
+            }
+#if DEBUG
+            _anchorTree.VerifySelf();
+            _lineTree.VerifySelf();
+#endif
         }
         public void Replace(Int32 offset, Int32 length, ITextSource content)
         {
@@ -151,8 +165,6 @@ namespace EditorSupport.Document
             }
             Replace(offset, length, content.Text);
         }
-
-        private Boolean _documentChanging;
         #endregion
 
         #region Anchor operations

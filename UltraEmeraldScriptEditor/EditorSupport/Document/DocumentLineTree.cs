@@ -31,7 +31,7 @@ namespace EditorSupport.Document
             internal DocumentLineNode(DocumentLine line)
             {
                 TotalCount = 1;
-                TotalLength = line._exactLength;
+                TotalLength = line != null ? line._exactLength : 0;
                 Line = line;
                 Color = NodeColor.RED;
             }
@@ -141,9 +141,7 @@ namespace EditorSupport.Document
         internal DocumentLineTree(TextDocument document)
         {
             _doc = document ?? throw new ArgumentNullException("document");
-            var emptyLine = new DocumentLine();
-            _root = new DocumentLineNode(emptyLine);
-            emptyLine._node = _root;
+            Clear();
         }
         #endregion
 
@@ -231,6 +229,7 @@ namespace EditorSupport.Document
                     {
                         // 在左节点覆盖范围内
                         curNode = curNode.Left;
+                        continue;
                     }
                     else
                     {
@@ -262,12 +261,16 @@ namespace EditorSupport.Document
             Int32 index = node.Left != null ? node.Left.TotalCount : 0;
             while (node.Parent != null)
             {
+                DocumentLineNode prevNode = node;
                 node = node.Parent;
-                if (node.Left != null)
+                if (prevNode.IsRight)
                 {
-                    index += node.Left.TotalCount;
+                    if (node.Left != null)
+                    {
+                        index += node.Left.TotalCount;
+                    }
+                    ++index;
                 }
-                ++index;
             }
             return index;
         }
@@ -281,12 +284,16 @@ namespace EditorSupport.Document
             Int32 offset = node.Left != null ? node.Left.TotalLength : 0;
             while (node.Parent != null)
             {
+                DocumentLineNode prevNode = node;
                 node = node.Parent;
-                if (node.Left != null)
+                if (prevNode.IsRight)
                 {
-                    offset += node.Left.TotalLength;
+                    if (node.Left != null)
+                    {
+                        offset += node.Left.TotalLength;
+                    }
+                    offset += node.Line._exactLength;
                 }
-                offset += node.Line._exactLength;
             }
             return offset;
         }
@@ -323,7 +330,7 @@ namespace EditorSupport.Document
         /// 直接创建一颗平衡的红黑树
         /// </summary>
         /// <param name="lines"></param>
-        public void RebuildTree(IList<DocumentLine> lines)
+        internal void RebuildTree(IList<DocumentLine> lines)
         {
             Debug.Assert(lines.Count > 0);
             var nodes = new DocumentLineNode[lines.Count];
@@ -367,7 +374,7 @@ namespace EditorSupport.Document
             return middleNode;
         }
 
-        public void InsertLineAfter(DocumentLine line, DocumentLine newLine)
+        internal void InsertLineAfter(DocumentLine line, DocumentLine newLine)
         {
             if (line == null)
             {
@@ -387,18 +394,27 @@ namespace EditorSupport.Document
             {
                 InsertAsLeft(line._node.Successor, newNode);
             }
-#if DEBUG
-            VerifySelf();
-#endif
         }
 
-        public void RemoveLine(DocumentLine line)
+        internal void RemoveLine(DocumentLine line)
         {
             if (line == null)
             {
                 throw new ArgumentNullException("line");
             }
             RemoveNode(line._node);
+        }
+
+        internal void Clear()
+        {
+#if DEBUG
+            var emptyLine = new DocumentLine(_doc);
+#else
+            var emptyLine = new DocumentLine();
+#endif
+            _root = new DocumentLineNode(emptyLine);
+            _root.Color = NodeColor.BLACK;
+            emptyLine._node = _root;
         }
 
         internal void InsertAsLeft(DocumentLineNode node, DocumentLineNode newNode)
@@ -475,9 +491,6 @@ namespace EditorSupport.Document
             {
                 _root.Color = NodeColor.BLACK;
             }
-#if DEBUG
-            VerifySelf();
-#endif
         }
 
         internal void UpdateNodeData(DocumentLineNode node)
@@ -863,7 +876,7 @@ namespace EditorSupport.Document
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        } 
+        }
 
         private IEnumerator<DocumentLine> Enumerate()
         {
@@ -909,10 +922,6 @@ namespace EditorSupport.Document
         [Conditional("DEBUG")]
         internal void VerifySelf()
         {
-            if (_root.TotalLength != _doc.Length)
-            {
-                throw new Exception("Invalid DocumentLineTree");
-            }
             var blackNodeCnt = new HashSet<Int32>();
             Int32 totalLen = 0, totalCnt = 0;
             LevelTraversal(node =>
