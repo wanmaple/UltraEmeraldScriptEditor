@@ -63,13 +63,16 @@
     <Compile Include="Document\TextDocument.cs" />
     <Compile Include="Document\TextLocation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Rendering\EditorBackgroundLayer.cs" />
-    <Compile Include="Rendering\EditorCaretLayer.cs" />
-    <Compile Include="Rendering\EditorLayer.cs" />
-    <Compile Include="Rendering\EditorSelectionLayer.cs" />
-    <Compile Include="Rendering\EditorTextLayer.cs" />
-    <Compile Include="Rendering\EditorView.cs" />
+    <Compile Include="Rendering\GlyphProperties.cs" />
+    <Compile Include="Rendering\Renderers\BackgroundRenderer.cs" />
+    <Compile Include="Rendering\Renderers\BrushBackgroundRenderer.cs" />
+    <Compile Include="Rendering\RenderView.cs" />
+    <Compile Include="Rendering\Renderers\ImageBackgroundRenderer.cs" />
+    <Compile Include="Rendering\Renderers\IRenderable.cs" />
     <Compile Include="Rendering\IEditorComponent.cs" />
+    <Compile Include="Rendering\Renderers\VisualLineRenderer.cs" />
+    <Compile Include="Rendering\VisualLine.cs" />
+    <Compile Include="Rendering\VisualLineElement.cs" />
     <Compile Include="Syntax\ILexicalAnalyzer.cs" />
     <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
   </ItemGroup>

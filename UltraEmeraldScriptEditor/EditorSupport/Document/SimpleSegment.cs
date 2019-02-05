@@ -52,7 +52,7 @@ namespace EditorSupport.Document
 
         public override string ToString()
         {
-            return String.Format("{0}-{1}", _offset, _length);
+            return String.Format("[offset={0},length={1}]", _offset, _length);
         }
 
         public override int GetHashCode()

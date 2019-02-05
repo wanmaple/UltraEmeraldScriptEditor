@@ -41,12 +41,15 @@ namespace EditorSupport.Document
                 return null;
             }
         }
+
+        internal Boolean Alive { get; set; }
         #endregion
 
         #region Constructor
         internal DocumentLine()
         {
             _exactLength = _delimiterLength = 0;
+            Alive = true;
         }
 #if DEBUG
         internal DocumentLine(TextDocument doc)

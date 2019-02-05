@@ -403,6 +403,7 @@ namespace EditorSupport.Document
                 throw new ArgumentNullException("line");
             }
             RemoveNode(line._node);
+            line.Alive = false;
         }
 
         internal void Clear()

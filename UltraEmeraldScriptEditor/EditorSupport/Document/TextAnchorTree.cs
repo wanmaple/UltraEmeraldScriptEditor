@@ -7,7 +7,7 @@ using System.Text;
 
 namespace EditorSupport.Document
 {
-    internal enum NodeColor
+    internal enum NodeColor : Byte
     {
         RED = 0,
         BLACK = 1,

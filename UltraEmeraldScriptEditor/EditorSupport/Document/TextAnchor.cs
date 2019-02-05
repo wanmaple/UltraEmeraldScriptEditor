@@ -6,7 +6,7 @@ using System.Text;
 
 namespace EditorSupport.Document
 {
-    public enum AnchorMovementType
+    public enum AnchorMovementType : Byte
     {
         BeforeInsertion,
         AfterInsertion,

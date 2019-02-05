@@ -12,7 +12,7 @@ namespace EditorSupport.Rendering
     public interface IEditorComponent
     {
         /// <summary>
-        /// Document改变时触发（注意不是Document内容的改变，而是Document属性自身的改变）
+        /// Document改变时触发（注意不是Document内容的改变，而是Document属性的改变）
         /// </summary>
         event EventHandler DocumentChanged;
 

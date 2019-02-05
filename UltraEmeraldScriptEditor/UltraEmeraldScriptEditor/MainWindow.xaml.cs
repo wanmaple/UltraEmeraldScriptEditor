@@ -54,5 +54,10 @@ namespace UltraEmeraldScriptEditor
         {
             e.Handled = true;
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            editor.GlyphOption.FontSize += 2;
+        }
     }
 }

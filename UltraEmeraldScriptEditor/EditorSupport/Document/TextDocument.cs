@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -164,6 +165,28 @@ namespace EditorSupport.Document
                 throw new ArgumentNullException("content");
             }
             Replace(offset, length, content.Text);
+        }
+        #endregion
+
+        #region Line getters
+        public Int32 LineCount
+        {
+            get { return _lineTree.LineCount; }
+        }
+
+        public DocumentLine GetLineByNumber(Int32 lineNumber)
+        {
+            return _lineTree.GetLineByNumber(lineNumber);
+        } 
+
+        public DocumentLine GetLineByOffset(Int32 offset)
+        {
+            return _lineTree.GetLineByOffset(offset);
+        }
+
+        public String GetLineText(DocumentLine line)
+        {
+            return GetTextAt(line.StartOffset, line.Length);
         }
         #endregion
 

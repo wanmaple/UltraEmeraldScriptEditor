@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
+        xmlns:editor="clr-namespace:EditorSupport.Rendering;assembly=EditorSupport"
         mc:Ignorable="d"
         Title="{DynamicResource lang_wintitle_main}" Height="450" Width="800"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
@@ -29,6 +30,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Menu Grid.Row="0">
             <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_file}">
@@ -57,6 +59,14 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
-        <TextBox x:Name="lbTest" Grid.Row="1" TextWrapping="Wrap" />
+        <editor:RenderView x:Name="editor" Grid.Row="1">
+            <editor:RenderView.BackgroundRenderers>
+                <editor:BrushBackgroundRenderer Brush="White" />
+            </editor:RenderView.BackgroundRenderers>
+            <editor:RenderView.GlyphOption>
+                <editor:GlyphProperties FontFamily="Consolas" FontSize="12" />
+            </editor:RenderView.GlyphOption>
+        </editor:RenderView>
+        <Button Grid.Row="2" Click="Button_Click">Test</Button>
     </Grid>
 </Window>
