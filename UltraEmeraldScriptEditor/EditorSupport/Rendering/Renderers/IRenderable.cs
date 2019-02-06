@@ -9,6 +9,6 @@ namespace EditorSupport.Rendering
 {
     public interface IRenderable
     {
-        void Render(DrawingContext context, FrameworkElement owner);
+        void Render(DrawingContext drawingContext, RenderContext renderContext);
     }
 }

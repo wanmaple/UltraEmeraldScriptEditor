@@ -14,13 +14,16 @@ using EditorSupport.Document;
 
 namespace EditorSupport.Rendering
 {
-    public sealed class RenderView : FrameworkElement, IEditorComponent
+    /// <summary>
+    /// 编辑器的渲染逻辑都在这里
+    /// </summary>
+    public sealed class RenderView : FrameworkElement, IScrollInfo, IEditorComponent
     {
         #region Properties
         public static readonly DependencyProperty GlyphOptionProperty =
     DependencyProperty.Register("GlyphOption", typeof(GlyphProperties), typeof(RenderView), new PropertyMetadata(OnGlyphOptionChanged));
         public static readonly DependencyProperty PaddingProperty =
-            DependencyProperty.Register("Padding", typeof(Thickness), typeof(RenderView), new PropertyMetadata(new Thickness(20, 10, 20, 10)));
+            DependencyProperty.Register("Padding", typeof(Thickness), typeof(RenderView), new PropertyMetadata(new Thickness(10, 5, 10, 5), OnPaddingChanged));
 
         public GlyphProperties GlyphOption
         {
@@ -41,80 +44,141 @@ namespace EditorSupport.Rendering
         #region Constructor
         public RenderView()
         {
+            _renderContext = new RenderContext();
             _bgRenderers = new ObservableCollection<BackgroundRenderer>();
             _lineRenderer = new VisualLineRenderer(this);
             _allVisualLines = new List<VisualLine>();
-            RebuildVisualLines();
         }
         #endregion
 
         #region Overrides
         protected override void OnRender(DrawingContext drawingContext)
         {
+            ResetRenderRegion();
             RenderBackground(drawingContext);
-            _lineRenderer.Render(drawingContext, this);
-            //var drawingGroup = new DrawingGroup();
-            //Double totalWidth;
-            //drawingGroup.Children.Add(CreateGlyphRunDrawing("this ", Brushes.Blue, new Point(0, 32), out totalWidth));
-            //drawingGroup.Children.Add(CreateGlyphRunDrawing("万鑫", Brushes.Black, new Point(totalWidth, 32), out totalWidth));
-            //var img = new DrawingImage(drawingGroup);
-            //drawingContext.DrawImage(img, new Rect(new Point(50, 50), new Point(50 + img.Width, 50 + img.Height)));
+            RenderLines(drawingContext);
         }
         #endregion
 
-        private GlyphRunDrawing CreateGlyphRunDrawing(String text, Brush foreBrush, Point pos, out Double totalWidth)
-        {
-            var defaultTypeface = new Typeface(new FontFamily("Microsoft YaHei"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-            GlyphTypeface defaultTF;
-            defaultTypeface.TryGetGlyphTypeface(out defaultTF);
-
-            totalWidth = 0.0;
-            var fontFamily = new FontFamily("Microsoft YaHei");
-            Typeface typeface = new Typeface(fontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-            GlyphTypeface glyphTypeface;
-            if (!typeface.TryGetGlyphTypeface(out glyphTypeface))
-            {
-                return null;
-            }
-            UInt16[] glyphIdxes = new ushort[text.Length];
-            Double[] advanceWidths = new double[text.Length];
-            for (int i = 0; i < text.Length; i++)
-            {
-                UInt16 glyphIdx;
-                Double width;
-                Char ch = text[i];
-                try
-                {
-                    glyphIdx = glyphTypeface.CharacterToGlyphMap[ch];
-                    width = glyphTypeface.AdvanceWidths[glyphIdx] * 32.0;
-                }
-                catch (Exception)
-                {
-                    glyphIdx = defaultTF.CharacterToGlyphMap[ch];
-                    width = defaultTF.AdvanceWidths[glyphIdx] * 32.0;
-                }
-                glyphIdxes[i] = glyphIdx;
-                advanceWidths[i] = width;
-                totalWidth += width;
-            }
-            GlyphRun gr = new GlyphRun(glyphTypeface, 0, false, 32.0, glyphIdxes, pos, advanceWidths, null, null, null, null, null, null);
-            var grDrawing = new GlyphRunDrawing(foreBrush, gr);
-            return grDrawing;
-        }
-
+        #region Rendering
         private void RenderBackground(DrawingContext drawingContext)
         {
             foreach (var renderer in BackgroundRenderers)
             {
-                renderer.Render(drawingContext, this);
+                renderer.Render(drawingContext, _renderContext);
             }
         }
+
+        private void RenderLines(DrawingContext drawingContext)
+        {
+            _renderContext.PrepareRendering();
+
+            _renderContext.PushTranslation(Padding.Left, Padding.Top);
+            _lineRenderer.Render(drawingContext, _renderContext);
+
+            _renderContext.FinishRendering();
+        }
+        #endregion
+
+        #region IScrollInfo
+        public bool CanVerticallyScroll { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool CanHorizontallyScroll { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public double ExtentWidth => throw new NotImplementedException();
+
+        public double ExtentHeight => throw new NotImplementedException();
+
+        public double ViewportWidth => throw new NotImplementedException();
+
+        public double ViewportHeight => throw new NotImplementedException();
+
+        public double HorizontalOffset => throw new NotImplementedException();
+
+        public double VerticalOffset => throw new NotImplementedException();
+
+        public ScrollViewer ScrollOwner { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public void LineDown()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LineLeft()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LineRight()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LineUp()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Rect MakeVisible(Visual visual, Rect rectangle)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void MouseWheelDown()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void MouseWheelLeft()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void MouseWheelRight()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void MouseWheelUp()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PageDown()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PageLeft()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PageRight()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PageUp()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetHorizontalOffset(double offset)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetVerticalOffset(double offset)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
 
         #region IEditorComponent
         public event EventHandler DocumentChanged;
 
         public static readonly DependencyProperty DocumentProperty =
-            DependencyProperty.Register("Document", typeof(TextDocument), typeof(RenderView), new PropertyMetadata(new TextDocument("Hello World!\r\n这是一段中文。\r\nThis is 什么？"), OnDocumentChanged));
+            DependencyProperty.Register("Document", typeof(TextDocument), typeof(RenderView), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
         public TextDocument Document
         {
             get { return (TextDocument)GetValue(DocumentProperty); }
@@ -127,10 +191,10 @@ namespace EditorSupport.Rendering
             Debug.Assert(Document != null);
             ClearVisualLines();
             Int32 lineNumber = 1;
-            DocumentLine line = null;
-            while (lineNumber <= Document.LineCount && (line = Document.GetLineByNumber(lineNumber)) != null)
+            while (lineNumber <= Document.LineCount)
             {
-                VisualLine visualLine = new VisualLine(Document, line);
+                DocumentLine line = Document.GetLineByNumber(lineNumber);
+                VisualLine visualLine = new VisualLine(Document, line, GlyphOption);
                 _allVisualLines.Add(visualLine);
                 _lineRenderer.VisibleLines.AddLast(visualLine);
                 ++lineNumber;
@@ -145,6 +209,11 @@ namespace EditorSupport.Rendering
             }
             _allVisualLines.Clear();
             _lineRenderer.VisibleLines.Clear();
+        }
+
+        private void ResetRenderRegion()
+        {
+            _renderContext.Region = new Rect(new Point(0, 0), new Size(ActualWidth, ActualHeight));
         }
 
         private void Redraw()
@@ -184,6 +253,18 @@ namespace EditorSupport.Rendering
             Redraw();
         }
 
+        private static void OnPaddingChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        {
+            RenderView editor = dp as RenderView;
+            Thickness padding = (Thickness)e.NewValue;
+            editor.OnPaddingChanged(padding, EventArgs.Empty);
+        }
+        private void OnPaddingChanged(Object sender, EventArgs e)
+        {
+            Redraw();
+        }
+
+        private RenderContext _renderContext;
         private ObservableCollection<BackgroundRenderer> _bgRenderers;
         private VisualLineRenderer _lineRenderer;
         private List<VisualLine> _allVisualLines;

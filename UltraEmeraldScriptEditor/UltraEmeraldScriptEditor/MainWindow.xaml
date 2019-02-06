@@ -59,14 +59,16 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
-        <editor:RenderView x:Name="editor" Grid.Row="1">
-            <editor:RenderView.BackgroundRenderers>
-                <editor:BrushBackgroundRenderer Brush="White" />
-            </editor:RenderView.BackgroundRenderers>
-            <editor:RenderView.GlyphOption>
-                <editor:GlyphProperties FontFamily="Consolas" FontSize="12" />
-            </editor:RenderView.GlyphOption>
-        </editor:RenderView>
+        <ScrollViewer Grid.Row="1">
+            <editor:RenderView x:Name="editor">
+                <editor:RenderView.BackgroundRenderers>
+                    <editor:BrushBackgroundRenderer Brush="White" />
+                </editor:RenderView.BackgroundRenderers>
+                <editor:RenderView.GlyphOption>
+                    <editor:GlyphProperties FontFamily="Consolas" />
+                </editor:RenderView.GlyphOption>
+            </editor:RenderView>
+        </ScrollViewer>
         <Button Grid.Row="2" Click="Button_Click">Test</Button>
     </Grid>
 </Window>

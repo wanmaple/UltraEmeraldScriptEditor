@@ -19,16 +19,15 @@ namespace EditorSupport.Rendering
         }
 
         #region IRenderable
-        public void Render(DrawingContext context, FrameworkElement owner)
+        public void Render(DrawingContext drawingContext, RenderContext renderContext)
         {
-            Point startPos = new Point(_editor.Padding.Left, _editor.Padding.Top);
-            Typeface typeface = _editor.GlyphOption.Typeface;
-            foreach (var visualLine in VisibleLines)
+            if (VisibleLines.Count > 0)
             {
-                String content = _editor.Document.GetLineText(visualLine.Line);
-                var formattedText = new FormattedText(content, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, _editor.GlyphOption.FontSize, Brushes.Black);
-                context.DrawText(formattedText, startPos);
-                startPos.Y += _editor.GlyphOption.LineHeight;
+                foreach (var visualLine in VisibleLines)
+                {
+                    visualLine.Render(drawingContext, renderContext);
+                    renderContext.PushTranslation(0.0, _editor.GlyphOption.LineHeight);
+                }
             }
         }
         #endregion

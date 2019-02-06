@@ -7,8 +7,9 @@ using System.Windows.Media;
 
 namespace EditorSupport.Rendering
 {
-    public enum RenderType
+    public enum RenderType : Byte
     {
+        DEFAULT,
         FILL,
         CENTER,
     }
@@ -46,7 +47,7 @@ namespace EditorSupport.Rendering
         }
 
         #region IRenderable
-        public abstract void Render(DrawingContext context, FrameworkElement owner);
+        public abstract void Render(DrawingContext drawingContext, RenderContext renderContext);
         #endregion
 
         protected RenderView _editor;

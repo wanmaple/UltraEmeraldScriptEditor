@@ -57,7 +57,8 @@ namespace UltraEmeraldScriptEditor
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            editor.GlyphOption.FontSize += 2;
+            var doc = new EditorSupport.Document.TextDocument("I'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\n");
+            editor.Document = doc;
         }
     }
 }

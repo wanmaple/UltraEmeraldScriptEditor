@@ -22,21 +22,24 @@ namespace EditorSupport.Rendering
         {
         }
 
-        public override void Render(DrawingContext context, FrameworkElement owner)
+        public override void Render(DrawingContext drawingContext, RenderContext renderContext)
         {
             if (Brush != null)
             {
                 switch (RenderType)
                 {
+                    case RenderType.DEFAULT:
+                        drawingContext.DrawRectangle(Brush, null, new Rect(renderContext.Offset, new Size(Width, Height)));
+                        break;
                     case RenderType.FILL:
-                        context.DrawRectangle(Brush, null, new Rect(new Size(owner.ActualWidth, owner.ActualHeight)));
+                        drawingContext.DrawRectangle(Brush, null, renderContext.Region);
                         break;
                     case RenderType.CENTER:
-                        Double boundWidth = owner.ActualWidth;
-                        Double boundHeight = owner.ActualHeight;
+                        Double boundWidth = renderContext.Region.Width;
+                        Double boundHeight = renderContext.Region.Height;
                         Point start = new Point((boundWidth - Width) * 0.5, (boundHeight - Height) * 0.5);
                         Point end = new Point(start.X + Width, start.Y + Height);
-                        context.DrawRectangle(Brush, null, new Rect(start, end));
+                        drawingContext.DrawRectangle(Brush, null, new Rect(start, end));
                         break;
                     default:
                         break;

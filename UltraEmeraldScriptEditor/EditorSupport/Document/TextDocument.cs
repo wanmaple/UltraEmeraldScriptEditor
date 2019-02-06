@@ -202,6 +202,21 @@ namespace EditorSupport.Document
         {
             VerifyAccess();
             _anchorTree.RemoveAnchor(anchor);
+        }
+        #endregion
+
+        #region Overrides
+        public override string ToString()
+        {
+            return Text;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return LineCount + Length * 1013;
+            }
         } 
         #endregion
 

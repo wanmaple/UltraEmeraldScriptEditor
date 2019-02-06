@@ -87,6 +87,11 @@ namespace EditorSupport.Document
             return _doc.GetTextAt(StartOffset, Length);
         }
 #endif 
+
+        public override int GetHashCode()
+        {
+            return StartOffset + Length * 10301;
+        }
         #endregion
 
         // 总长度（包含换行符）

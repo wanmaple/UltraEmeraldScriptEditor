@@ -22,21 +22,24 @@ namespace EditorSupport.Rendering
         {
         }
 
-        public override void Render(DrawingContext context, FrameworkElement owner)
+        public override void Render(DrawingContext drawingContext, RenderContext renderContext)
         {
             if (ImageSource != null)
             {
                 switch (RenderType)
                 {
+                    case RenderType.DEFAULT:
+                        drawingContext.DrawImage(ImageSource, new Rect(renderContext.Offset, new Size(Width, Height)));
+                        break;
                     case RenderType.FILL:
-                        context.DrawImage(ImageSource, new Rect(new Size(owner.ActualWidth, owner.ActualHeight)));
+                        drawingContext.DrawImage(ImageSource, renderContext.Region);
                         break;
                     case RenderType.CENTER:
-                        Double boundWidth = owner.ActualWidth;
-                        Double boundHeight = owner.ActualHeight;
+                        Double boundWidth = renderContext.Region.Width;
+                        Double boundHeight = renderContext.Region.Height;
                         Point start = new Point((boundWidth - Width) * 0.5, (boundHeight - Height) * 0.5);
                         Point end = new Point(start.X + Width, start.Y + Height);
-                        context.DrawImage(ImageSource, new Rect(start, end));
+                        drawingContext.DrawImage(ImageSource, new Rect(start, end));
                         break;
                     default:
                         break;
