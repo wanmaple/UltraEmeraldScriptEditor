@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="TextDocumentTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ValueSequenceTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 using EditorSupport.Document;
 
 namespace EditorSupport.Rendering
@@ -35,9 +36,13 @@ namespace EditorSupport.Rendering
             get { return (Thickness)GetValue(PaddingProperty); }
             set { SetValue(PaddingProperty, value); }
         }
-        public ObservableCollection<BackgroundRenderer> BackgroundRenderers
+        public List<BackgroundRenderer> BackgroundRenderers
         {
             get { return _bgRenderers; }
+        }
+        public ObservableCollection<VisualLine> VisualLines
+        {
+            get { return _allVisualLines; }
         }
         #endregion
 
@@ -45,18 +50,30 @@ namespace EditorSupport.Rendering
         public RenderView()
         {
             _renderContext = new RenderContext();
-            _bgRenderers = new ObservableCollection<BackgroundRenderer>();
+            _bgRenderers = new List<BackgroundRenderer>();
             _lineRenderer = new VisualLineRenderer(this);
-            _allVisualLines = new List<VisualLine>();
+            _allVisualLines = new ObservableCollection<VisualLine>();
         }
         #endregion
 
         #region Overrides
         protected override void OnRender(DrawingContext drawingContext)
         {
-            ResetRenderRegion();
             RenderBackground(drawingContext);
             RenderLines(drawingContext);
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            base.InvalidateVisual();
+
+            return base.MeasureOverride(availableSize);
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            ResetVisualRegion(finalSize);
+            return base.ArrangeOverride(finalSize);
         }
         #endregion
 
@@ -81,97 +98,110 @@ namespace EditorSupport.Rendering
         #endregion
 
         #region IScrollInfo
-        public bool CanVerticallyScroll { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public bool CanHorizontallyScroll { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool CanVerticallyScroll
+        {
+            get => _canVerticallyScroll;
+            set
+            {
+                if (_canVerticallyScroll != value)
+                {
+                    _canVerticallyScroll = value;
+                    InvalidateMeasure();
+                }
+            }
+        }
+        public bool CanHorizontallyScroll
+        {
+            get => _canHorizontallyScroll;
+            set
+            {
+                if (_canHorizontallyScroll != value)
+                {
+                    _canHorizontallyScroll = value;
+                    InvalidateMeasure();
+                }
+            }
+        }
 
-        public double ExtentWidth => throw new NotImplementedException();
+        public double ExtentWidth => _extentSize.Width;
 
-        public double ExtentHeight => throw new NotImplementedException();
+        public double ExtentHeight => _extentSize.Height;
 
-        public double ViewportWidth => throw new NotImplementedException();
+        public double ViewportWidth => _scrollViewport.Width;
 
-        public double ViewportHeight => throw new NotImplementedException();
+        public double ViewportHeight => _scrollViewport.Height;
 
-        public double HorizontalOffset => throw new NotImplementedException();
+        public double HorizontalOffset => _scrollOffset.X;
 
-        public double VerticalOffset => throw new NotImplementedException();
+        public double VerticalOffset => _scrollOffset.Y;
 
-        public ScrollViewer ScrollOwner { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public ScrollViewer ScrollOwner { get; set; }
 
         public void LineDown()
         {
-            throw new NotImplementedException();
         }
 
         public void LineLeft()
         {
-            throw new NotImplementedException();
         }
 
         public void LineRight()
         {
-            throw new NotImplementedException();
         }
 
         public void LineUp()
         {
-            throw new NotImplementedException();
         }
 
         public Rect MakeVisible(Visual visual, Rect rectangle)
         {
-            throw new NotImplementedException();
+            return rectangle;
         }
 
         public void MouseWheelDown()
         {
-            throw new NotImplementedException();
         }
 
         public void MouseWheelLeft()
         {
-            throw new NotImplementedException();
         }
 
         public void MouseWheelRight()
         {
-            throw new NotImplementedException();
         }
 
         public void MouseWheelUp()
         {
-            throw new NotImplementedException();
         }
 
         public void PageDown()
         {
-            throw new NotImplementedException();
         }
 
         public void PageLeft()
         {
-            throw new NotImplementedException();
         }
 
         public void PageRight()
         {
-            throw new NotImplementedException();
         }
 
         public void PageUp()
         {
-            throw new NotImplementedException();
         }
 
         public void SetHorizontalOffset(double offset)
         {
-            throw new NotImplementedException();
         }
 
         public void SetVerticalOffset(double offset)
         {
-            throw new NotImplementedException();
         }
+
+        private Boolean _canVerticallyScroll, _canHorizontallyScroll;
+        private Size _extentSize;
+        private Size _scrollViewport;
+        private Point _scrollOffset;
         #endregion
 
         #region IEditorComponent
@@ -211,16 +241,54 @@ namespace EditorSupport.Rendering
             _lineRenderer.VisibleLines.Clear();
         }
 
-        private void ResetRenderRegion()
+        private void ResetVisualRegion(Size availableSize)
         {
-            _renderContext.Region = new Rect(new Point(0, 0), new Size(ActualWidth, ActualHeight));
+            _renderContext.Region = new Rect(availableSize);
+            _scrollViewport = availableSize;
         }
 
         private void Redraw()
         {
-            base.InvalidateVisual();
+            InvalidateMeasure(DispatcherPriority.Normal);
         }
 
+        /// <summary>
+        /// Measure是异步操作，通过传入的优先级判断是否需要立刻刷新
+        /// </summary>
+        /// <param name="priority"></param>
+        private void InvalidateMeasure(DispatcherPriority priority)
+        {
+            if (priority >= DispatcherPriority.Render)
+            {
+                // 需要立刻刷新，强制结束之前未完成的Measure操作
+                if (_measureOperation != null)
+                {
+                    _measureOperation.Abort();
+                    _measureOperation = null;
+                }
+                base.InvalidateMeasure();
+            }
+            else
+            {
+                if (_measureOperation != null)
+                {
+                    _measureOperation.Priority = priority;
+                }
+                else
+                {
+                    // 交给Dispatcher去分发Measure操作，可能不能立刻得到反馈
+                    _measureOperation = Dispatcher.BeginInvoke(priority, new Action(() =>
+                    {
+                        _measureOperation = null;
+                        base.InvalidateMeasure();
+                    }));
+                }
+            }
+        }
+
+        private DispatcherOperation _measureOperation;
+
+        #region PropertyChange EventHandlers
         private static void OnDocumentChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         {
             RenderView editor = dp as RenderView;
@@ -262,12 +330,13 @@ namespace EditorSupport.Rendering
         private void OnPaddingChanged(Object sender, EventArgs e)
         {
             Redraw();
-        }
+        } 
+        #endregion
 
         private RenderContext _renderContext;
-        private ObservableCollection<BackgroundRenderer> _bgRenderers;
+        private List<BackgroundRenderer> _bgRenderers;
         private VisualLineRenderer _lineRenderer;
-        private List<VisualLine> _allVisualLines;
+        private ObservableCollection<VisualLine> _allVisualLines;
 
         //private static void OnBackgroundRenderersChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         //{

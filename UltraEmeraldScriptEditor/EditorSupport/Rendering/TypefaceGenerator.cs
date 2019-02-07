@@ -80,7 +80,7 @@ namespace EditorSupport.Rendering
         {
             unchecked
             {
-                return ff.GetHashCode() + style.GetHashCode() * 1229 + weight.GetHashCode() * 4373 + stretch.GetHashCode() * 9803;
+                return ff.GetHashCode() + style.GetHashCode() * 1229 + weight.GetHashCode() * 20011 + stretch.GetHashCode() * 200003;
             }
         }
 

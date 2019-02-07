@@ -62,7 +62,7 @@
         <ScrollViewer Grid.Row="1">
             <editor:RenderView x:Name="editor">
                 <editor:RenderView.BackgroundRenderers>
-                    <editor:BrushBackgroundRenderer Brush="White" />
+                    <editor:BrushBackgroundRenderer Brush="Yellow" />
                 </editor:RenderView.BackgroundRenderers>
                 <editor:RenderView.GlyphOption>
                     <editor:GlyphProperties FontFamily="Consolas" />

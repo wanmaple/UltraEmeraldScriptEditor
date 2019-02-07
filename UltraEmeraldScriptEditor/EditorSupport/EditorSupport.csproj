@@ -81,6 +81,7 @@
     <Compile Include="Rendering\VisualLineImageCache.cs" />
     <Compile Include="Syntax\ILexicalAnalyzer.cs" />
     <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
+    <Compile Include="Utils\ValueSequence.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

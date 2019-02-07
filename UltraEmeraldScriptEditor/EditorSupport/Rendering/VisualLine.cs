@@ -1,4 +1,5 @@
 ﻿using EditorSupport.Document;
+using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -26,7 +27,12 @@ namespace EditorSupport.Rendering
 
         public GlyphProperties GlyphProperties { get; private set; }
 
-        public List<Double> VisualOffsets { get; private set; }
+        public ValueSequence CharacterVisualOffsets { get; private set; }
+
+        public Double VisualLength
+        {
+            get { return CharacterVisualOffsets.GetSumValue(CharacterVisualOffsets.Count); }
+        }
         #endregion
 
         #region Constructor
@@ -36,7 +42,7 @@ namespace EditorSupport.Rendering
             Line = line ?? throw new ArgumentNullException("line");
             GlyphProperties = glyphProperties ?? throw new ArgumentNullException("glyphProperties");
             Elements = new LinkedList<VisualLineElement>();
-            VisualOffsets = new List<double>();
+            CharacterVisualOffsets = new ValueSequence();
             Rebuild();
         } 
         #endregion
@@ -49,14 +55,13 @@ namespace EditorSupport.Rendering
 
         private void RebuildVisualOffsets()
         {
-            VisualOffsets.Clear();
-            VisualOffsets.Add(0.0);
+            // 本来是打算用一个数组存储偏移，但是实际上很多字符之间的偏移是一样的，为了节省内存这里定义一种新的结构。
+            CharacterVisualOffsets.Clear();
             if (Line.Length == 0)
             {
                 return;
             }
             String text = Document.GetLineText(Line);
-            Double totalWidth = 0.0;
             foreach (var elem in Elements)
             {
                 GlyphTypeface globalGlyphTypeface = TypefaceGenerator.GetInstance().GenerateGlyphTypeface(new FontFamily("Microsoft YaHei"), elem.FontStyle, elem.FontWeight, elem.FontStretch);
@@ -76,8 +81,7 @@ namespace EditorSupport.Rendering
                         indice = globalGlyphTypeface.CharacterToGlyphMap[ch];
                         width = globalGlyphTypeface.AdvanceWidths[indice] * GlyphProperties.FontSize;
                     }
-                    totalWidth += width;
-                    VisualOffsets.Add(totalWidth);
+                    CharacterVisualOffsets.Add(width);
                 }
             }
         }
@@ -165,6 +169,11 @@ namespace EditorSupport.Rendering
             cachedImg.Freeze();
             Point startPos = renderContext.Offset;
             drawingContext.DrawImage(cachedImg, new Rect(startPos, new Size(cachedImg.Width, cachedImg.Height)));
+            //for (int i = 0; i <= CharacterVisualOffsets.Count; i++)
+            //{
+            //    var pos = new Point(startPos.X + CharacterVisualOffsets.GetSumValue(i) - 1, startPos.Y);
+            //    drawingContext.DrawRectangle(Brushes.Red, null, new Rect(pos, new Size(2, cachedImg.Height)));
+            //}
         }
         #endregion
     }
