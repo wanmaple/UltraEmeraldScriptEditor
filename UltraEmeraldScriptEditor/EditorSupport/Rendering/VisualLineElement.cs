@@ -44,7 +44,7 @@ namespace EditorSupport.Rendering
             _fontWeight = FontWeights.Normal;
             _fontStyle = FontStyles.Normal;
             _fontStretch = FontStretches.Normal;
-        } 
+        }
         #endregion
 
         #region IHighlightee
@@ -53,12 +53,15 @@ namespace EditorSupport.Rendering
         public FontWeight FontWeight { get => _fontWeight; set => _fontWeight = value; }
         public FontStyle FontStyle { get => _fontStyle; set => _fontStyle = value; }
         public FontStretch FontStretch { get => _fontStretch; set => _fontStretch = value; }
-        #endregion
+        public int HighlightRule { get => _highlightRule; set => _highlightRule = value; }
+        public abstract string Content { get; }
 
         protected Brush _fgBrush, _bgBrush;
         protected FontWeight _fontWeight;
         protected FontStyle _fontStyle;
         protected FontStretch _fontStretch;
+        protected Int32 _highlightRule;
+        #endregion
 
         protected VisualLine _owner;
     }

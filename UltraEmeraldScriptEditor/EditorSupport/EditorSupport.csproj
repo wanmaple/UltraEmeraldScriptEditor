@@ -62,8 +62,13 @@
     <Compile Include="Document\TextAnchorTree.cs" />
     <Compile Include="Document\TextDocument.cs" />
     <Compile Include="Document\TextLocation.cs" />
+    <Compile Include="Highlighting\CommonHighlighter.cs" />
+    <Compile Include="Highlighting\HighlightingFactory.cs" />
+    <Compile Include="Highlighting\HighlightStyle.cs" />
+    <Compile Include="Highlighting\KeywordHighlightRuler.cs" />
     <Compile Include="Highlighting\IHighlightee.cs" />
     <Compile Include="Highlighting\IHighlighter.cs" />
+    <Compile Include="Highlighting\IHighlightRuler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rendering\GlyphTextElement.cs" />
     <Compile Include="Rendering\GlyphProperties.cs" />
@@ -81,8 +86,16 @@
     <Compile Include="Rendering\VisualLineImageCache.cs" />
     <Compile Include="Syntax\ILexicalAnalyzer.cs" />
     <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
+    <Compile Include="Utils\CommonUtilities.cs" />
     <Compile Include="Utils\ValueSequence.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Configs\PScript.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Configs\Plain.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

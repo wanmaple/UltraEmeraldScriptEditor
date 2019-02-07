@@ -10,6 +10,6 @@ namespace EditorSupport.Highlighting
     /// </summary>
     public interface IHighlighter
     {
-        void Highlight(IHighlightee highlightee);
+        void Highlight(IHighlightRuler ruler, IHighlightee highlightee);
     }
 }

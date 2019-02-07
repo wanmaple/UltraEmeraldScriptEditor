@@ -21,5 +21,12 @@ namespace EditorSupport.Highlighting
         FontStyle FontStyle { get; set; }
 
         FontStretch FontStretch { get; set; }
+
+        /// <summary>
+        /// 高亮规则
+        /// </summary>
+        Int32 HighlightRule { get; set; }
+
+        String Content { get; }
     }
 }

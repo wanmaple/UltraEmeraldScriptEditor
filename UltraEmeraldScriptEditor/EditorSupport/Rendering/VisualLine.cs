@@ -3,6 +3,7 @@ using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -25,26 +26,26 @@ namespace EditorSupport.Rendering
 
         public LinkedList<VisualLineElement> Elements { get; private set; }
 
-        public GlyphProperties GlyphProperties { get; private set; }
-
         public ValueSequence CharacterVisualOffsets { get; private set; }
 
         public Double VisualLength
         {
             get { return CharacterVisualOffsets.GetSumValue(CharacterVisualOffsets.Count); }
         }
+
+        public RenderView Owner { get; private set; }
         #endregion
 
         #region Constructor
-        public VisualLine(TextDocument doc, DocumentLine line, GlyphProperties glyphProperties)
+        public VisualLine(RenderView owner, TextDocument doc, DocumentLine line)
         {
             Document = doc ?? throw new ArgumentNullException("doc");
             Line = line ?? throw new ArgumentNullException("line");
-            GlyphProperties = glyphProperties ?? throw new ArgumentNullException("glyphProperties");
+            Owner = owner ?? throw new ArgumentNullException("owner");
             Elements = new LinkedList<VisualLineElement>();
             CharacterVisualOffsets = new ValueSequence();
             Rebuild();
-        } 
+        }
         #endregion
 
         public void Rebuild()
@@ -61,11 +62,12 @@ namespace EditorSupport.Rendering
             {
                 return;
             }
+
             String text = Document.GetLineText(Line);
             foreach (var elem in Elements)
             {
                 GlyphTypeface globalGlyphTypeface = TypefaceGenerator.GetInstance().GenerateGlyphTypeface(new FontFamily("Microsoft YaHei"), elem.FontStyle, elem.FontWeight, elem.FontStretch);
-                GlyphTypeface glyphTypeface = TypefaceGenerator.GetInstance().GenerateGlyphTypeface(GlyphProperties.FontFamily, elem.FontStyle, elem.FontWeight, elem.FontStretch);
+                GlyphTypeface glyphTypeface = TypefaceGenerator.GetInstance().GenerateGlyphTypeface(Owner.GlyphOption.FontFamily, elem.FontStyle, elem.FontWeight, elem.FontStretch);
                 for (int i = 0; i < elem.Length; i++)
                 {
                     Char ch = text[elem.RelativeOffset + i];
@@ -74,12 +76,12 @@ namespace EditorSupport.Rendering
                     if (glyphTypeface.CharacterToGlyphMap.ContainsKey(ch))
                     {
                         indice = glyphTypeface.CharacterToGlyphMap[ch];
-                        width = glyphTypeface.AdvanceWidths[indice] * GlyphProperties.FontSize;
+                        width = glyphTypeface.AdvanceWidths[indice] * Owner.GlyphOption.FontSize;
                     }
                     else
                     {
                         indice = globalGlyphTypeface.CharacterToGlyphMap[ch];
-                        width = globalGlyphTypeface.AdvanceWidths[indice] * GlyphProperties.FontSize;
+                        width = globalGlyphTypeface.AdvanceWidths[indice] * Owner.GlyphOption.FontSize;
                     }
                     CharacterVisualOffsets.Add(width);
                 }
@@ -94,43 +96,20 @@ namespace EditorSupport.Rendering
                 return;
             }
             String text = Document.GetLineText(Line);
-            Int32 startIdx = 0;
-            Boolean spaceAtFirst = true;
-            GlyphTextElement elem = null;
-            String content = null;
-            for (int i = 0; i < text.Length; ++i)
+            using (var sr = new StringReader(text))
             {
-                Char ch = text[i];
-                if (spaceAtFirst && ch == ' ')
+                Owner.HighlightRuler.SplitText(sr, (offset, length) =>
                 {
-                    continue;
-                }
-                else if (spaceAtFirst && ch != ' ')
-                {
-                    spaceAtFirst = false;
-                    continue;
-                }
-                else if (ch == ' ')
-                {
-                    Int32 relativeIdx = startIdx;
-                    Int32 length = i - startIdx;
-                    content = text.Substring(startIdx, length);
-                    elem = new GlyphTextElement(this, relativeIdx, length, content);
-                    elem.GenerateTypeface(GlyphProperties.FontFamily, GlyphProperties.FontSize, GlyphProperties.LineHeight);
+                    // -1表示直接读到结尾
+                    if (length == -1)
+                    {
+                        length = text.Length - offset;
+                    }
+                    var elem = new GlyphTextElement(this, offset, length, text.Substring(offset, length));
+                    Owner.Highlighter.Highlight(Owner.HighlightRuler, elem);
+                    elem.GenerateTypeface(Owner.GlyphOption.FontFamily, Owner.GlyphOption.FontSize, Owner.GlyphOption.LineHeight);
                     Elements.AddLast(elem);
-                    startIdx = i;
-                    spaceAtFirst = true;
-                }
-            }
-            {
-                Int32 relativeIdx = startIdx;
-                Int32 length = text.Length - startIdx;
-                content = text.Substring(relativeIdx, length);
-                elem = new GlyphTextElement(this, relativeIdx, length, content);
-                elem.ForegroundBrush = Brushes.Blue;
-                elem.FontWeight = FontWeights.Bold;
-                elem.GenerateTypeface(GlyphProperties.FontFamily, GlyphProperties.FontSize, GlyphProperties.LineHeight);
-                Elements.AddLast(elem);
+                });
             }
         }
 
@@ -168,11 +147,12 @@ namespace EditorSupport.Rendering
             }
             cachedImg.Freeze();
             Point startPos = renderContext.Offset;
+            startPos.Y += (Owner.GlyphOption.LineHeight - cachedImg.Height) * 0.5;
             drawingContext.DrawImage(cachedImg, new Rect(startPos, new Size(cachedImg.Width, cachedImg.Height)));
             //for (int i = 0; i <= CharacterVisualOffsets.Count; i++)
             //{
-            //    var pos = new Point(startPos.X + CharacterVisualOffsets.GetSumValue(i) - 1, startPos.Y);
-            //    drawingContext.DrawRectangle(Brushes.Red, null, new Rect(pos, new Size(2, cachedImg.Height)));
+            //    var pos = new Point(renderContext.Offset.X + CharacterVisualOffsets.GetSumValue(i) - 1, renderContext.Offset.Y);
+            //    drawingContext.DrawRectangle(Brushes.Red, null, new Rect(pos, new Size(2, GlyphProperties.LineHeight)));
             //}
         }
         #endregion

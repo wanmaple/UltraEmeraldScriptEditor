@@ -53,6 +53,8 @@ namespace EditorSupport.Rendering
         }
 
         #region Overrides
+        public override string Content => _content;
+
         public override IEnumerable<Drawing> GenerateDrawings(DrawingContext drawingContext, RenderContext renderContext)
         {
             if (_glyphTypeface == null)

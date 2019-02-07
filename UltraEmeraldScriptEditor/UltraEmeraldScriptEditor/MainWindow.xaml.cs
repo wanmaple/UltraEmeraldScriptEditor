@@ -1,5 +1,9 @@
-﻿using System;
+﻿using EditorSupport.Document;
+using EditorSupport.Utils;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -31,6 +35,22 @@ namespace UltraEmeraldScriptEditor
 
         private void OpenScript(Object sender, ExecutedRoutedEventArgs e)
         {
+            var ofd = new OpenFileDialog();
+            ofd.RestoreDirectory = true;
+            ofd.Filter = "PScript Files|*.s";
+            if (ofd.ShowDialog().Value)
+            {
+                String filePath = ofd.FileName;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    using (var sr = new StreamReader(fs))
+                    {
+                        String text = CommonUtilities.NormalizeText(sr);
+                        var doc = new TextDocument(text);
+                        editor.Document = doc;
+                    }
+                }
+            }
             e.Handled = true;
         }
 
@@ -53,12 +73,6 @@ namespace UltraEmeraldScriptEditor
         private void OpenSettings(Object sender, ExecutedRoutedEventArgs e)
         {
             e.Handled = true;
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            var doc = new EditorSupport.Document.TextDocument("I'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\nI'm Maple万鑫。How are u.  \r\n这is什么English\r\nFFF zxEfすみません。Jap能行？\r\n");
-            editor.Document = doc;
         }
     }
 }
