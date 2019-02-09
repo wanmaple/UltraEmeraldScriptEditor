@@ -65,7 +65,7 @@
     <Compile Include="Highlighting\CommonHighlighter.cs" />
     <Compile Include="Highlighting\HighlightingFactory.cs" />
     <Compile Include="Highlighting\HighlightStyle.cs" />
-    <Compile Include="Highlighting\KeywordHighlightRuler.cs" />
+    <Compile Include="Highlighting\RegexHighlightRuler.cs" />
     <Compile Include="Highlighting\IHighlightee.cs" />
     <Compile Include="Highlighting\IHighlighter.cs" />
     <Compile Include="Highlighting\IHighlightRuler.cs" />
@@ -91,10 +91,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Configs\PScript.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Configs\Plain.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

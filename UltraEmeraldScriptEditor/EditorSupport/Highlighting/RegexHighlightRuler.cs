@@ -3,24 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace EditorSupport.Highlighting
 {
     /// <summary>
     /// 使用关键字比对作为规则的制定器。
     /// </summary>
-    public sealed class KeywordHighlightRuler : IHighlightRuler
+    public sealed class RegexHighlightRuler : IHighlightRuler
     {
-        public Dictionary<String, Int32> KeywordMap => _keywordMap;
+        public Dictionary<String, Int32> RegexMap => _regexMap;
         public Dictionary<String, Int32> PrefixMap => _prefixMap;
-        public Dictionary<String, Int32> StartMap => _startMap;
         public List<Char> Splitters => _splitters;
 
-        public KeywordHighlightRuler()
+        public RegexHighlightRuler()
         {
-            _keywordMap = new Dictionary<string, int>();
             _prefixMap = new Dictionary<string, int>();
-            _startMap = new Dictionary<string, int>();
+            _regexMap = new Dictionary<string, int>();
             _splitters = new List<char>();
         }
 
@@ -28,30 +27,24 @@ namespace EditorSupport.Highlighting
         public void FormulateRule(IHighlightee highlightee)
         {
             String text = highlightee.Content.Trim();
-            if (_keywordMap.ContainsKey(text))
+            foreach (String expression in _regexMap.Keys)
             {
-                highlightee.HighlightRule = _keywordMap[text];
+                Regex reg = new Regex(expression);
+                if (reg.IsMatch(text))
+                {
+                    highlightee.HighlightRule = _regexMap[expression];
+                    return;
+                }
             }
-            else
+            foreach (String prefix in _prefixMap.Keys)
             {
-                foreach (String prefix in _prefixMap.Keys)
+                if (text.StartsWith(prefix))
                 {
-                    if (text.StartsWith(prefix))
-                    {
-                        highlightee.HighlightRule = _prefixMap[prefix];
-                        return;
-                    }
+                    highlightee.HighlightRule = _prefixMap[prefix];
+                    return;
                 }
-                foreach (String prefix in _startMap.Keys)
-                {
-                    if (text.StartsWith(prefix))
-                    {
-                        highlightee.HighlightRule = _startMap[prefix];
-                        return;
-                    }
-                }
-                highlightee.HighlightRule = -1;
             }
+            highlightee.HighlightRule = -1;
         }
 
         public void SplitText(TextReader reader, Action<Int32, Int32> handler)
@@ -103,9 +96,8 @@ namespace EditorSupport.Highlighting
         }
         #endregion
 
-        private Dictionary<String, Int32> _keywordMap;
+        private Dictionary<String, Int32> _regexMap;
         private Dictionary<String, Int32> _prefixMap;
-        private Dictionary<String, Int32> _startMap;
         private List<Char> _splitters;
     }
 }

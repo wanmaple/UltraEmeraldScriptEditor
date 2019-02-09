@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
-  <ruler type="keyword" splitter=" ,">
+  <ruler type="regex" splitter=" ,">
     <!--keyword-->
-    <rule type="match">
-      <keyword>.equ</keyword>
-      <keyword>.macro</keyword>
-      <keyword>.byte</keyword>
-      <keyword>.word</keyword>
-      <keyword>.hword</keyword>
-      <keyword>.endm</keyword>
+    <rule type="regex">
+      <keyword>^.equ$</keyword>
+      <keyword>^.macro$</keyword>
+      <keyword>^.byte$</keyword>
+      <keyword>^.word$</keyword>
+      <keyword>^.hword$</keyword>
+      <keyword>^.endm$</keyword>
     </rule>
     <!--comment-->
     <rule type="prefix">
@@ -16,17 +16,9 @@
       <keyword>//</keyword>
     </rule>
     <!--number-->
-    <rule type="start">
-      <keyword>0</keyword>
-      <keyword>1</keyword>
-      <keyword>2</keyword>
-      <keyword>3</keyword>
-      <keyword>4</keyword>
-      <keyword>5</keyword>
-      <keyword>6</keyword>
-      <keyword>7</keyword>
-      <keyword>8</keyword>
-      <keyword>9</keyword>
+    <rule type="regex">
+      <keyword>^[-+]?\d+(\.\d+)?$</keyword>
+      <keyword>^0[xX][0-9a-fA-F]+$</keyword>
     </rule>
   </ruler>
   <styles>

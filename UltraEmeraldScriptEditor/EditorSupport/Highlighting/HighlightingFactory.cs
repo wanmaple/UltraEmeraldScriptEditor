@@ -189,13 +189,13 @@ namespace EditorSupport.Highlighting
 
         private void RegisterInnerRulerCreators()
         {
-            RegisterRulerCreator("keyword", KeywordRulerCreator);
+            RegisterRulerCreator("regex", RegexRulerCreator);
         }
 
         #region Ruler creators
-        private IHighlightRuler KeywordRulerCreator(XmlNode rulerNode)
+        private IHighlightRuler RegexRulerCreator(XmlNode rulerNode)
         {
-            var ret = new KeywordHighlightRuler();
+            var ret = new RegexHighlightRuler();
             XmlNode splitterAttrNode = rulerNode.Attributes["splitter"];
             if (splitterAttrNode != null)
             {
@@ -212,14 +212,11 @@ namespace EditorSupport.Highlighting
                     {
                         switch (typeAttrNode.Value)
                         {
-                            case "match":
-                                map = ret.KeywordMap;
+                            case "regex":
+                                map = ret.RegexMap;
                                 break;
                             case "prefix":
                                 map = ret.PrefixMap;
-                                break;
-                            case "start":
-                                map = ret.StartMap;
                                 break;
                             default:
                                 break;
@@ -227,7 +224,7 @@ namespace EditorSupport.Highlighting
                     }
                     else
                     {
-                        map = ret.KeywordMap;
+                        map = ret.RegexMap;
                     }
                     foreach (XmlNode grandchild in child.ChildNodes)
                     {
