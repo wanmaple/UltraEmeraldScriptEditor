@@ -13,13 +13,14 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using EditorSupport.Document;
 using EditorSupport.Highlighting;
+using EditorSupport.Utils;
 
 namespace EditorSupport.Rendering
 {
     /// <summary>
     /// 编辑器的渲染逻辑都在这里
     /// </summary>
-    public sealed class RenderView : FrameworkElement, IEditorComponent
+    public sealed class RenderView : FrameworkElement, IEditorComponent, IScrollInfo
     {
         #region Properties
         public static readonly DependencyProperty GlyphOptionProperty =
@@ -76,6 +77,9 @@ namespace EditorSupport.Rendering
 
         protected override Size MeasureOverride(Size availableSize)
         {
+            _scrollViewport = availableSize;
+
+            // 所有VisualLine的逻辑区域
             Double maxLineWidth = 0.0;
             foreach (VisualLine line in _allVisualLines)
             {
@@ -88,13 +92,35 @@ namespace EditorSupport.Rendering
             Double docHeight = _allVisualLines.Count * GlyphOption.LineHeight;
             Double desireWidth = maxLineWidth + Padding.Left + Padding.Right;
             Double desireHeight = docHeight + Padding.Top + Padding.Bottom;
+            Size desireSize = new Size(desireWidth, desireHeight);
+            // 找出所有需要绘制的VisualLine
+            _lineRenderer.VisibleLines.Clear();
+            Double relativeOffsetY = VerticalOffset;
+            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight)), 0);
+            Int32 endIdx = Math.Min(Convert.ToInt32(Math.Ceiling((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
+            for (int i = startIdx; i < endIdx; i++)
+            {
+                _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
+            }
+            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -(VerticalOffset % GlyphOption.LineHeight));
 
-            return new Size(desireWidth, desireHeight);
+            return desireSize;
         }
 
         protected override Size ArrangeOverride(Size finalSize)
         {
             ResetVisualRegion(finalSize);
+            // 滚动区域相关逻辑
+            _scrollExtent = finalSize;
+            _canHorizontallyScroll = ExtentWidth > ViewportWidth;
+            _canVerticallyScroll = ExtentHeight > ViewportHeight;
+            _scrollOffset.X = CommonUtilities.Clamp(_scrollOffset.X, 0.0, ExtentWidth - ViewportWidth);
+            _scrollOffset.Y = CommonUtilities.Clamp(_scrollOffset.Y, 0.0, ExtentHeight - ViewportHeight);
+            if (ScrollOwner != null)
+            {
+                ScrollOwner.InvalidateScrollInfo();
+            }
+
             base.InvalidateVisual();
 
             return base.ArrangeOverride(finalSize);
@@ -114,7 +140,7 @@ namespace EditorSupport.Rendering
         {
             _renderContext.PrepareRendering();
 
-            _renderContext.PushTranslation(Padding.Left, Padding.Top);
+            _renderContext.PushTranslation(Padding.Left + _lineRenderer.RenderOffset.X, Padding.Top + _lineRenderer.RenderOffset.Y);
             _lineRenderer.Render(drawingContext, _renderContext);
 
             _renderContext.FinishRendering();
@@ -217,6 +243,118 @@ namespace EditorSupport.Rendering
         private List<BackgroundRenderer> _bgRenderers;
         private VisualLineRenderer _lineRenderer;
         private ObservableCollection<VisualLine> _allVisualLines;
+        #endregion
+
+        #region IScrollInfo
+        public bool CanVerticallyScroll { get => _canVerticallyScroll; set => _canVerticallyScroll = value; }
+        public bool CanHorizontallyScroll { get => _canHorizontallyScroll; set => _canHorizontallyScroll = value; }
+
+        public double ExtentWidth => _scrollExtent.Width;
+
+        public double ExtentHeight => _scrollExtent.Height;
+
+        public double ViewportWidth => _scrollViewport.Width;
+
+        public double ViewportHeight => _scrollViewport.Height;
+
+        public double HorizontalOffset => _scrollOffset.X;
+
+        public double VerticalOffset => _scrollOffset.Y;
+
+        public ScrollViewer ScrollOwner { get => _scrollOwner; set => _scrollOwner = value; }
+
+        public void LineDown()
+        {
+            SetVerticalOffset(VerticalOffset + GlyphOption.LineHeight);
+        }
+
+        public void LineLeft()
+        {
+            SetHorizontalOffset(HorizontalOffset - GlyphOption.LineHeight);
+        }
+
+        public void LineRight()
+        {
+            SetHorizontalOffset(HorizontalOffset + GlyphOption.LineHeight);
+        }
+
+        public void LineUp()
+        {
+            SetVerticalOffset(VerticalOffset - GlyphOption.LineHeight);
+        }
+
+        public Rect MakeVisible(Visual visual, Rect rectangle)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void MouseWheelDown()
+        {
+            SetVerticalOffset(VerticalOffset + GlyphOption.LineHeight * 3);
+        }
+
+        public void MouseWheelLeft()
+        {
+            SetHorizontalOffset(HorizontalOffset - GlyphOption.LineHeight * 3);
+        }
+
+        public void MouseWheelRight()
+        {
+            SetHorizontalOffset(HorizontalOffset + GlyphOption.LineHeight * 3);
+        }
+
+        public void MouseWheelUp()
+        {
+            SetVerticalOffset(VerticalOffset - GlyphOption.LineHeight * 3);
+        }
+
+        public void PageDown()
+        {
+            SetVerticalOffset(VerticalOffset + _scrollViewport.Height);
+        }
+
+        public void PageLeft()
+        {
+            SetHorizontalOffset(HorizontalOffset - _scrollViewport.Height);
+        }
+
+        public void PageRight()
+        {
+            SetHorizontalOffset(HorizontalOffset - _scrollViewport.Height);
+        }
+
+        public void PageUp()
+        {
+            SetVerticalOffset(VerticalOffset - _scrollViewport.Height);
+
+        }
+
+        public void SetHorizontalOffset(double offset)
+        {
+            offset = CommonUtilities.Clamp(offset, 0, ExtentWidth - ViewportWidth);
+            if (offset != _scrollOffset.X)
+            {
+                _scrollOffset.X = offset;
+                InvalidateMeasure(DispatcherPriority.Normal);
+            }
+        }
+
+        public void SetVerticalOffset(double offset)
+        {
+            offset = CommonUtilities.Clamp(offset, 0, ExtentHeight - ViewportHeight);
+            if (offset != _scrollOffset.Y)
+            {
+                _scrollOffset.Y = offset;
+                InvalidateMeasure(DispatcherPriority.Normal);
+            }
+        }
+
+        private ScrollViewer _scrollOwner;
+        private Size _scrollViewport;
+        private Size _scrollExtent;
+        private Point _scrollOffset;
+        private Boolean _canVerticallyScroll;
+        private Boolean _canHorizontallyScroll;
         #endregion
 
         #region PropertyChange EventHandlers

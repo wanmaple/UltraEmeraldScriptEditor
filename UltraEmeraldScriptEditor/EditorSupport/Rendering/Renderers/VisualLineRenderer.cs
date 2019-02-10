@@ -11,6 +11,7 @@ namespace EditorSupport.Rendering
     public class VisualLineRenderer : IRenderable
     {
         public LinkedList<VisualLine> VisibleLines { get; private set; }
+        public Point RenderOffset { get => _renderOffset; set => _renderOffset = value; }
 
         public VisualLineRenderer(RenderView editor)
         {
@@ -25,7 +26,10 @@ namespace EditorSupport.Rendering
             {
                 foreach (var visualLine in VisibleLines)
                 {
-                    visualLine.Render(drawingContext, renderContext);
+                    if (visualLine.VisualLength + _renderOffset.X > 0)
+                    {
+                        visualLine.Render(drawingContext, renderContext);
+                    }
                     renderContext.PushTranslation(0.0, _editor.GlyphOption.LineHeight);
                 }
             }
@@ -33,5 +37,6 @@ namespace EditorSupport.Rendering
         #endregion
 
         private RenderView _editor;
+        private Point _renderOffset;
     }
 }

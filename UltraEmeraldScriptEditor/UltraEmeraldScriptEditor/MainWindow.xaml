@@ -58,10 +58,10 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <editor:RenderView x:Name="editor" Syntax="PScript">
                 <editor:RenderView.BackgroundRenderers>
-                    <editor:BrushBackgroundRenderer Brush="White" />
+                    <editor:BrushBackgroundRenderer Brush="Yellow" />
                 </editor:RenderView.BackgroundRenderers>
                 <editor:RenderView.GlyphOption>
                     <editor:GlyphProperties FontFamily="Consolas" />

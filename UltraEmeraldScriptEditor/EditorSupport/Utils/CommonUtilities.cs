@@ -9,6 +9,11 @@ namespace EditorSupport.Utils
 {
     public static class CommonUtilities
     {
+        public static Double Clamp(Double value, Double min, Double max)
+        {
+            return Math.Max(min, Math.Min(value, max));
+        }
+
         /// <summary>
         /// 将十六进制字符串转成Color
         /// </summary>
@@ -32,6 +37,14 @@ namespace EditorSupport.Utils
             return Color.FromArgb(argb[0], argb[1], argb[2], argb[3]);
         }
 
+        /// <summary>
+        /// 将文本格式化。
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// \t替换为空格，\n和\r替换为\r\n
+        /// </remarks>
         public static String NormalizeText(TextReader reader)
         {
             StringBuilder sb = new StringBuilder();
