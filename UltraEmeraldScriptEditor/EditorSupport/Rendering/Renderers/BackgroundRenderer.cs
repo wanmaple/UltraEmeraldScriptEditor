@@ -14,6 +14,7 @@ namespace EditorSupport.Rendering
         CENTER,
     }
 
+    [Obsolete("BackgroundRenderer works for wrong Z-Index.")]
     public abstract class BackgroundRenderer : DependencyObject, IRenderable
     {
         #region Properties

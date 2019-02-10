@@ -12,6 +12,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
 using EditorSupport.Document;
+using EditorSupport.Editing;
 using EditorSupport.Highlighting;
 using EditorSupport.Utils;
 
@@ -20,9 +21,11 @@ namespace EditorSupport.Rendering
     /// <summary>
     /// 编辑器的渲染逻辑都在这里
     /// </summary>
-    public sealed class RenderView : FrameworkElement, IEditorComponent, IScrollInfo
+    public sealed class RenderView : FrameworkElement, IScrollInfo, IEditInfo
     {
         #region Properties
+        public static readonly DependencyProperty DocumentProperty =
+            DependencyProperty.Register("Document", typeof(TextDocument), typeof(RenderView), new PropertyMetadata(OnDocumentChanged));
         public static readonly DependencyProperty GlyphOptionProperty =
     DependencyProperty.Register("GlyphOption", typeof(GlyphProperties), typeof(RenderView), new PropertyMetadata(OnGlyphOptionChanged));
         public static readonly DependencyProperty PaddingProperty =
@@ -30,6 +33,11 @@ namespace EditorSupport.Rendering
         public static readonly DependencyProperty SyntaxProperty =
             DependencyProperty.Register("Syntax", typeof(String), typeof(RenderView), new PropertyMetadata("Plain", OnSyntaxChanged));
 
+        public TextDocument Document
+        {
+            get { return (TextDocument)GetValue(DocumentProperty); }
+            set { SetValue(DocumentProperty, value); }
+        }
         public GlyphProperties GlyphOption
         {
             get { return (GlyphProperties)GetValue(GlyphOptionProperty); }
@@ -71,13 +79,25 @@ namespace EditorSupport.Rendering
         #region Overrides
         protected override void OnRender(DrawingContext drawingContext)
         {
-            RenderBackground(drawingContext);
+            //RenderBackground(drawingContext);
             RenderLines(drawingContext);
         }
 
         protected override Size MeasureOverride(Size availableSize)
         {
+            ResetVisualRegion(availableSize);
             _scrollViewport = availableSize;
+
+            // 找出所有需要绘制的VisualLine
+            _lineRenderer.VisibleLines.Clear();
+            Double relativeOffsetY = VerticalOffset;
+            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight)), 0);
+            Int32 endIdx = Math.Min(Convert.ToInt32(Math.Ceiling((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
+            for (int i = startIdx; i <= endIdx; i++)
+            {
+                _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
+            }
+            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -(VerticalOffset % GlyphOption.LineHeight));
 
             // 所有VisualLine的逻辑区域
             Double maxLineWidth = 0.0;
@@ -93,23 +113,12 @@ namespace EditorSupport.Rendering
             Double desireWidth = maxLineWidth + Padding.Left + Padding.Right;
             Double desireHeight = docHeight + Padding.Top + Padding.Bottom;
             Size desireSize = new Size(desireWidth, desireHeight);
-            // 找出所有需要绘制的VisualLine
-            _lineRenderer.VisibleLines.Clear();
-            Double relativeOffsetY = VerticalOffset;
-            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight)), 0);
-            Int32 endIdx = Math.Min(Convert.ToInt32(Math.Ceiling((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
-            for (int i = startIdx; i < endIdx; i++)
-            {
-                _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
-            }
-            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -(VerticalOffset % GlyphOption.LineHeight));
 
             return desireSize;
         }
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            ResetVisualRegion(finalSize);
             // 滚动区域相关逻辑
             _scrollExtent = finalSize;
             _canHorizontallyScroll = ExtentWidth > ViewportWidth;
@@ -128,6 +137,7 @@ namespace EditorSupport.Rendering
         #endregion
 
         #region Rendering
+        [Obsolete("Background renderers are already obsoleted.")]
         private void RenderBackground(DrawingContext drawingContext)
         {
             foreach (var renderer in BackgroundRenderers)
@@ -145,18 +155,10 @@ namespace EditorSupport.Rendering
 
             _renderContext.FinishRendering();
         }
-        #endregion
 
-        #region IEditorComponent
-        public event EventHandler DocumentChanged;
-
-        public static readonly DependencyProperty DocumentProperty =
-            DependencyProperty.Register("Document", typeof(TextDocument), typeof(RenderView), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
-        public TextDocument Document
-        {
-            get { return (TextDocument)GetValue(DocumentProperty); }
-            set { SetValue(DocumentProperty, value); }
-        }
+        private RenderContext _renderContext;
+        private List<BackgroundRenderer> _bgRenderers;
+        private VisualLineRenderer _lineRenderer;
         #endregion
 
         #region Highlighting control
@@ -178,7 +180,6 @@ namespace EditorSupport.Rendering
                 DocumentLine line = Document.GetLineByNumber(lineNumber);
                 VisualLine visualLine = new VisualLine(this, Document, line);
                 _allVisualLines.Add(visualLine);
-                _lineRenderer.VisibleLines.AddLast(visualLine);
                 ++lineNumber;
             }
         }
@@ -239,9 +240,6 @@ namespace EditorSupport.Rendering
 
         private DispatcherOperation _measureOperation;
 
-        private RenderContext _renderContext;
-        private List<BackgroundRenderer> _bgRenderers;
-        private VisualLineRenderer _lineRenderer;
         private ObservableCollection<VisualLine> _allVisualLines;
         #endregion
 
@@ -357,18 +355,99 @@ namespace EditorSupport.Rendering
         private Boolean _canHorizontallyScroll;
         #endregion
 
+        #region IEditInfo
+        public void ChangeDocument(TextDocument doc)
+        {
+            if (Document != doc)
+            {
+                Document = doc;
+            }
+        }
+
+        public void MeasureCaretRendering(Caret caret)
+        {
+            if (_lineRenderer.VisibleLines.Count <= 0)
+            {
+                caret.Visible = false;
+                return;
+            }
+            caret.CaretSize = new Size(2.0, GlyphOption.LineHeight);
+            Point pos = LocationToPosition(caret.Location);
+            if (pos.X >= 0 && pos.Y >= 0)
+            {
+                caret.Visible = true;
+                caret.RenderPosition = new Point(pos.X + Padding.Left, pos.Y + Padding.Top);
+            }
+            else
+            {
+                caret.Visible = false;
+            }
+        }
+
+        public void MeasureCaretLocation(Caret caret, Point positionToView)
+        {
+            caret.Location = PositionToLocation(positionToView);
+        }
+
+        private Point LocationToPosition(TextLocation location)
+        {
+            Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
+            Int32 renderLastLineNum = _lineRenderer.VisibleLines.Last.Value.Line.LineNumber;
+            if (location.Line >= renderFirstLineNum && location.Line <= renderLastLineNum)
+            {
+                Int32 lineIdx = location.Line - renderFirstLineNum;
+                VisualLine caretLine = _lineRenderer.VisibleLines.ElementAt(lineIdx);
+                Double caretVisualOffset = caretLine.CharacterVisualOffsets.GetSumValue(location.Column - 1);
+                Double caretPosX = caretVisualOffset + _lineRenderer.RenderOffset.X;
+                if (caretPosX < 0)
+                {
+                    return new Point(-1.0, -1.0);
+                }
+                Double caretPosY = _lineRenderer.RenderOffset.Y + lineIdx * GlyphOption.LineHeight;
+
+                return new Point(caretPosX, caretPosY);
+            }
+            return new Point(-1.0, -1.0);
+        }
+
+        private TextLocation PositionToLocation(Point position)
+        {
+            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
+            Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
+            Int32 renderLastLineNum = _lineRenderer.VisibleLines.Last.Value.Line.LineNumber;
+            Double startY = _lineRenderer.RenderOffset.Y + Padding.Top;
+            Double endY = startY + _lineRenderer.VisibleLines.Count * GlyphOption.LineHeight;
+            Int32 line = CommonUtilities.Clamp(Convert.ToInt32(Math.Floor((position.Y - startY) / GlyphOption.LineHeight)) + renderFirstLineNum, renderFirstLineNum, renderLastLineNum);
+            VisualLine visualLine = _lineRenderer.VisibleLines.ElementAt(line - renderFirstLineNum);
+            Double visualOffset = Padding.Left;
+            Int32 column = 1;
+            while (position.X >= visualOffset && column <= visualLine.CharacterVisualOffsets.Count)
+            {
+                Double chLen = visualLine.CharacterVisualOffsets[column - 1];
+                if (position.X <= visualOffset + chLen * 0.5)
+                {
+                    break;
+                }
+                visualOffset += chLen;
+                ++column;
+            }
+
+            return new TextLocation(line, column);
+        }
+        #endregion
+
         #region PropertyChange EventHandlers
         private static void OnDocumentChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         {
             RenderView editor = dp as RenderView;
+            if (e.OldValue != null)
+            {
+                VisualLineImageCache.GetInstance().RemoveCache(e.OldValue as TextDocument);
+            }
             editor.OnDocumentChanged();
         }
         private void OnDocumentChanged()
         {
-            if (DocumentChanged != null)
-            {
-                DocumentChanged(this, EventArgs.Empty);
-            }
             RebuildVisualLines();
             Redraw();
         }
@@ -413,22 +492,5 @@ namespace EditorSupport.Rendering
             Redraw();
         }
         #endregion
-
-        //private static void OnBackgroundRenderersChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
-        //{
-        //    if (e.OldValue != null)
-        //    {
-        //        var handler = (INotifyCollectionChanged)e.OldValue;
-        //        handler.CollectionChanged -= OnBackgroundRendererCollectionChanged;
-        //    }
-        //    if (e.NewValue != null)
-        //    {
-        //        var handler = (INotifyCollectionChanged)e.NewValue;
-        //        handler.CollectionChanged += OnBackgroundRendererCollectionChanged;
-        //    }
-        //}
-        //private static void OnBackgroundRendererCollectionChanged(Object sender, NotifyCollectionChangedEventArgs e)
-        //{
-        //}
     }
 }

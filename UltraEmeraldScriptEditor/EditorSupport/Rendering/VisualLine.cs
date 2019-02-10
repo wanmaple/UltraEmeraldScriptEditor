@@ -48,6 +48,7 @@ namespace EditorSupport.Rendering
         }
         #endregion
 
+        #region Rebuilding
         public void Rebuild()
         {
             RebuildElements();
@@ -111,7 +112,8 @@ namespace EditorSupport.Rendering
                     Elements.AddLast(elem);
                 });
             }
-        }
+        } 
+        #endregion
 
         #region IDisposable
         public void Dispose()
@@ -149,11 +151,6 @@ namespace EditorSupport.Rendering
             Point startPos = renderContext.Offset;
             startPos.Y += (Owner.GlyphOption.LineHeight - cachedImg.Height) * 0.5;
             drawingContext.DrawImage(cachedImg, new Rect(startPos, new Size(cachedImg.Width, cachedImg.Height)));
-            //for (int i = 0; i <= CharacterVisualOffsets.Count; i++)
-            //{
-            //    var pos = new Point(renderContext.Offset.X + CharacterVisualOffsets.GetSumValue(i) - 1, renderContext.Offset.Y);
-            //    drawingContext.DrawRectangle(Brushes.Red, null, new Rect(pos, new Size(2, GlyphProperties.LineHeight)));
-            //}
         }
         #endregion
     }

@@ -8,6 +8,9 @@ using System.Windows.Media;
 
 namespace EditorSupport.Rendering
 {
+    /// <summary>
+    /// VisualLine绘制器。
+    /// </summary>
     public class VisualLineRenderer : IRenderable
     {
         public LinkedList<VisualLine> VisibleLines { get; private set; }

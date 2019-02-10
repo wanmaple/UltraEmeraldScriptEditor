@@ -62,6 +62,9 @@
     <Compile Include="Document\TextAnchorTree.cs" />
     <Compile Include="Document\TextDocument.cs" />
     <Compile Include="Document\TextLocation.cs" />
+    <Compile Include="Editing\Caret.cs" />
+    <Compile Include="Editing\EditView.cs" />
+    <Compile Include="Editing\IEditInfo.cs" />
     <Compile Include="Highlighting\CommonHighlighter.cs" />
     <Compile Include="Highlighting\HighlightingFactory.cs" />
     <Compile Include="Highlighting\HighlightStyle.cs" />
@@ -78,7 +81,6 @@
     <Compile Include="Rendering\RenderView.cs" />
     <Compile Include="Rendering\Renderers\ImageBackgroundRenderer.cs" />
     <Compile Include="Rendering\Renderers\IRenderable.cs" />
-    <Compile Include="Rendering\IEditorComponent.cs" />
     <Compile Include="Rendering\Renderers\VisualLineRenderer.cs" />
     <Compile Include="Rendering\TypefaceGenerator.cs" />
     <Compile Include="Rendering\VisualLine.cs" />
@@ -97,5 +99,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -7,6 +7,7 @@ using System.Windows.Media;
 
 namespace EditorSupport.Rendering
 {
+    [Obsolete("BackgroundRenderers are obsoleted.")]
     public class BrushBackgroundRenderer : BackgroundRenderer
     {
         public static readonly DependencyProperty BrushProperty =
@@ -26,6 +27,7 @@ namespace EditorSupport.Rendering
         {
             if (Brush != null)
             {
+                Brush.Freeze();
                 switch (RenderType)
                 {
                     case RenderType.DEFAULT:

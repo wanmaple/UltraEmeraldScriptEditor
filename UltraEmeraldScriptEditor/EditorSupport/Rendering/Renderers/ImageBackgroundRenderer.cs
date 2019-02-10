@@ -7,6 +7,7 @@ using System.Windows.Media;
 
 namespace EditorSupport.Rendering
 {
+    [Obsolete("BackgroundRenderers are obsoleted.")]
     public class ImageBackgroundRenderer : BackgroundRenderer
     {
         public static readonly DependencyProperty ImageSourceProperty =

@@ -9,6 +9,11 @@ namespace EditorSupport.Utils
 {
     public static class CommonUtilities
     {
+        public static Int32 Clamp(Int32 value, Int32 min, Int32 max)
+        {
+            return Math.Max(min, Math.Min(value, max));
+        }
+
         public static Double Clamp(Double value, Double min, Double max)
         {
             return Math.Max(min, Math.Min(value, max));
