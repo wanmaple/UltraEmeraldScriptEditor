@@ -15,10 +15,11 @@ namespace EditorSupport.Editing
     /// <summary>
     /// 编辑框。给Content提供编辑支持，Content需要实现<see cref="IEditInfo"/>
     /// </summary>
-    public sealed class EditView : ScrollViewer
+    public sealed class EditView : ScrollViewer, IWeakEventListener
     {
+        #region Properties
         public static readonly DependencyProperty DocumentProperty =
-            DependencyProperty.Register("Document", typeof(TextDocument), typeof(EditView), new PropertyMetadata(OnDocumentChanged));
+    DependencyProperty.Register("Document", typeof(TextDocument), typeof(EditView), new PropertyMetadata(OnDocumentChanged));
         public static readonly DependencyProperty CanContentEditProperty =
             DependencyProperty.Register("CanContentEdit", typeof(Boolean), typeof(EditView), new PropertyMetadata(false));
 
@@ -33,12 +34,41 @@ namespace EditorSupport.Editing
             set { SetValue(CanContentEditProperty, value); }
         }
 
+        public Caret Caret => _caret; 
+
+        public IInputHandler ActiveInputHandler
+        {
+            get => _activeInputHandler;
+            set
+            {
+                if (value != null && value.Owner != this)
+                {
+                    throw new InvalidOperationException("The handler's owner is not the attaching view.");
+                }
+                if (_activeInputHandler != value)
+                {
+                    if (_activeInputHandler != null)
+                    {
+                        _activeInputHandler.Detach();
+                    }
+                    _activeInputHandler = value;
+                    if (_activeInputHandler != null)
+                    {
+                        _activeInputHandler.Attach();
+                    }
+                }
+            }
+        }
+        #endregion
+
         #region Constructor
         public EditView()
         {
             _renderContext = new RenderContext();
             _caret = new Caret(this);
             Cursor = Cursors.IBeam;
+
+            ActiveInputHandler = EditingCommandHelper.CreateHandler(this);
         } 
         #endregion
 
@@ -85,6 +115,7 @@ namespace EditorSupport.Editing
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
+            base.OnMouseDown(e);
             if (Content != null && Content is IInputElement)
             {
                 Point pos = e.GetPosition(Content as IInputElement);
@@ -97,6 +128,16 @@ namespace EditorSupport.Editing
             }
         }
 
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        {
+            base.OnMouseDoubleClick(e);
+        }
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
@@ -107,39 +148,107 @@ namespace EditorSupport.Editing
             base.OnPreviewKeyUp(e);
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected override void OnTextInput(TextCompositionEventArgs e)
         {
-            base.OnKeyDown(e);
-        }
-
-        protected override void OnKeyUp(KeyEventArgs e)
-        {
-            base.OnKeyUp(e);
+            base.OnTextInput(e);
+            Document.Insert(_caret.DocumentOffset, e.Text);
+            _caret.MoveRight(e.Text.Length);
+            Redraw();
         }
         #endregion
+
+        public void InsertText(String content)
+        {
+
+        }
 
         public void Redraw()
         {
             base.InvalidateVisual();
         }
 
+        #region IWeakEventListener
+        public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs e)
+        {
+            if (managerType == typeof(TextDocumentWeakEventManager.Changing))
+            {
+                OnDocumentChanging(sender as TextDocument, e);
+                return true;
+            }
+            else if (managerType == typeof(TextDocumentWeakEventManager.Changed))
+            {
+                OnDocumentChanged(sender as TextDocument, e as DocumentUpdateEventArgs);
+                return true;
+            }
+            else if (managerType == typeof(TextDocumentWeakEventManager.UpdateStarted))
+            {
+                OnDocumentUpdateStarted(sender as TextDocument, e);
+                return true;
+            }
+            else if (managerType == typeof(TextDocumentWeakEventManager.UpdateFinished))
+            {
+                OnDocumentUpdateFinished(sender as TextDocument, e as DocumentUpdateEventArgs);
+                return true;
+            }
+            return false;
+        }
+        #endregion
+
+        #region Weak events
+        private void OnDocumentChanging(TextDocument document, EventArgs e)
+        {
+
+        }
+
+        private void OnDocumentChanged(TextDocument document, DocumentUpdateEventArgs e)
+        {
+
+        }
+
+        private void OnDocumentUpdateStarted(TextDocument document, EventArgs e)
+        {
+
+        }
+
+        private void OnDocumentUpdateFinished(TextDocument document, DocumentUpdateEventArgs e)
+        {
+
+        }
+        #endregion
+
         #region PropertyChange EventHandlers
         private static void OnDocumentChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         {
             EditView editor = dp as EditView;
-            editor.OnDocumentChanged(e.NewValue as TextDocument);
+            editor.OnDocumentChanged(e.OldValue as TextDocument, e.NewValue as TextDocument);
         }
-        private void OnDocumentChanged(TextDocument doc)
+        private void OnDocumentChanged(TextDocument oldDoc, TextDocument newDoc)
         {
+            if (oldDoc != null)
+            {
+                TextDocumentWeakEventManager.Changing.RemoveListener(oldDoc, this);
+                TextDocumentWeakEventManager.Changed.RemoveListener(oldDoc, this);
+                TextDocumentWeakEventManager.UpdateStarted.RemoveListener(oldDoc, this);
+                TextDocumentWeakEventManager.UpdateFinished.RemoveListener(oldDoc, this);
+            }
+            if (newDoc != null)
+            {
+                TextDocumentWeakEventManager.Changing.AddListener(newDoc, this);
+                TextDocumentWeakEventManager.Changed.AddListener(newDoc, this);
+                TextDocumentWeakEventManager.UpdateStarted.AddListener(newDoc, this);
+                TextDocumentWeakEventManager.UpdateFinished.AddListener(newDoc, this);
+            }
+            _caret.DocumentOffset = 0;
             if (CanContentEdit && Content is IEditInfo)
             {
-                (Content as IEditInfo).ChangeDocument(doc);
+                (Content as IEditInfo).ChangeDocument(newDoc);
             }
             Redraw();
-        } 
+        }
         #endregion
 
         private RenderContext _renderContext;
         private Caret _caret;
+        private IInputHandler _activeInputHandler;
     }
 }

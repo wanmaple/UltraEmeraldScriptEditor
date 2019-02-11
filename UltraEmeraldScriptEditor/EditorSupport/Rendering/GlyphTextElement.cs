@@ -68,8 +68,8 @@ namespace EditorSupport.Rendering
             GlyphRunParams param = null;
             GlyphRun gr = null;
             Point origin = renderContext.Offset;
-            // GlyphDrawing的起始点在左下角，所以要偏移一个LineHeight
-            origin.Y += _lineHeight;
+            // GlyphDrawing的起始点在左下角
+            origin.Y += _fontSize;
             Int32 idx = 0;
             // 起始点的偏移是0
             do

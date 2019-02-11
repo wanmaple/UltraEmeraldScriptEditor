@@ -1,5 +1,6 @@
 ﻿using EditorSupport.Document;
 using EditorSupport.Rendering;
+using EditorSupport.Rendering.Renderers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,8 @@ namespace EditorSupport.Editing
     public class Caret : IRenderable
     {
         #region Properties
-        public TextLocation Location { get => _location; set => _location = value; }
+        public Int32 DocumentOffset { get => _docOffset; set => _docOffset = value; }
+        public TextLocation Location { get => _owner.Document.GetLocation(_docOffset); }
         public Point RenderPosition { get => _renderPos; set => _renderPos = value; }
         public Size CaretSize { get => _caretSize; set => _caretSize = value; }
         public Boolean Visible { get => _visible; set => _visible = value; }
@@ -28,7 +30,6 @@ namespace EditorSupport.Editing
         public Caret(EditView owner)
         {
             _owner = owner ?? throw new ArgumentNullException("owner");
-            _location = new TextLocation(1, 1);
             _visible = true;
             _fgBrush = Brushes.Black;
             _blinkTimer = new DispatcherTimer();
@@ -37,6 +38,16 @@ namespace EditorSupport.Editing
             StartAnimation();
         }
         #endregion
+
+        public void MoveLeft(Int32 length = 1)
+        {
+            _docOffset = Math.Max(_docOffset - length, 0);
+        }
+
+        public void MoveRight(Int32 length = 1)
+        {
+            _docOffset = Math.Min(_docOffset + length, _owner.Document.Length);
+        }
 
         #region Animation
         public void StartAnimation()
@@ -68,11 +79,13 @@ namespace EditorSupport.Editing
             {
                 return;
             }
-            drawingContext.DrawRectangle(_fgBrush, null, new Rect(-_caretSize.Width * 0.5 + _renderPos.X, _renderPos.Y, _caretSize.Width, _caretSize.Height));
+            Double renderX = Math.Round(-_caretSize.Width * 0.5 + _renderPos.X);
+            Double renderY = _renderPos.Y;
+            drawingContext.DrawRectangle(_fgBrush, null, new Rect(renderX, renderY, _caretSize.Width, _caretSize.Height));
         }
         #endregion
-
-        protected TextLocation _location;
+        
+        protected Int32 _docOffset;
         protected Point _renderPos;
         protected Boolean _visible;
         protected Brush _fgBrush;

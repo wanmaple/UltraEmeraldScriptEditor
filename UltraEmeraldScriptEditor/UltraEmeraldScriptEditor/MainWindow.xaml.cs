@@ -30,6 +30,9 @@ namespace UltraEmeraldScriptEditor
 
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)
         {
+            var doc = new TextDocument();
+            editor.Document = doc;
+            editor.Focus();
             e.Handled = true;
         }
 
@@ -48,6 +51,7 @@ namespace UltraEmeraldScriptEditor
                         String text = CommonUtilities.NormalizeText(sr);
                         var doc = new TextDocument(text);
                         editor.Document = doc;
+                        editor.Focus();
                     }
                 }
             }

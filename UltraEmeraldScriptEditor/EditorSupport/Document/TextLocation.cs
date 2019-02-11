@@ -13,10 +13,12 @@ namespace EditorSupport.Document
         public Int32 Line
         {
             get { return _x; }
+            set { _x = value; }
         }
         public Int32 Column
         {
             get { return _y; }
+            set { _y = value; }
         }
 
         #region Constructor

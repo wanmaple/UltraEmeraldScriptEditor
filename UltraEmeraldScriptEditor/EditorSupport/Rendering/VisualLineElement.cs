@@ -14,12 +14,14 @@ namespace EditorSupport.Rendering
     /// </summary>
     public abstract class VisualLineElement : IHighlightee
     {
+        #region Abstraction
         /// <summary>
         /// 计算好所有的Drawing，为了能使<see cref="VisualLine"/>将Drawing合并。
         /// </summary>
         /// <param name="drawingContext"></param>
         /// <param name="renderContext"></param>
         public abstract IEnumerable<Drawing> GenerateDrawings(DrawingContext drawingContext, RenderContext renderContext);
+        #endregion
 
         #region Properties
         public VisualLine Owner { get => _owner; }
@@ -31,6 +33,8 @@ namespace EditorSupport.Rendering
         /// 长度
         /// </summary>
         public Int32 Length { get; set; }
+        public LineBreakCondition BreakBefore { get; set; }
+        public LineBreakCondition BreakAfter { get; set; }
         #endregion
 
         #region Constructor
@@ -39,6 +43,8 @@ namespace EditorSupport.Rendering
             _owner = owner ?? throw new ArgumentNullException("owner");
             RelativeOffset = relativeOffset;
             Length = length;
+            BreakBefore = LineBreakCondition.BreakPossible;
+            BreakAfter = LineBreakCondition.BreakPossible;
             _fgBrush = Brushes.Black;
             _bgBrush = null;
             _fontWeight = FontWeights.Normal;

@@ -10,7 +10,6 @@ namespace EditorSupport.Rendering
     /// <summary>
     /// 影响文字渲染的选项
     /// </summary>
-    [Serializable]
     public sealed class GlyphProperties : DependencyObject
     {
         public event EventHandler OptionChanged;

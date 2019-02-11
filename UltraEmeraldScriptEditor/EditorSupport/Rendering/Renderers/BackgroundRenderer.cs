@@ -5,7 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 
-namespace EditorSupport.Rendering
+namespace EditorSupport.Rendering.Renderers
 {
     public enum RenderType : Byte
     {
@@ -14,7 +14,7 @@ namespace EditorSupport.Rendering
         CENTER,
     }
 
-    [Obsolete("BackgroundRenderer works for wrong Z-Index.")]
+    [Obsolete("BackgroundRenderer is no longer used.")]
     public abstract class BackgroundRenderer : DependencyObject, IRenderable
     {
         #region Properties

@@ -111,6 +111,11 @@ namespace EditorSupport.Document
         #endregion
 
         #region Text modification
+        public event EventHandler<EventArgs> UpdateStarted;
+        public event EventHandler<DocumentUpdateEventArgs> UpdateFinished;
+        public event EventHandler<EventArgs> Changing;
+        public event EventHandler<DocumentUpdateEventArgs> Changed;
+
         public void Append(String content)
         {
             Replace(Length, 0, content);
@@ -140,18 +145,37 @@ namespace EditorSupport.Document
             {
                 throw new ArgumentNullException("content");
             }
+            if (length <= 0 && content.Length <= 0)
+            {
+                return;
+            }
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
+            
+            if (Changing != null)
+            {
+                Changing(this, EventArgs.Empty);
+            }
+
+            var docUpdate = new DocumentUpdate();
+            docUpdate.Offset = offset;
+            docUpdate.InsertionLength = content.Length;
+            docUpdate.RemovalLength = length;
+
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 _anchorTree.RemoveText(offset, length);
-                _lineMgr.Remove(offset, length);
+                _lineMgr.Remove(offset, length, docUpdate);
             }
             if (content.Length > 0)
             {
                 _anchorTree.InsertText(offset, content.Length);
-                _lineMgr.Insert(offset, content);
+                _lineMgr.Insert(offset, content, docUpdate);
+            }
+            if (Changed != null)
+            {
+                Changed(this, new DocumentUpdateEventArgs(docUpdate));
             }
 #if DEBUG
             _anchorTree.VerifySelf();
@@ -202,6 +226,38 @@ namespace EditorSupport.Document
         {
             VerifyAccess();
             _anchorTree.RemoveAnchor(anchor);
+        }
+        #endregion
+
+        #region Locations <=> Offsets
+        public TextLocation GetLocation(Int32 offset)
+        {
+            DocumentLine docLine = GetLineByOffset(offset);
+            Int32 column = offset - docLine.StartOffset + 1;
+            return new TextLocation(docLine.LineNumber, column);
+        }
+
+        public Int32 GetOffset(TextLocation location)
+        {
+            return GetOffset(location.Line, location.Column);
+        }
+
+        public Int32 GetOffset(Int32 line, Int32 column)
+        {
+            DocumentLine docLine = GetLineByNumber(line);
+            if (docLine != null)
+            {
+                if (column <= 0)
+                {
+                    return docLine.StartOffset;
+                }
+                if (column > docLine.Length)
+                {
+                    return docLine.EndOffset;
+                }
+                return docLine.StartOffset + column - 1;
+            }
+            return -1;
         }
         #endregion
 

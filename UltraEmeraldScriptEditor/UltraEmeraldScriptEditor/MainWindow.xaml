@@ -63,7 +63,7 @@
         <edit:EditView x:Name="editor" Grid.Row="1" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <render:RenderView Syntax="PScript">
                 <render:RenderView.GlyphOption>
-                    <render:GlyphProperties FontFamily="Consolas" />
+                    <render:GlyphProperties FontFamily="Lucida Console" FontSize="15" />
                 </render:RenderView.GlyphOption>
             </render:RenderView>
         </edit:EditView>

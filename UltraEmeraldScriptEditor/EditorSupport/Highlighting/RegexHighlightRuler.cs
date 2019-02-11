@@ -50,49 +50,73 @@ namespace EditorSupport.Highlighting
         public void SplitText(TextReader reader, Action<Int32, Int32> handler)
         {
             Int32 startIdx = 0;
-            Boolean spaceAtFirst = true;
+            Boolean isSplitter = true;
             Int32 idx = 0;
             StringBuilder prefixSb = new StringBuilder();
             Int32 read;
             while ((read = reader.Read()) >= 0)
             {
-                ++idx;
                 Char ch = (Char)read;
-                if (spaceAtFirst && _splitters.Contains(ch))
+                if (idx == 0)
                 {
-                    continue;
+                    isSplitter = _splitters.Contains(ch);
                 }
-                else if (spaceAtFirst)
+                if (isSplitter)
                 {
-                    spaceAtFirst = false;
-                    prefixSb.Append(ch);
-                    continue;
-                }
-
-                if (_splitters.Contains(ch))
-                {
-                    // 查看是否有符合的前缀
-                    String prefixStr = prefixSb.ToString();
-                    foreach (String prefix in _prefixMap.Keys)
+                    if (_splitters.Contains(ch))
                     {
-                        if (prefixStr.StartsWith(prefix))
-                        {
-                            handler(startIdx, -1);
-                            return;
-                        }
                     }
-                    prefixSb.Clear();
+                    else
+                    {
+                        isSplitter = false;
+                        prefixSb.Clear();
+                        prefixSb.Append(ch);
 
-                    handler(startIdx, idx - startIdx);
-                    startIdx = idx;
-                    spaceAtFirst = true;
+                        handler(startIdx, idx - startIdx);
+                        startIdx = idx;
+                    }
                 }
                 else
                 {
-                    prefixSb.Append(ch);
+                    if (!_splitters.Contains(ch))
+                    {
+                        prefixSb.Append(ch);
+                    }
+                    else
+                    {
+                        // 查看是否有符合的前缀
+                        String prefixStr = prefixSb.ToString();
+                        foreach (String prefix in _prefixMap.Keys)
+                        {
+                            if (prefixStr.StartsWith(prefix))
+                            {
+                                handler(startIdx, -1);
+                                return;
+                            }
+                        }
+                        isSplitter = true;
+                        prefixSb.Clear();
+
+                        handler(startIdx, idx - startIdx);
+                        startIdx = idx;
+                    }
                 }
+                ++idx;
             }
-            handler(startIdx, idx - startIdx);
+            if (idx - startIdx > 0)
+            {
+                // 查看是否有符合的前缀
+                String prefixStr = prefixSb.ToString();
+                foreach (String prefix in _prefixMap.Keys)
+                {
+                    if (prefixStr.StartsWith(prefix))
+                    {
+                        handler(startIdx, -1);
+                        return;
+                    }
+                }
+                handler(startIdx, idx - startIdx);
+            }
         }
         #endregion
 

@@ -14,6 +14,7 @@ using System.Windows.Threading;
 using EditorSupport.Document;
 using EditorSupport.Editing;
 using EditorSupport.Highlighting;
+using EditorSupport.Rendering.Renderers;
 using EditorSupport.Utils;
 
 namespace EditorSupport.Rendering
@@ -21,7 +22,7 @@ namespace EditorSupport.Rendering
     /// <summary>
     /// 编辑器的渲染逻辑都在这里
     /// </summary>
-    public sealed class RenderView : FrameworkElement, IScrollInfo, IEditInfo
+    public sealed class RenderView : FrameworkElement, IWeakEventListener, IScrollInfo, IEditInfo
     {
         #region Properties
         public static readonly DependencyProperty DocumentProperty =
@@ -53,11 +54,12 @@ namespace EditorSupport.Rendering
             get { return (String)GetValue(SyntaxProperty); }
             set { SetValue(SyntaxProperty, value); }
         }
+        [Obsolete("BackgroundRenderer is no longer used.")]
         public List<BackgroundRenderer> BackgroundRenderers
         {
             get { return _bgRenderers; }
         }
-        public ObservableCollection<VisualLine> VisualLines
+        public List<VisualLine> VisualLines
         {
             get { return _allVisualLines; }
         }
@@ -69,7 +71,7 @@ namespace EditorSupport.Rendering
             _renderContext = new RenderContext();
             _bgRenderers = new List<BackgroundRenderer>();
             _lineRenderer = new VisualLineRenderer(this);
-            _allVisualLines = new ObservableCollection<VisualLine>();
+            _allVisualLines = new List<VisualLine>();
 
             _highlighter = HighlightingFactory.GetInstance().GetHighlighter(Syntax);
             _highlightRuler = HighlightingFactory.GetInstance().GetHighlightRuler(Syntax);
@@ -240,7 +242,62 @@ namespace EditorSupport.Rendering
 
         private DispatcherOperation _measureOperation;
 
-        private ObservableCollection<VisualLine> _allVisualLines;
+        private List<VisualLine> _allVisualLines;
+        #endregion
+
+        #region IWeakEventListener
+        public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs e)
+        {
+            if (managerType == typeof(TextDocumentWeakEventManager.Changing))
+            {
+                OnDocumentChanging(sender as TextDocument, e);
+                return true;
+            }
+            else if (managerType == typeof(TextDocumentWeakEventManager.Changed))
+            {
+                OnDocumentChanged(sender as TextDocument, e as DocumentUpdateEventArgs);
+                return true;
+            }
+            return false;
+        }
+        #endregion
+
+        #region Weak events
+        private void OnDocumentChanging(TextDocument document, EventArgs e)
+        {
+
+        }
+
+        private void OnDocumentChanged(TextDocument document, DocumentUpdateEventArgs e)
+        {
+            foreach (DocumentUpdate update in e.Updates)
+            {
+                if (update.LineNumberNeedUpdate > 0)
+                {
+                    VisualLine lineNeedUpdate = _allVisualLines[update.LineNumberNeedUpdate - 1];
+                    lineNeedUpdate.Rebuild();
+                }
+                if (update.RemovedStartLineNumber > 0)
+                {
+                    for (int i = update.RemovedStartLineNumber - 1; i < update.RemovedStartLineNumber + update.RemovedLineCount - 1; i++)
+                    {
+                        _allVisualLines[i].Dispose();
+                    }
+                    _allVisualLines.RemoveRange(update.RemovedStartLineNumber - 1, update.RemovedLineCount);
+                }
+                if (update.NewStartLineNumber > 0)
+                {
+                    var newLines = new List<VisualLine>();
+                    for (int i = update.NewStartLineNumber; i < update.NewStartLineNumber + update.NewLineCount; i++)
+                    {
+                        VisualLine newLine = new VisualLine(this, Document, Document.GetLineByNumber(i));
+                        newLines.Add(newLine);
+                    }
+                    _allVisualLines.InsertRange(update.NewStartLineNumber - 1, newLines);
+                }
+            }
+            Redraw();
+        }
         #endregion
 
         #region IScrollInfo
@@ -364,6 +421,11 @@ namespace EditorSupport.Rendering
             }
         }
 
+        public void OnTextChanged()
+        {
+            Redraw();
+        }
+
         public void MeasureCaretRendering(Caret caret)
         {
             if (_lineRenderer.VisibleLines.Count <= 0)
@@ -371,7 +433,7 @@ namespace EditorSupport.Rendering
                 caret.Visible = false;
                 return;
             }
-            caret.CaretSize = new Size(2.0, GlyphOption.LineHeight);
+            caret.CaretSize = new Size(1.0, GlyphOption.LineHeight);
             Point pos = LocationToPosition(caret.Location);
             if (pos.X >= 0 && pos.Y >= 0)
             {
@@ -386,7 +448,7 @@ namespace EditorSupport.Rendering
 
         public void MeasureCaretLocation(Caret caret, Point positionToView)
         {
-            caret.Location = PositionToLocation(positionToView);
+            caret.DocumentOffset = Document.GetOffset(PositionToLocation(positionToView));
         }
 
         private Point LocationToPosition(TextLocation location)
@@ -412,6 +474,8 @@ namespace EditorSupport.Rendering
 
         private TextLocation PositionToLocation(Point position)
         {
+            position.X -= _lineRenderer.RenderOffset.X;
+            position.Y -= _lineRenderer.RenderOffset.Y;
             Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
             Int32 renderLastLineNum = _lineRenderer.VisibleLines.Last.Value.Line.LineNumber;
@@ -444,10 +508,20 @@ namespace EditorSupport.Rendering
             {
                 VisualLineImageCache.GetInstance().RemoveCache(e.OldValue as TextDocument);
             }
-            editor.OnDocumentChanged();
+            editor.OnDocumentChanged(e.OldValue as TextDocument, e.NewValue as TextDocument);
         }
-        private void OnDocumentChanged()
+        private void OnDocumentChanged(TextDocument oldDoc, TextDocument newDoc)
         {
+            if (oldDoc != null)
+            {
+                TextDocumentWeakEventManager.Changing.RemoveListener(oldDoc, this);
+                TextDocumentWeakEventManager.Changed.RemoveListener(oldDoc, this);
+            }
+            if (newDoc != null)
+            {
+                TextDocumentWeakEventManager.Changing.AddListener(newDoc, this);
+                TextDocumentWeakEventManager.Changed.AddListener(newDoc, this);
+            }
             RebuildVisualLines();
             Redraw();
         }

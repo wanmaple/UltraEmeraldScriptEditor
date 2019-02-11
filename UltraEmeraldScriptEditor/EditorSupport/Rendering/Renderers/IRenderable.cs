@@ -5,7 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 
-namespace EditorSupport.Rendering
+namespace EditorSupport.Rendering.Renderers
 {
     public interface IRenderable
     {

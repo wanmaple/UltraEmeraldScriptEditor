@@ -45,17 +45,20 @@ namespace EditorSupport.Document
             _lineTree.RebuildTree(lines);
         }
 
-        internal void Insert(Int32 offset, String text)
+        internal void Insert(Int32 offset, String text, DocumentUpdate update)
         {
             DocumentLine line = _lineTree.GetLineByOffset(offset);
             // 不允许在\r和\n之间插入文本
             SimpleSegment seg = DocumentLineSeeker.NextLineDelimiter(text, 0);
             if (seg == SimpleSegment.Invalid)
             {
+                update.LineNumberNeedUpdate = line.LineNumber;
                 // 插入的文本没有新的行，直接加入当前行
                 SetLineLength(line, line._exactLength + text.Length);
                 return;
             }
+            update.LineNumberNeedUpdate = line.LineNumber;
+            update.NewStartLineNumber = update.LineNumberNeedUpdate + 1;
             // 和前置行合并
             Int32 lineOffset = line.StartOffset;
             Int32 lineBreakOffset = offset + seg.EndOffset;
@@ -73,6 +76,7 @@ namespace EditorSupport.Document
 #else
                 var newLine = new DocumentLine();
 #endif
+                ++update.NewLineCount;
                 newLine._delimiterLength = seg.Length;
                 newLine._exactLength = seg.EndOffset - lastDelimeterEnd;
                 _lineTree.InsertLineAfter(line, newLine);
@@ -86,15 +90,20 @@ namespace EditorSupport.Document
 #else
             var afterLine = new DocumentLine();
 #endif
+            ++update.NewLineCount;
             afterLine._delimiterLength = delimiterLengthAfterInsertion;
             afterLine._exactLength = lengthAfterInsertion + (text.Length - lastDelimeterEnd);
             _lineTree.InsertLineAfter(line, afterLine);
         }
 
-        internal void Remove(Int32 offset, Int32 length)
+        internal void Remove(Int32 offset, Int32 length, DocumentUpdate update)
         {
             if (offset == 0 && length == _doc.Length)
             {
+                // 清除后会有空行
+                update.LineNumberNeedUpdate = 1;
+                update.RemovedStartLineNumber = 2;
+                update.RemovedLineCount = _lineTree.LineCount - 1;
                 // 全删，直接重置
                 _lineTree.Clear();
                 return;
@@ -103,23 +112,29 @@ namespace EditorSupport.Document
             // 不允许在\r和\n之间删除文本
             Int32 lineOffset = line.StartOffset;
             Int32 lengthAfterDeletion = lineOffset + line._exactLength - offset;
-            if (length < lengthAfterDeletion)
+            if ((line._delimiterLength > 0 && length < lengthAfterDeletion) || (line._delimiterLength == 0 && length <= lengthAfterDeletion))
             {
+                update.LineNumberNeedUpdate = line.LineNumber;
                 // 不需要删除行
                 SetLineLength(line, line._exactLength - length);
                 return;
             }
+            Int32 removedLineNum = -1, removedLineCnt = 0;
             DocumentLine firstLine = line;
             Int32 lengthBeforeDeletion = offset - lineOffset;
             DocumentLine nextLine = line.NextLine;
+            removedLineNum = line.LineNumber;
+            update.LineNumberNeedUpdate = removedLineNum;
             if (lengthBeforeDeletion == 0)
             {
+                ++removedLineCnt;
                 // 当前行需要删除
                 _lineTree.RemoveLine(line);
                 firstLine = null;
             }
             else
             {
+                ++removedLineNum;
                 SetLineLength(line, line._exactLength - lengthAfterDeletion);
                 line._delimiterLength = 0;
             }
@@ -134,6 +149,7 @@ namespace EditorSupport.Document
                 }
                 nextLine = line.NextLine;
                 _lineTree.RemoveLine(line);
+                ++removedLineCnt;
                 length -= line._exactLength;
                 line = nextLine;
             }
@@ -145,12 +161,23 @@ namespace EditorSupport.Document
                     SetLineLength(firstLine, firstLine._exactLength + (line._exactLength - length));
                     firstLine._delimiterLength = line._delimiterLength;
                     _lineTree.RemoveLine(line);
+                    ++removedLineCnt;
                 }
                 else
                 {
+                    update.LineNumberNeedUpdate += removedLineCnt;
                     // 没有前置行了，保留该行
                     SetLineLength(line, line._exactLength - length);
                 }
+            }
+            else
+            {
+                update.LineNumberNeedUpdate = -1;
+            }
+            if (removedLineCnt > 0)
+            {
+                update.RemovedStartLineNumber = removedLineNum;
+                update.RemovedLineCount = removedLineCnt;
             }
         }
 

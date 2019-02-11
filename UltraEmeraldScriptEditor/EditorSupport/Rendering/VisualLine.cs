@@ -1,4 +1,5 @@
 ﻿using EditorSupport.Document;
+using EditorSupport.Rendering.Renderers;
 using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,8 @@ using System.Windows.Media;
 namespace EditorSupport.Rendering
 {
     /// <summary>
-    /// DocumentLine的可视对象
+    /// DocumentLine的可视对象。
     /// </summary>
-    /// <remarks>
-    /// 考虑到wpf的DrawingContext.DrawText性能堪忧，每一行又有不同样式的<see cref="VisualLineElement"/>，我们对每个没有编辑的行对象存储一份<see cref="DrawingImage"/>，在该行没有进行编辑的时候，直接用DrawingContext.DrawImage绘制，编辑中的行仍然用DrawingContext.DrawText绘制。
-    /// </remarks>
     public sealed class VisualLine : IRenderable, IDisposable
     {
         #region Properties
@@ -112,7 +110,7 @@ namespace EditorSupport.Rendering
                     Elements.AddLast(elem);
                 });
             }
-        } 
+        }
         #endregion
 
         #region IDisposable
@@ -125,12 +123,15 @@ namespace EditorSupport.Rendering
         #region IRenderable
         public void Render(DrawingContext drawingContext, RenderContext renderContext)
         {
+            // DrawingImage会自动Trimming，怎么解决这个问题？
+#if false
             DrawingImage cachedImg = VisualLineImageCache.GetInstance().GetCache(Document, Line);
+            DrawingGroup drawingGroup = null;
             if (cachedImg == null)
             {
                 renderContext.PrepareRendering();
 
-                var drawingGroup = new DrawingGroup();
+                drawingGroup = new DrawingGroup();
                 foreach (VisualLineElement elem in Elements)
                 {
                     var drawings = elem.GenerateDrawings(drawingContext, renderContext);
@@ -149,8 +150,26 @@ namespace EditorSupport.Rendering
             }
             cachedImg.Freeze();
             Point startPos = renderContext.Offset;
-            startPos.Y += (Owner.GlyphOption.LineHeight - cachedImg.Height) * 0.5;
+            startPos.Y += (Owner.GlyphOption.LineHeight - cachedImg.Height);
             drawingContext.DrawImage(cachedImg, new Rect(startPos, new Size(cachedImg.Width, cachedImg.Height)));
+            drawingContext.DrawDrawing(drawingGroup);
+#else
+            renderContext.PrepareRendering();
+
+            foreach (VisualLineElement elem in Elements)
+            {
+                var drawings = elem.GenerateDrawings(drawingContext, renderContext);
+                if (drawings != null)
+                {
+                    foreach (var drawing in drawings)
+                    {
+                        drawingContext.DrawDrawing(drawing);
+                    }
+                }
+            }
+
+            renderContext.FinishRendering();
+#endif
         }
         #endregion
     }

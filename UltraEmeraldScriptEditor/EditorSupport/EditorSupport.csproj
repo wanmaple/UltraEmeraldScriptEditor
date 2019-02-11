@@ -52,6 +52,8 @@
     <Compile Include="Document\DocumentLineManager.cs" />
     <Compile Include="Document\DocumentLineSeeker.cs" />
     <Compile Include="Document\DocumentLineTree.cs" />
+    <Compile Include="Document\DocumentUpdate.cs" />
+    <Compile Include="Document\DocumentUpdateEventArgs.cs" />
     <Compile Include="Document\ISegment.cs" />
     <Compile Include="Document\ITextSource.cs" />
     <Compile Include="Document\Rope.cs" />
@@ -61,10 +63,15 @@
     <Compile Include="Document\TextAnchor.cs" />
     <Compile Include="Document\TextAnchorTree.cs" />
     <Compile Include="Document\TextDocument.cs" />
+    <Compile Include="Document\TextDocumentWeakEventManager.cs" />
     <Compile Include="Document\TextLocation.cs" />
     <Compile Include="Editing\Caret.cs" />
+    <Compile Include="Editing\EditingCommandHelper.cs" />
     <Compile Include="Editing\EditView.cs" />
     <Compile Include="Editing\IEditInfo.cs" />
+    <Compile Include="Editing\IInputHandler.cs" />
+    <Compile Include="Editing\InputCommandsHandler.cs" />
+    <Compile Include="Editing\InputHandlerGroup.cs" />
     <Compile Include="Highlighting\CommonHighlighter.cs" />
     <Compile Include="Highlighting\HighlightingFactory.cs" />
     <Compile Include="Highlighting\HighlightStyle.cs" />
@@ -90,6 +97,7 @@
     <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
     <Compile Include="Utils\CommonUtilities.cs" />
     <Compile Include="Utils\ValueSequence.cs" />
+    <Compile Include="Utils\WeakEventManagerBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Configs\PScript.xml">
