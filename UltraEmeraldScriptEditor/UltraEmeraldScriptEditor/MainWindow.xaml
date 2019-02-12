@@ -60,12 +60,16 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
-        <edit:EditView x:Name="editor" Grid.Row="1" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <render:RenderView Syntax="PScript">
-                <render:RenderView.GlyphOption>
-                    <render:GlyphProperties FontFamily="Lucida Console" FontSize="15" />
-                </render:RenderView.GlyphOption>
-            </render:RenderView>
-        </edit:EditView>
+        <TabControl x:Name="tcDocs" Grid.Row="1">
+            <TabItem Header="New" MinWidth="65">
+                <edit:EditView x:Name="editor" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <render:RenderView Syntax="PScript">
+                        <render:RenderView.GlyphOption>
+                            <render:GlyphProperties FontFamily="Lucida Console" FontSize="15" />
+                        </render:RenderView.GlyphOption>
+                    </render:RenderView>
+                </edit:EditView>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>

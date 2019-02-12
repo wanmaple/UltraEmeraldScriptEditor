@@ -255,6 +255,95 @@ namespace EditorSupport.Document
             UpdateTotalLength(curNode);
         }
 
+        internal void MoveLeft(TextAnchorNode node, Int32 length)
+        {
+           Debug.Assert(node.Anchor.Offset >= length);
+
+            var nodesNeedUpdate = new List<TextAnchorNode>();
+            // 交换前如果存在后继节点，则更新后继节点的Length
+            TextAnchorNode successor = node.Successor;
+            if (successor != null)
+            {
+                successor.Length += Math.Min(node.Length, length);
+                nodesNeedUpdate.Add(successor);
+            }
+            // 记录最后一次交换的节点
+            TextAnchorNode lastPredecessor = null;
+            while (length > node.Length)
+            {
+                length -= node.Length;
+                // 向前交换前驱节点
+                TextAnchorNode predecessor = node.Predecessor;
+                Debug.Assert(predecessor != null);
+                SwapNode(node, predecessor);
+                lastPredecessor = node;
+                lastPredecessor.Length = predecessor.Length;
+                node = predecessor;
+            }
+            // 所有节点交换完毕
+            if (lastPredecessor != null)
+            {
+                lastPredecessor.Length = length;
+                nodesNeedUpdate.Add(lastPredecessor);
+            }
+            node.Length -= length;
+            nodesNeedUpdate.Add(node);
+            // 更新所有需要更新的节点
+            foreach (var nodeNeedUpdate in nodesNeedUpdate)
+            {
+                UpdateTotalLength(nodeNeedUpdate);
+            }
+#if DEBUG
+            VerifySelf();
+#endif
+        }
+
+        internal void MoveRight(TextAnchorNode node, Int32 length)
+        {
+            Debug.Assert(_doc.Length - node.Anchor.Offset >= length);
+
+            var nodesNeedUpdate = new List<TextAnchorNode>();
+            Boolean firstSwap = true;
+            do
+            {
+                TextAnchorNode successor = node.Successor;
+                if (successor == null || successor.Length > length)
+                {
+                    break;
+                }
+                length -= successor.Length;
+                if (firstSwap)
+                {
+                    // 只有第一次交换的后继节点需要更新
+                    firstSwap = false;
+                    successor.Length += node.Length;
+                    nodesNeedUpdate.Add(node);
+                }
+                SwapNode(node, successor);
+                node.Length = successor.Length;
+                node = successor;
+                node.Length = 0;
+            } while (true);
+            // 所有节点交换完毕
+            node.Length += length;
+            nodesNeedUpdate.Add(node);
+            // 交换完毕后如果存在后继节点，则需要更新Length
+            TextAnchorNode lastSuccessor = node.Successor;
+            if (lastSuccessor != null)
+            {
+                lastSuccessor.Length -= node.Length;
+                nodesNeedUpdate.Add(lastSuccessor);
+            }
+            // 更新所有需要更新的节点
+            foreach (var nodeNeedUpdate in nodesNeedUpdate)
+            {
+                UpdateTotalLength(nodeNeedUpdate);
+            }
+#if DEBUG
+            VerifySelf();
+#endif
+        }
+
         internal void RemoveNode(TextAnchorNode node)
         {
             TextAnchorNode toReplace = null;
@@ -365,6 +454,15 @@ namespace EditorSupport.Document
                     return null;
                 }
             }
+        }
+
+        internal void SwapNode(TextAnchorNode node1, TextAnchorNode node2)
+        {
+            TextAnchor tmp = node1.Anchor;
+            node1.Anchor = node2.Anchor;
+            node1.Anchor._node = node1;
+            node2.Anchor = tmp;
+            node2.Anchor._node = node2;
         }
 
         internal void InsertAsLeft(TextAnchorNode node, TextAnchorNode newNode)

@@ -151,7 +151,7 @@ namespace EditorSupport.Document
             }
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
-            
+
             if (Changing != null)
             {
                 Changing(this, EventArgs.Empty);
@@ -165,12 +165,12 @@ namespace EditorSupport.Document
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
-                _anchorTree.RemoveText(offset, length);
+                //_anchorTree.RemoveText(offset, length);
                 _lineMgr.Remove(offset, length, docUpdate);
             }
             if (content.Length > 0)
             {
-                _anchorTree.InsertText(offset, content.Length);
+                //_anchorTree.InsertText(offset, content.Length);
                 _lineMgr.Insert(offset, content, docUpdate);
             }
             if (Changed != null)
@@ -201,7 +201,7 @@ namespace EditorSupport.Document
         public DocumentLine GetLineByNumber(Int32 lineNumber)
         {
             return _lineTree.GetLineByNumber(lineNumber);
-        } 
+        }
 
         public DocumentLine GetLineByOffset(Int32 offset)
         {
@@ -219,13 +219,27 @@ namespace EditorSupport.Document
         {
             VerifyAccess();
             VerifyOffsetRange(offset);
-            return _anchorTree.CreateAnchor(offset);
+            var ret = _anchorTree.CreateAnchor(offset);
+            ret.Alive = true;
+            return ret;
         }
 
         public void RemoveAnchor(TextAnchor anchor)
         {
             VerifyAccess();
             _anchorTree.RemoveAnchor(anchor);
+        }
+
+        public void MoveAnchorLeft(TextAnchor anchor, Int32 length)
+        {
+            VerifyAccess();
+            _anchorTree.MoveLeft(anchor._node, length);
+        }
+
+        public void MoveAnchorRight(TextAnchor anchor, Int32 length)
+        {
+            VerifyAccess();
+            _anchorTree.MoveRight(anchor._node, length);
         }
         #endregion
 
@@ -273,7 +287,7 @@ namespace EditorSupport.Document
             {
                 return LineCount + Length * 1013;
             }
-        } 
+        }
         #endregion
 
         #region Validation
@@ -291,7 +305,7 @@ namespace EditorSupport.Document
             {
                 throw new ArgumentOutOfRangeException("length", length, "0 <= length, offset(" + offset + ") + length <= " + Length.ToString(CultureInfo.InvariantCulture));
             }
-        } 
+        }
         #endregion
 
         private readonly Rope<Char> _rope;

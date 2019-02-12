@@ -602,6 +602,14 @@ namespace EditorSupport.Document
                             Array.Copy(curNode._contents, 0, leftMost._contents, offset, curNode.Length);
                             offset += curNode.Length;
                         }
+                        if (stack.Count > 0)
+                        {
+                            curNode = stack.Pop();
+                        }
+                        else
+                        {
+                            curNode = null;
+                        }
                     }
                     Debug.Assert(leftMost != null, "LeftMost couldn't be null.");
                     leftMost.Length = node.Left.Length + node.Right.Length;

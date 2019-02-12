@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using EditorSupport.Document;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,6 +45,26 @@ namespace EditorUnitTest
             var doc = CreateDocument();
             doc.Remove(16, 12);
             doc.Remove(3, doc.Length - 3);
+        }
+
+        [TestMethod]
+        public void TestAnchor()
+        {
+            var doc = CreateDocument();
+            var anchors = new List<TextAnchor>();
+            for (int i = 0; i < 4; i++)
+            {
+                anchors.Add(doc.CreateAnchor((i + 1) * 5));
+            }
+            var anchor = anchors.Last();
+            doc.MoveAnchorLeft(anchor, 1);
+            doc.MoveAnchorLeft(anchor, 2);
+            doc.MoveAnchorLeft(anchor, 5);
+            doc.MoveAnchorLeft(anchor, 10);
+            doc.MoveAnchorRight(anchor, 10);
+            doc.MoveAnchorRight(anchor, 5);
+            doc.MoveAnchorRight(anchor, 2);
+            doc.MoveAnchorRight(anchor, 1);
         }
 
         private TextDocument CreateDocument()

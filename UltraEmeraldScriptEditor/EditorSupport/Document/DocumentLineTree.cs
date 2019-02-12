@@ -25,7 +25,7 @@ namespace EditorSupport.Document
         {
             internal static DocumentLineNode DoubleBlackNilNode
             {
-                get { return new DocumentLineNode(null) { Color = NodeColor.DOUBLE_BLACK, }; }
+                get { return new DocumentLineNode(null) { Color = NodeColor.DOUBLE_BLACK, TotalCount = 0, }; }
             }
 
             internal DocumentLineNode(DocumentLine line)

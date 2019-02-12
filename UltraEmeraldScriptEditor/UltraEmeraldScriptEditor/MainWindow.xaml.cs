@@ -31,8 +31,7 @@ namespace UltraEmeraldScriptEditor
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)
         {
             var doc = new TextDocument();
-            editor.Document = doc;
-            editor.Focus();
+            AddNewDocument(doc);
             e.Handled = true;
         }
 
@@ -77,6 +76,12 @@ namespace UltraEmeraldScriptEditor
         private void OpenSettings(Object sender, ExecutedRoutedEventArgs e)
         {
             e.Handled = true;
+        }
+
+        private void AddNewDocument(TextDocument doc)
+        {
+            editor.Document = doc;
+            editor.Focus();
         }
     }
 }

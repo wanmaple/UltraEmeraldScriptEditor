@@ -8,6 +8,7 @@ namespace EditorSupport.Document
 {
     public enum AnchorMovementType : Byte
     {
+        Default,
         BeforeInsertion,
         AfterInsertion,
     }

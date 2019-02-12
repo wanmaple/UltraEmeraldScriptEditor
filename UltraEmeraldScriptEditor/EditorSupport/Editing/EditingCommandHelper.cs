@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 
@@ -28,6 +29,7 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.EnterParagraphBreak, ModifierKeys.None, Key.Enter, OnEnter);
             AddCommandBinding(EditingCommands.EnterLineBreak, ModifierKeys.Shift, Key.Enter, OnEnter);
             AddCommandBinding(EditingCommands.Backspace, ModifierKeys.None, Key.Back, RemoveHandler(EditingCommands.SelectLeftByCharacter));
+            AddCommandBinding(EditingCommands.Delete, ModifierKeys.None, Key.Delete, RemoveHandler(EditingCommands.SelectRightByCharacter));
         }
 
         internal static void AddCommandBinding(ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler handler)
@@ -55,7 +57,12 @@ namespace EditorSupport.Editing
                 EditView editor = sender as EditView;
                 if (editor != null && editor.Document != null)
                 {
-                    command.Execute(e.Parameter, editor);
+                    if (editor.Selection.IsEmpty)
+                    {
+                        command.Execute(e.Parameter, editor);
+                    }
+                    editor.RemoveSelection();
+                    editor.Redraw();
                 }
                 e.Handled = true;
             };
@@ -64,6 +71,10 @@ namespace EditorSupport.Editing
         private static void OnEnter(Object sender, ExecutedRoutedEventArgs e)
         {
             EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null)
+            {
+                editor.InsertText("\r\n");
+            }
         }
 
         internal static List<CommandBinding> _commandBindings = new List<CommandBinding>();

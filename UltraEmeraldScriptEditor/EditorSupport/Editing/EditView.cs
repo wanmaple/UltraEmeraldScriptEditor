@@ -34,7 +34,8 @@ namespace EditorSupport.Editing
             set { SetValue(CanContentEditProperty, value); }
         }
 
-        public Caret Caret => _caret; 
+        public Caret Caret => _caret;
+        public Selection Selection => _selection;
 
         public IInputHandler ActiveInputHandler
         {
@@ -65,11 +66,10 @@ namespace EditorSupport.Editing
         public EditView()
         {
             _renderContext = new RenderContext();
-            _caret = new Caret(this);
             Cursor = Cursors.IBeam;
 
-            ActiveInputHandler = EditingCommandHelper.CreateHandler(this);
-        } 
+            CreateDefaultInputHandler();
+        }
         #endregion
 
         #region Overrides
@@ -87,11 +87,14 @@ namespace EditorSupport.Editing
 
         protected override void OnRender(DrawingContext drawingContext)
         {
-            if (CanContentEdit && Content is IEditInfo)
+            if (_caret != null)
             {
-                (Content as IEditInfo).MeasureCaretRendering(_caret);
+                if (CanContentEdit && Content is IEditInfo)
+                {
+                    (Content as IEditInfo).MeasureCaretRendering(_caret);
+                }
+                _caret.Render(drawingContext, _renderContext);
             }
-            _caret.Render(drawingContext, _renderContext);
         }
 
         protected override void OnScrollChanged(ScrollChangedEventArgs e)
@@ -122,6 +125,7 @@ namespace EditorSupport.Editing
                 if (CanContentEdit && Content is IEditInfo)
                 {
                     (Content as IEditInfo).MeasureCaretLocation(_caret, pos);
+                    _selection.SetEmpty(_caret.DocumentOffset);
                 }
                 Focus();
                 Redraw();
@@ -151,20 +155,109 @@ namespace EditorSupport.Editing
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
-            Document.Insert(_caret.DocumentOffset, e.Text);
-            _caret.MoveRight(e.Text.Length);
+            InsertText(e.Text);
             Redraw();
         }
         #endregion
 
         public void InsertText(String content)
         {
+            if (_selection.IsEmpty)
+            {
+                Document.Insert(_selection.StartOffset, content);
+            }
+            else
+            {
+                Document.Replace(_selection.StartOffset, _selection.Length, content);
+            }
+            _caret.MoveRight(content.Length);
+            _selection.SetEmpty(_caret.DocumentOffset);
+        }
 
+        public void RemoveSelection()
+        {
+            if (_selection.IsEmpty)
+            {
+                return;
+            }
+            Document.Remove(_selection.StartOffset, _selection.Length);
+            _selection.Length = 0;
         }
 
         public void Redraw()
         {
             base.InvalidateVisual();
+        }
+
+        internal void MoveCaret(CaretMovementType movementType, Boolean doSelect)
+        {
+            TextLocation location;
+            Int32 length;
+            DocumentLine line;
+            switch (movementType)
+            {
+                case CaretMovementType.CharacterLeft:
+                    location = Document.GetLocation(_selection.StartOffset);
+                    // 行结尾是\r\n
+                    length = location.Column == 1 ? 2 : 1;
+                    _caret.MoveLeft(length);
+                    if (doSelect)
+                    {
+                        _selection.MoveLeft(length);
+                    }
+                    else
+                    {
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
+                    break;
+                case CaretMovementType.CharacterRight:
+                    location = Document.GetLocation(_selection.StartOffset);
+                    line = Document.GetLineByNumber(location.Line);
+                    // 行结尾是\r\n
+                    length = location.Column == (line.Length + 1) ? 2 : 1;
+                    if (doSelect)
+                    {
+                        _selection.MoveRight(length);
+                    }
+                    else
+                    {
+                        _caret.MoveRight(length);
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
+                    break;
+                case CaretMovementType.WordLeft:
+                    break;
+                case CaretMovementType.WordRight:
+                    break;
+                case CaretMovementType.LineStart:
+                    break;
+                case CaretMovementType.LineEnd:
+                    break;
+                case CaretMovementType.LineUp:
+                    break;
+                case CaretMovementType.LineDown:
+                    break;
+                case CaretMovementType.PageUp:
+                    break;
+                case CaretMovementType.PageDown:
+                    break;
+                case CaretMovementType.DocumentStart:
+                    break;
+                case CaretMovementType.DocumentEnd:
+                    break;
+                default:
+                    break;
+            }
+            _caret.StopAnimation();
+            _caret.StartAnimation();
+        }
+
+        private void CreateDefaultInputHandler()
+        {
+            var defaultHandler = new InputHandlerGroup(this);
+            defaultHandler.Children.Add(EditingCommandHelper.CreateHandler(this));
+            defaultHandler.Children.Add(CaretNavigationCommandHelper.CreateHandler(this));
+            ActiveInputHandler = defaultHandler;
         }
 
         #region IWeakEventListener
@@ -238,7 +331,16 @@ namespace EditorSupport.Editing
                 TextDocumentWeakEventManager.UpdateStarted.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateFinished.AddListener(newDoc, this);
             }
+            if (_caret == null)
+            {
+                _caret = new Caret(this);
+            }
             _caret.DocumentOffset = 0;
+            if (_selection == null)
+            {
+                _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            }
+            _selection.Reset();
             if (CanContentEdit && Content is IEditInfo)
             {
                 (Content as IEditInfo).ChangeDocument(newDoc);
@@ -249,6 +351,7 @@ namespace EditorSupport.Editing
 
         private RenderContext _renderContext;
         private Caret _caret;
+        private Selection _selection;
         private IInputHandler _activeInputHandler;
     }
 }

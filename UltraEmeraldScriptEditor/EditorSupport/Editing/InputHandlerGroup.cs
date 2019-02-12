@@ -11,15 +11,16 @@ namespace EditorSupport.Editing
     {
         public ObservableCollection<IInputHandler> Children => _children;
 
-        public InputHandlerGroup()
+        public InputHandlerGroup(EditView owner)
         {
+            _owner = owner ?? throw new ArgumentNullException("owner");
             _attached = false;
             _children = new ObservableCollection<IInputHandler>();
             _children.CollectionChanged += OnChildrenChanged;
         }
 
         #region IInputHandler
-        public EditView Owner => throw new NotImplementedException();
+        public EditView Owner => _owner;
 
         public void Attach()
         {
@@ -62,5 +63,6 @@ namespace EditorSupport.Editing
 
         private ObservableCollection<IInputHandler> _children;
         private Boolean _attached;
+        private EditView _owner;
     }
 }

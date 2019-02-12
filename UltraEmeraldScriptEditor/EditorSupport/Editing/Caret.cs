@@ -41,11 +41,19 @@ namespace EditorSupport.Editing
 
         public void MoveLeft(Int32 length = 1)
         {
+            if (length <= 0)
+            {
+                throw new ArgumentException("'length' must be positive.");
+            }
             _docOffset = Math.Max(_docOffset - length, 0);
         }
 
         public void MoveRight(Int32 length = 1)
         {
+            if (length <= 0)
+            {
+                throw new ArgumentException("'length' must be positive.");
+            }
             _docOffset = Math.Min(_docOffset + length, _owner.Document.Length);
         }
 
