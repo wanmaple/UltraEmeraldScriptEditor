@@ -43,8 +43,13 @@ namespace EditorSupport.Editing
         {
             AddCommandBinding(EditingCommands.MoveLeftByCharacter, ModifierKeys.None, Key.Left, SelectionHandler(CaretMovementType.CharacterLeft, false));
             AddCommandBinding(EditingCommands.MoveRightByCharacter, ModifierKeys.None, Key.Right, SelectionHandler(CaretMovementType.CharacterRight, false));
+            AddCommandBinding(EditingCommands.MoveUpByLine, ModifierKeys.None, Key.Up, SelectionHandler(CaretMovementType.LineUp, false));
+            AddCommandBinding(EditingCommands.MoveDownByLine, ModifierKeys.None, Key.Down, SelectionHandler(CaretMovementType.LineDown, false));
             AddCommandBinding(EditingCommands.SelectLeftByCharacter, ModifierKeys.Shift, Key.Left, SelectionHandler(CaretMovementType.CharacterLeft, true));
             AddCommandBinding(EditingCommands.SelectRightByCharacter, ModifierKeys.Shift, Key.Right, SelectionHandler(CaretMovementType.CharacterRight, true));
+            AddCommandBinding(EditingCommands.SelectUpByLine, ModifierKeys.Shift, Key.Up, SelectionHandler(CaretMovementType.LineUp, true));
+            AddCommandBinding(EditingCommands.SelectDownByLine, ModifierKeys.Shift, Key.Down, SelectionHandler(CaretMovementType.LineDown, true));
+            AddCommandBinding(ApplicationCommands.SelectAll, ModifierKeys.Control, Key.A, OnSelectAll);
         }
 
         internal static void AddCommandBinding(ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler handler)
@@ -68,6 +73,13 @@ namespace EditorSupport.Editing
                 editor.MoveCaret(caretMovementType, doSelect);
                 editor.Redraw();
             };
+        }
+
+        private static void OnSelectAll(Object sender, ExecutedRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            editor.SelectAll();
+            editor.Redraw();
         }
 
         internal static List<CommandBinding> _commandBindings = new List<CommandBinding>();

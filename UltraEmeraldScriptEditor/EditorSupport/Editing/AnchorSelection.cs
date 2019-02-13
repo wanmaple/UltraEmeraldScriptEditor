@@ -76,14 +76,6 @@ namespace EditorSupport.Editing
                 }
             }
         }
-
-        public override void Render(DrawingContext drawingContext, RenderContext renderContext)
-        {
-            if (IsEmpty)
-            {
-                return;
-            }
-        }
         #endregion
 
         private TextAnchor _startAnchor;

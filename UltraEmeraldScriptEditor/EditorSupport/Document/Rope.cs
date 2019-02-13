@@ -391,6 +391,7 @@ namespace EditorSupport.Document
                     {
                         a.Parent.Right = c;
                     }
+                    c.Parent = a.Parent;
                 }
                 else
                 {
@@ -816,6 +817,10 @@ namespace EditorSupport.Document
             }
             Debug.Assert(Math.Abs(node.Balance) <= 1);
             Debug.Assert(node.IsLeaf || node.Length == node.Left.Length + node.Right.Length);
+            if (node.Parent == null && node != _root)
+            {
+                Debug.Assert(false);
+            }
             VerifyNode(node.Left);
             VerifyNode(node.Right);
         }

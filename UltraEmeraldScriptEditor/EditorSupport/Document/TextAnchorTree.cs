@@ -331,7 +331,7 @@ namespace EditorSupport.Document
             TextAnchorNode lastSuccessor = node.Successor;
             if (lastSuccessor != null)
             {
-                lastSuccessor.Length -= node.Length;
+                lastSuccessor.Length -= Math.Min(node.Length, length);
                 nodesNeedUpdate.Add(lastSuccessor);
             }
             // 更新所有需要更新的节点

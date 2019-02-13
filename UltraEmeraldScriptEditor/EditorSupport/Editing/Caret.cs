@@ -19,8 +19,17 @@ namespace EditorSupport.Editing
         #region Properties
         public Int32 DocumentOffset { get => _docOffset; set => _docOffset = value; }
         public TextLocation Location { get => _owner.Document.GetLocation(_docOffset); }
-        public Point RenderPosition { get => _renderPos; set => _renderPos = value; }
-        public Size CaretSize { get => _caretSize; set => _caretSize = value; }
+        /// <summary>
+        /// 绘制矩形
+        /// </summary>
+        public Rect RenderRect { get => _renderRect; set => _renderRect = value; }
+        /// <summary>
+        /// 实际的UI坐标下的矩形
+        /// </summary>
+        public Rect ViewRect { get => _viewRect; set => _viewRect = value; }
+        /// <summary>
+        /// 是否处于Focus状态
+        /// </summary>
         public Boolean Visible { get => _visible; set => _visible = value; }
         public Brush Foreground { get => _fgBrush; set => _fgBrush = value; }
         public EditView Owner { get => _owner; }
@@ -89,21 +98,21 @@ namespace EditorSupport.Editing
         #region IRenderable
         public void Render(DrawingContext drawingContext, RenderContext renderContext)
         {
-            if (!_visible || !_timerWorking)
+            if (!_visible || !_timerWorking || _renderRect.IsEmpty)
             {
                 return;
             }
-            Double renderX = Math.Round(-_caretSize.Width * 0.5 + _renderPos.X);
-            Double renderY = _renderPos.Y;
-            drawingContext.DrawRectangle(_fgBrush, null, new Rect(renderX, renderY, _caretSize.Width, _caretSize.Height));
+            Double renderX = Math.Round(-_renderRect.Width * 0.5 + _renderRect.X);
+            Double renderY = _renderRect.Y;
+            drawingContext.DrawRectangle(_fgBrush, null, new Rect(renderX, renderY, _renderRect.Width, _renderRect.Height));
         }
         #endregion
         
         protected Int32 _docOffset;
-        protected Point _renderPos;
         protected Boolean _visible;
         protected Brush _fgBrush;
-        protected Size _caretSize;
+        protected Rect _renderRect;
+        protected Rect _viewRect;
         protected EditView _owner;
     }
 }

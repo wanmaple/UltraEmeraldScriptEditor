@@ -428,21 +428,82 @@ namespace EditorSupport.Rendering
 
         public void MeasureCaretRendering(Caret caret)
         {
-            if (_lineRenderer.VisibleLines.Count <= 0)
+            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
+            Size caretSize = new Size(1.0, GlyphOption.LineHeight);
+            Point caretPos = LocationToPosition(caret.Location);
+            Rect caretRect = new Rect(caretPos, caretSize);
+            caret.ViewRect = caretRect;
+            caretRect.Intersect(_renderContext.Region);
+            caret.RenderRect = caretRect;
+        }
+
+        public void MeasureSelectionRendering(Selection selection)
+        {
+            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
+            selection.RenderRects.Clear();
+            selection.ViewRects.Clear();
+            if (selection.IsEmpty)
             {
-                caret.Visible = false;
                 return;
             }
-            caret.CaretSize = new Size(1.0, GlyphOption.LineHeight);
-            Point pos = LocationToPosition(caret.Location);
-            if (pos.X >= 0 && pos.Y >= 0)
+            TextLocation startLocation = Document.GetLocation(selection.StartOffset);
+            TextLocation endLocation = Document.GetLocation(selection.EndOffset);
+            if (startLocation.Line == endLocation.Line)
             {
-                caret.Visible = true;
-                caret.RenderPosition = new Point(pos.X + Padding.Left, pos.Y + Padding.Top);
+                // 单行
+                Point viewStart = LocationToPosition(startLocation);
+                Point viewEnd = LocationToPosition(endLocation);
+                viewEnd.Y += GlyphOption.LineHeight;
+                var viewRect = new Rect(viewStart, viewEnd);
+                selection.ViewRects.Add(viewRect);
+                viewRect.Intersect(_renderContext.Region);
+                if (!viewRect.IsEmpty)
+                {
+                    selection.RenderRects.Add(viewRect);
+                }
             }
             else
             {
-                caret.Visible = false;
+                Point viewStart, viewEnd;
+                Rect viewRect;
+                // 第一行到底
+                viewStart = LocationToPosition(startLocation);
+                VisualLine line = _allVisualLines[startLocation.Line - 1];
+                viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize, viewStart.Y + GlyphOption.LineHeight);
+                viewRect = new Rect(viewStart, viewEnd);
+                selection.ViewRects.Add(viewRect);
+                viewRect.Intersect(_renderContext.Region);
+                if (!viewRect.IsEmpty)
+                {
+                    selection.RenderRects.Add(viewRect);
+                }
+                // 中间若干行
+                Int32 lineNum = startLocation.Line + 1;
+                while (lineNum != endLocation.Line)
+                {
+                    line = _allVisualLines[lineNum - 1];
+                    viewStart = new Point(Padding.Left, viewStart.Y + GlyphOption.LineHeight);
+                    viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize, viewEnd.Y + GlyphOption.LineHeight);
+                    viewRect = new Rect(viewStart, viewEnd);
+                    selection.ViewRects.Add(viewRect);
+                    viewRect.Intersect(_renderContext.Region);
+                    if (!viewRect.IsEmpty)
+                    {
+                        selection.RenderRects.Add(viewRect);
+                    }
+                    ++lineNum;
+                }
+                // 最后一行到头
+                viewStart = new Point(Padding.Left, viewStart.Y + GlyphOption.LineHeight);
+                viewEnd = LocationToPosition(endLocation);
+                viewEnd.Y += GlyphOption.LineHeight;
+                viewRect = new Rect(viewStart, viewEnd);
+                selection.ViewRects.Add(viewRect);
+                viewRect.Intersect(_renderContext.Region);
+                if (!viewRect.IsEmpty)
+                {
+                    selection.RenderRects.Add(viewRect);
+                }
             }
         }
 
@@ -451,25 +512,100 @@ namespace EditorSupport.Rendering
             caret.DocumentOffset = Document.GetOffset(PositionToLocation(positionToView));
         }
 
+        public Int32 LineUpCaretOffset(Int32 currentOffset)
+        {
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            if (currentLocation.Line <= 1)
+            {
+                // 不变化
+                return currentOffset;
+            }
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            Double currentVisualLength = currentLine.CharacterVisualOffsets.GetSumValue(currentLocation.Column - 1);
+            VisualLine prevLine = _allVisualLines[currentLocation.Line - 2];
+            // 先预估一个值以免全部遍历
+            Int32 estimation = Math.Min(currentLocation.Column - 1, prevLine.Line.Length);
+            Double visualLength = prevLine.CharacterVisualOffsets.GetSumValue(estimation);
+            Int32 column = estimation;
+            if (visualLength < currentVisualLength)
+            {
+                for (int i = estimation + 1; i <= prevLine.Line.Length; i++)
+                {
+                    if (prevLine.CharacterVisualOffsets.GetSumValue(i) > currentVisualLength)
+                    {
+                        column = i - 1;
+                        break;
+                    }
+                }
+            }
+            else if (visualLength > currentVisualLength)
+            {
+                for (int i = estimation - 1; i >= 0; --i)
+                {
+                    if (prevLine.CharacterVisualOffsets.GetSumValue(i) < currentVisualLength)
+                    {
+                        column = i + 1;
+                        break;
+                    }
+                }
+            }
+            TextLocation targetLocation = new TextLocation(currentLocation.Line - 1, column + 1);
+            return Document.GetOffset(targetLocation);
+        }
+
+        public Int32 LineDownCaretOffset(Int32 currentOffset)
+        {
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            if (currentLocation.Line >= Document.LineCount)
+            {
+                // 不变化
+                return currentOffset;
+            }
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            Double currentVisualLength = currentLine.CharacterVisualOffsets.GetSumValue(currentLocation.Column - 1);
+            VisualLine nextLine = _allVisualLines[currentLocation.Line];
+            // 先预估一个值以免全部遍历
+            Int32 estimation = Math.Min(currentLocation.Column - 1, nextLine.Line.Length);
+            Double visualLength = nextLine.CharacterVisualOffsets.GetSumValue(estimation);
+            Int32 column = estimation;
+            if (visualLength < currentVisualLength)
+            {
+                for (int i = estimation + 1; i <= nextLine.Line.Length; i++)
+                {
+                    if (nextLine.CharacterVisualOffsets.GetSumValue(i) > currentVisualLength)
+                    {
+                        column = i - 1;
+                        break;
+                    }
+                }
+            }
+            else if (visualLength > currentVisualLength)
+            {
+                for (int i = estimation - 1; i >= 0; --i)
+                {
+                    if (nextLine.CharacterVisualOffsets.GetSumValue(i) < currentVisualLength)
+                    {
+                        column = i + 1;
+                        break;
+                    }
+                }
+            }
+            TextLocation targetLocation = new TextLocation(currentLocation.Line + 1, column + 1);
+            return Document.GetOffset(targetLocation);
+        }
+
         private Point LocationToPosition(TextLocation location)
         {
+            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
             Int32 renderLastLineNum = _lineRenderer.VisibleLines.Last.Value.Line.LineNumber;
-            if (location.Line >= renderFirstLineNum && location.Line <= renderLastLineNum)
-            {
-                Int32 lineIdx = location.Line - renderFirstLineNum;
-                VisualLine caretLine = _lineRenderer.VisibleLines.ElementAt(lineIdx);
-                Double caretVisualOffset = caretLine.CharacterVisualOffsets.GetSumValue(location.Column - 1);
-                Double caretPosX = caretVisualOffset + _lineRenderer.RenderOffset.X;
-                if (caretPosX < 0)
-                {
-                    return new Point(-1.0, -1.0);
-                }
-                Double caretPosY = _lineRenderer.RenderOffset.Y + lineIdx * GlyphOption.LineHeight;
+            Int32 visualLineIdx = location.Line - renderFirstLineNum;
+            VisualLine caretLine = _allVisualLines[location.Line - 1];
+            Double caretVisualOffset = caretLine.CharacterVisualOffsets.GetSumValue(location.Column - 1);
+            Double caretPosX = caretVisualOffset + _lineRenderer.RenderOffset.X;
+            Double caretPosY = _lineRenderer.RenderOffset.Y + visualLineIdx * GlyphOption.LineHeight;
 
-                return new Point(caretPosX, caretPosY);
-            }
-            return new Point(-1.0, -1.0);
+            return new Point(caretPosX + Padding.Left, caretPosY + Padding.Top);
         }
 
         private TextLocation PositionToLocation(Point position)

@@ -19,8 +19,6 @@ namespace EditorSupport.Editing
         public abstract int Length { get; set; }
 
         public abstract int EndOffset { get; set; }
-
-        public abstract void Render(DrawingContext drawingContext, RenderContext renderContext);
         #endregion
 
         #region Properties
@@ -29,7 +27,11 @@ namespace EditorSupport.Editing
 
         public Boolean IsEmpty { get => Length <= 0; }
 
-        public List<Rect> RenderRects { get => _renderRects; set => _renderRects = value; }
+        public List<Rect> RenderRects { get => _renderRects; }
+
+        public List<Rect> ViewRects { get => _viewRects; }
+
+        public Boolean Visible { get => _renderRects.Count > 0; }
 
         public EditView Owner { get => _owner; }
         #endregion
@@ -40,27 +42,51 @@ namespace EditorSupport.Editing
             _owner = owner ?? throw new ArgumentNullException("owner");
             _brush = new SolidColorBrush(CommonUtilities.ColorFromHexString("#7F7D7D7D"));
             _renderRects = new List<Rect>();
+            _viewRects = new List<Rect>();
         }
         #endregion
 
-        public void MoveLeft(Int32 length = 1)
+        /// <summary>
+        /// StartOffset偏移
+        /// </summary>
+        /// <param name="offset"></param>
+        public void MoveStart(Int32 offset)
         {
-            if (length <= 0)
-            {
-                throw new ArgumentException("'length' must be positive.");
-            }
-            StartOffset = Math.Max(StartOffset - length, 0);
+            StartOffset = CommonUtilities.Clamp(StartOffset + offset, 0, Owner.Document.Length);
         }
 
-        public void MoveRight(Int32 length = 1)
+        /// <summary>
+        /// EndOffset偏移
+        /// </summary>
+        /// <param name="offset"></param>
+        public void MoveEnd(Int32 offset)
         {
-            if (length <= 0)
-            {
-                throw new ArgumentException("'length' must be positive.");
-            }
-            EndOffset = Math.Min(EndOffset + length, Owner.Document.Length);
+            EndOffset = CommonUtilities.Clamp(EndOffset + offset, 0, Owner.Document.Length);
         }
 
+        /// <summary>
+        /// StartOffset和EndOffset一起偏移
+        /// </summary>
+        /// <param name="offset"></param>
+        public void Move(Int32 offset)
+        {
+            Int32 oldLength = Length;
+            if (offset > 0)
+            {
+                MoveEnd(offset);
+                StartOffset = EndOffset - oldLength;
+            }
+            else if (offset < 0)
+            {
+                MoveStart(offset);
+                EndOffset = StartOffset + oldLength;
+            }
+        }
+
+        /// <summary>
+        /// 清空Selection并且设置到指定偏移
+        /// </summary>
+        /// <param name="offset"></param>
         public void SetEmpty(Int32 offset)
         {
             if (offset < 0 || offset > _owner.Document.Length)
@@ -75,8 +101,21 @@ namespace EditorSupport.Editing
             SetEmpty(0);
         }
 
+        public virtual void Render(DrawingContext drawingContext, RenderContext renderContext)
+        {
+            if (!Visible)
+            {
+                return;
+            }
+            foreach (Rect rect in _renderRects)
+            {
+                drawingContext.DrawRectangle(_brush, null, rect);
+            }
+        }
+
         protected Brush _brush;
         protected List<Rect> _renderRects;
+        protected List<Rect> _viewRects;
         protected EditView _owner;
     }
 }

@@ -9,6 +9,10 @@ namespace EditorSupport.Utils
 {
     public static class CommonUtilities
     {
+        public static readonly String LineBreak = "\r\n";
+        public static readonly String Tab = "    ";
+        public static readonly Double LineVisualUnit = 1.25;
+
         public static Int32 Clamp(Int32 value, Int32 min, Int32 max)
         {
             return Math.Max(min, Math.Min(value, max));
@@ -61,7 +65,7 @@ namespace EditorSupport.Utils
                 if (ch == '\t')
                 {
                     // 改为4个空格
-                    sb.Append("    ");
+                    sb.Append(Tab);
                 }
                 else if (ch == '\n')
                 {

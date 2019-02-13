@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EditorSupport.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -75,7 +76,7 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
-                editor.InsertText("\r\n");
+                editor.InsertText(CommonUtilities.LineBreak);
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
             }
