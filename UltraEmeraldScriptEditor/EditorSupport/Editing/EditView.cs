@@ -184,6 +184,16 @@ namespace EditorSupport.Editing
             _selection.Length = 0;
         }
 
+        public void TabForward()
+        {
+
+        }
+
+        public void TabBackward()
+        {
+
+        }
+
         public void Redraw()
         {
             base.InvalidateVisual();
@@ -248,8 +258,7 @@ namespace EditorSupport.Editing
                 default:
                     break;
             }
-            _caret.StopAnimation();
-            _caret.StartAnimation();
+            _caret.RestartAnimation();
         }
 
         private void CreateDefaultInputHandler()

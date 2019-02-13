@@ -64,16 +64,22 @@ namespace EditorSupport.Editing
             _blinkTimer.Start();
         }
 
-        private void OnBlinkTimerTick(object sender, EventArgs e)
-        {
-            _timerWorking = !_timerWorking;
-            _owner.Redraw();
-        }
-
         public void StopAnimation()
         {
             _timerWorking = false;
             _blinkTimer.Stop();
+        }
+
+        public void RestartAnimation()
+        {
+            StopAnimation();
+            StartAnimation();
+        }
+
+        private void OnBlinkTimerTick(object sender, EventArgs e)
+        {
+            _timerWorking = !_timerWorking;
+            _owner.Redraw();
         }
 
         private DispatcherTimer _blinkTimer;

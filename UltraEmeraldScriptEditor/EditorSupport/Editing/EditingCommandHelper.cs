@@ -30,6 +30,8 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.EnterLineBreak, ModifierKeys.Shift, Key.Enter, OnEnter);
             AddCommandBinding(EditingCommands.Backspace, ModifierKeys.None, Key.Back, RemoveHandler(EditingCommands.SelectLeftByCharacter));
             AddCommandBinding(EditingCommands.Delete, ModifierKeys.None, Key.Delete, RemoveHandler(EditingCommands.SelectRightByCharacter));
+            AddCommandBinding(EditingCommands.TabForward, ModifierKeys.None, Key.Tab, OnTabForward);
+            AddCommandBinding(EditingCommands.TabBackward, ModifierKeys.Shift, Key.Tab, OnTabBackward);
         }
 
         internal static void AddCommandBinding(ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler handler)
@@ -74,6 +76,30 @@ namespace EditorSupport.Editing
             if (editor != null && editor.Document != null)
             {
                 editor.InsertText("\r\n");
+                editor.Caret.RestartAnimation();
+                editor.Redraw();
+            }
+        }
+
+        private static void OnTabForward(Object sender, ExecutedRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null)
+            {
+                editor.TabForward();
+                editor.Caret.RestartAnimation();
+                editor.Redraw();
+            }
+        }
+
+        private static void OnTabBackward(Object sender, ExecutedRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null)
+            {
+                editor.TabBackward();
+                editor.Caret.RestartAnimation();
+                editor.Redraw();
             }
         }
 
