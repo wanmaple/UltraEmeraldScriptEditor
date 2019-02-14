@@ -90,18 +90,10 @@ namespace EditorSupport.Editing
         {
             if (_selection != null)
             {
-                if (CanContentEdit && Content is IEditInfo)
-                {
-                    (Content as IEditInfo).MeasureSelectionRendering(_selection);
-                }
                 _selection.Render(drawingContext, _renderContext);
             }
             if (_caret != null)
             {
-                if (CanContentEdit && Content is IEditInfo)
-                {
-                    (Content as IEditInfo).MeasureCaretRendering(_caret);
-                }
                 _caret.Render(drawingContext, _renderContext);
             }
         }
@@ -440,6 +432,7 @@ namespace EditorSupport.Editing
                 default:
                     break;
             }
+            Measure();
             MoveCaretInVisual();
             _caret.RestartAnimation();
         }
@@ -479,6 +472,18 @@ namespace EditorSupport.Editing
             if (yChanged)
             {
                 base.ScrollToVerticalOffset(VerticalOffset + offsetY);
+            }
+        }
+
+        private void Measure()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                (Content as IEditInfo).MeasureSelectionRendering(_selection);
+            }
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                (Content as IEditInfo).MeasureCaretRendering(_caret);
             }
         }
 
@@ -565,16 +570,15 @@ namespace EditorSupport.Editing
             {
                 _caret = new Caret(this);
             }
-            _caret.DocumentOffset = 0;
             if (_selection == null)
             {
                 _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
             }
-            _selection.Reset();
             if (CanContentEdit && Content is IEditInfo)
             {
                 (Content as IEditInfo).ChangeDocument(newDoc);
             }
+            MoveCaret(CaretMovementType.DocumentStart, false);
             Redraw();
         }
         #endregion
