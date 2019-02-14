@@ -241,7 +241,7 @@ namespace EditorSupport.Editing
         {
             TextLocation location;
             Int32 length;
-            DocumentLine line;
+            DocumentLine line, prevLine, nextLine;
             switch (movementType)
             {
                 case CaretMovementType.CharacterLeft:
@@ -304,8 +304,66 @@ namespace EditorSupport.Editing
                 case CaretMovementType.WordRight:
                     break;
                 case CaretMovementType.LineStart:
+                    location = Document.GetLocation(_caret.DocumentOffset);
+                    line = Document.GetLineByOffset(_caret.DocumentOffset);
+                    if (doSelect)
+                    {
+                        if (_selection.IsEmpty || _caret.DocumentOffset < _selection.EndOffset)
+                        {
+                            _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
+                            _selection.StartOffset = _caret.DocumentOffset;
+                        }
+                        else if (_caret.DocumentOffset > _selection.StartOffset)
+                        {
+                            prevLine = Document.GetLineByOffset(_selection.StartOffset);
+                            _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
+                            if (prevLine.LineNumber == location.Line)
+                            {
+                                _selection.EndOffset = _selection.StartOffset;
+                                _selection.StartOffset = _caret.DocumentOffset;
+                            }
+                            else
+                            {
+                                _selection.EndOffset = _caret.DocumentOffset;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
                     break;
                 case CaretMovementType.LineEnd:
+                    location = Document.GetLocation(_caret.DocumentOffset);
+                    line = Document.GetLineByOffset(_caret.DocumentOffset);
+                    if (doSelect)
+                    {
+                        if (_selection.IsEmpty || _caret.DocumentOffset > _selection.StartOffset)
+                        {
+                            _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
+                            _selection.EndOffset = _caret.DocumentOffset;
+                        }
+                        else if (_caret.DocumentOffset < _selection.EndOffset)
+                        {
+                            nextLine = Document.GetLineByOffset(_selection.EndOffset);
+                            _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
+                            if (nextLine.LineNumber == location.Line)
+                            {
+                                _selection.StartOffset = _selection.EndOffset;
+                                _selection.EndOffset = _caret.DocumentOffset;
+                            }
+                            else
+                            {
+                                _selection.StartOffset = _caret.DocumentOffset;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
                     break;
                 case CaretMovementType.LineUp:
                     if (CanContentEdit && Content is IEditInfo)
@@ -358,13 +416,70 @@ namespace EditorSupport.Editing
                 case CaretMovementType.PageDown:
                     break;
                 case CaretMovementType.DocumentStart:
+                    _caret.DocumentOffset = 0;
+                    if (doSelect)
+                    {
+                        _selection.StartOffset = _caret.DocumentOffset;
+                    }
+                    else
+                    {
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
                     break;
                 case CaretMovementType.DocumentEnd:
+                    _caret.DocumentOffset = Document.Length;
+                    if (doSelect)
+                    {
+                        _selection.EndOffset = _caret.DocumentOffset;
+                    }
+                    else
+                    {
+                        _selection.SetEmpty(_caret.DocumentOffset);
+                    }
                     break;
                 default:
                     break;
             }
+            MoveCaretInVisual();
             _caret.RestartAnimation();
+        }
+
+        internal void MoveCaretInVisual()
+        {
+            Double left = _caret.ViewRect.Left;
+            Double top = _caret.ViewRect.Top;
+            Double right = _caret.ViewRect.Right;
+            Double bottom = _caret.ViewRect.Bottom;
+            Double offsetX = 0.0, offsetY = 0.0;
+            Boolean xChanged = false, yChanged = false;
+            if (left < 0)
+            {
+                offsetX = left;
+                xChanged = true;
+            }
+            else if (right > ViewportWidth)
+            {
+                offsetX = right - ViewportWidth;
+                xChanged = true;
+            }
+            if (top < 0)
+            {
+                offsetY = top;
+                yChanged = true;
+            }
+            else if (bottom > ViewportHeight)
+            {
+                offsetY = bottom - ViewportHeight;
+                yChanged = true;
+            }
+            if (xChanged)
+            {
+                base.ScrollToHorizontalOffset(HorizontalOffset + offsetX);
+            }
+            if (yChanged)
+            {
+                base.ScrollToVerticalOffset(VerticalOffset + offsetY);
+            }
         }
 
         private void CreateDefaultInputHandler()

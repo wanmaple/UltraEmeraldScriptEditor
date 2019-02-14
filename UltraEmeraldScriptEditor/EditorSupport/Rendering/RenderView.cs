@@ -93,13 +93,13 @@ namespace EditorSupport.Rendering
             // 找出所有需要绘制的VisualLine
             _lineRenderer.VisibleLines.Clear();
             Double relativeOffsetY = VerticalOffset;
-            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight)), 0);
+            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight) - 1), 0);
             Int32 endIdx = Math.Min(Convert.ToInt32(Math.Ceiling((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
             for (int i = startIdx; i <= endIdx; i++)
             {
                 _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
             }
-            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -(VerticalOffset % GlyphOption.LineHeight));
+            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -((VerticalOffset - Padding.Top) % GlyphOption.LineHeight + Padding.Top));
 
             // 所有VisualLine的逻辑区域
             Double maxLineWidth = 0.0;
@@ -113,7 +113,7 @@ namespace EditorSupport.Rendering
             }
             Double docHeight = _allVisualLines.Count * GlyphOption.LineHeight;
             Double desireWidth = maxLineWidth + Padding.Left + Padding.Right;
-            Double desireHeight = docHeight + Padding.Top + Padding.Bottom;
+            Double desireHeight = docHeight + Padding.Top + Padding.Bottom + ViewportHeight;
             Size desireSize = new Size(desireWidth, desireHeight);
 
             return desireSize;

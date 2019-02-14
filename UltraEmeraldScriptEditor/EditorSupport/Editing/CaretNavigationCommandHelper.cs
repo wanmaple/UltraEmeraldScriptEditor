@@ -41,14 +41,23 @@ namespace EditorSupport.Editing
 
         static CaretNavigationCommandHelper()
         {
-            AddCommandBinding(EditingCommands.MoveLeftByCharacter, ModifierKeys.None, Key.Left, SelectionHandler(CaretMovementType.CharacterLeft, false));
-            AddCommandBinding(EditingCommands.MoveRightByCharacter, ModifierKeys.None, Key.Right, SelectionHandler(CaretMovementType.CharacterRight, false));
-            AddCommandBinding(EditingCommands.MoveUpByLine, ModifierKeys.None, Key.Up, SelectionHandler(CaretMovementType.LineUp, false));
-            AddCommandBinding(EditingCommands.MoveDownByLine, ModifierKeys.None, Key.Down, SelectionHandler(CaretMovementType.LineDown, false));
-            AddCommandBinding(EditingCommands.SelectLeftByCharacter, ModifierKeys.Shift, Key.Left, SelectionHandler(CaretMovementType.CharacterLeft, true));
-            AddCommandBinding(EditingCommands.SelectRightByCharacter, ModifierKeys.Shift, Key.Right, SelectionHandler(CaretMovementType.CharacterRight, true));
-            AddCommandBinding(EditingCommands.SelectUpByLine, ModifierKeys.Shift, Key.Up, SelectionHandler(CaretMovementType.LineUp, true));
-            AddCommandBinding(EditingCommands.SelectDownByLine, ModifierKeys.Shift, Key.Down, SelectionHandler(CaretMovementType.LineDown, true));
+            AddCommandBinding(EditingCommands.MoveLeftByCharacter, ModifierKeys.None, Key.Left, CaretHandler(CaretMovementType.CharacterLeft, false));
+            AddCommandBinding(EditingCommands.MoveRightByCharacter, ModifierKeys.None, Key.Right, CaretHandler(CaretMovementType.CharacterRight, false));
+            AddCommandBinding(EditingCommands.MoveUpByLine, ModifierKeys.None, Key.Up, CaretHandler(CaretMovementType.LineUp, false));
+            AddCommandBinding(EditingCommands.MoveDownByLine, ModifierKeys.None, Key.Down, CaretHandler(CaretMovementType.LineDown, false));
+            AddCommandBinding(EditingCommands.MoveToLineStart, ModifierKeys.None, Key.Home, CaretHandler(CaretMovementType.LineStart, false));
+            AddCommandBinding(EditingCommands.MoveToLineEnd, ModifierKeys.None, Key.End, CaretHandler(CaretMovementType.LineEnd, false));
+            AddCommandBinding(EditingCommands.MoveToDocumentStart, ModifierKeys.Control, Key.Home, CaretHandler(CaretMovementType.DocumentStart, false));
+            AddCommandBinding(EditingCommands.MoveToDocumentEnd, ModifierKeys.Control, Key.End, CaretHandler(CaretMovementType.DocumentEnd, false));
+
+            AddCommandBinding(EditingCommands.SelectLeftByCharacter, ModifierKeys.Shift, Key.Left, CaretHandler(CaretMovementType.CharacterLeft, true));
+            AddCommandBinding(EditingCommands.SelectRightByCharacter, ModifierKeys.Shift, Key.Right, CaretHandler(CaretMovementType.CharacterRight, true));
+            AddCommandBinding(EditingCommands.SelectUpByLine, ModifierKeys.Shift, Key.Up, CaretHandler(CaretMovementType.LineUp, true));
+            AddCommandBinding(EditingCommands.SelectDownByLine, ModifierKeys.Shift, Key.Down, CaretHandler(CaretMovementType.LineDown, true));
+            AddCommandBinding(EditingCommands.SelectToLineStart, ModifierKeys.Shift, Key.Home, CaretHandler(CaretMovementType.LineStart, true));
+            AddCommandBinding(EditingCommands.SelectToLineEnd, ModifierKeys.Shift, Key.End, CaretHandler(CaretMovementType.LineEnd, true));
+            AddCommandBinding(EditingCommands.SelectToDocumentStart, ModifierKeys.Control | ModifierKeys.Shift, Key.Home, CaretHandler(CaretMovementType.DocumentStart, true));
+            AddCommandBinding(EditingCommands.SelectToDocumentEnd, ModifierKeys.Control | ModifierKeys.Shift, Key.End, CaretHandler(CaretMovementType.DocumentEnd, true));
             AddCommandBinding(ApplicationCommands.SelectAll, ModifierKeys.Control, Key.A, OnSelectAll);
         }
 
@@ -65,7 +74,7 @@ namespace EditorSupport.Editing
             return kb;
         }
 
-        private static ExecutedRoutedEventHandler SelectionHandler(CaretMovementType caretMovementType, Boolean doSelect)
+        private static ExecutedRoutedEventHandler CaretHandler(CaretMovementType caretMovementType, Boolean doSelect)
         {
             return (sender, e) =>
             {

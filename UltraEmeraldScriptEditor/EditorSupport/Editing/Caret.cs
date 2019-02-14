@@ -50,7 +50,7 @@ namespace EditorSupport.Editing
 
         public void MoveLeft(Int32 length = 1)
         {
-            if (length <= 0)
+            if (length < 0)
             {
                 throw new ArgumentException("'length' must be positive.");
             }
@@ -59,7 +59,7 @@ namespace EditorSupport.Editing
 
         public void MoveRight(Int32 length = 1)
         {
-            if (length <= 0)
+            if (length < 0)
             {
                 throw new ArgumentException("'length' must be positive.");
             }
