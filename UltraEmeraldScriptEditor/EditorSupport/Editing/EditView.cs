@@ -3,6 +3,7 @@ using EditorSupport.Rendering;
 using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace EditorSupport.Editing
     {
         #region Properties
         public static readonly DependencyProperty DocumentProperty =
-    DependencyProperty.Register("Document", typeof(TextDocument), typeof(EditView), new PropertyMetadata(OnDocumentChanged));
+    DependencyProperty.Register("Document", typeof(TextDocument), typeof(EditView), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
         public static readonly DependencyProperty CanContentEditProperty =
             DependencyProperty.Register("CanContentEdit", typeof(Boolean), typeof(EditView), new PropertyMetadata(false));
 
@@ -69,6 +70,9 @@ namespace EditorSupport.Editing
             _renderContext = new RenderContext();
             Cursor = Cursors.IBeam;
 
+            _caret = new Caret(this);
+            _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+
             CreateDefaultInputHandler();
         }
         #endregion
@@ -100,6 +104,7 @@ namespace EditorSupport.Editing
 
         protected override void OnScrollChanged(ScrollChangedEventArgs e)
         {
+            Measure();
             Redraw();
         }
 
@@ -129,6 +134,8 @@ namespace EditorSupport.Editing
                     _selection.SetEmpty(_caret.DocumentOffset);
                 }
                 Focus();
+                Measure();
+                MoveCaretInVisual();
                 Redraw();
             }
         }
@@ -173,6 +180,7 @@ namespace EditorSupport.Editing
             }
             _caret.MoveRight(content.Length);
             _selection.SetEmpty(_caret.DocumentOffset);
+            Measure();
         }
 
         public void RemoveSelection()
@@ -184,6 +192,7 @@ namespace EditorSupport.Editing
             Document.Remove(_selection.StartOffset, _selection.Length);
             _caret.DocumentOffset = _selection.StartOffset;
             _selection.SetEmpty(_caret.DocumentOffset);
+            Measure();
         }
 
         public void TabForward()
@@ -222,6 +231,8 @@ namespace EditorSupport.Editing
             _selection.StartOffset = 0;
             _selection.EndOffset = Document.Length;
             _caret.DocumentOffset = Document.Length;
+            Measure();
+            MoveCaretInVisual();
         }
 
         public void Redraw()
@@ -370,7 +381,15 @@ namespace EditorSupport.Editing
                             else if (_caret.DocumentOffset == _selection.EndOffset)
                             {
                                 _caret.DocumentOffset = (Content as IEditInfo).LineUpCaretOffset(_caret.DocumentOffset);
-                                _selection.EndOffset = _caret.DocumentOffset;
+                                if (_caret.DocumentOffset < _selection.StartOffset)
+                                {
+                                    _selection.EndOffset = _selection.StartOffset;
+                                    _selection.StartOffset = _caret.DocumentOffset;
+                                }
+                                else
+                                {
+                                    _selection.EndOffset = _caret.DocumentOffset;
+                                }
                             }
                         }
                         else
@@ -393,7 +412,15 @@ namespace EditorSupport.Editing
                             else if (_caret.DocumentOffset == _selection.StartOffset)
                             {
                                 _caret.DocumentOffset = (Content as IEditInfo).LineDownCaretOffset(_caret.DocumentOffset);
-                                _selection.StartOffset = _caret.DocumentOffset;
+                                if (_caret.DocumentOffset > _selection.EndOffset)
+                                {
+                                    _selection.StartOffset = _selection.EndOffset;
+                                    _selection.EndOffset = _caret.DocumentOffset;
+                                }
+                                else
+                                {
+                                    _selection.StartOffset = _caret.DocumentOffset;
+                                }
                             }
                         }
                         else
@@ -404,8 +431,66 @@ namespace EditorSupport.Editing
                     }
                     break;
                 case CaretMovementType.PageUp:
+                    if (CanContentEdit && Content is IEditInfo)
+                    {
+                        if (doSelect)
+                        {
+                            if (_caret.DocumentOffset == _selection.StartOffset)
+                            {
+                                _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
+                                _selection.StartOffset = _caret.DocumentOffset;
+                            }
+                            else if (_caret.DocumentOffset == _selection.EndOffset)
+                            {
+                                _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
+                                if (_caret.DocumentOffset < _selection.StartOffset)
+                                {
+                                    _selection.EndOffset = _selection.StartOffset;
+                                    _selection.StartOffset = _caret.DocumentOffset;
+                                }
+                                else
+                                {
+                                    _selection.EndOffset = _caret.DocumentOffset;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
+                            _selection.SetEmpty(_caret.DocumentOffset);
+                        }
+                    }
                     break;
                 case CaretMovementType.PageDown:
+                    if (CanContentEdit && Content is IEditInfo)
+                    {
+                        if (doSelect)
+                        {
+                            if (_caret.DocumentOffset == _selection.EndOffset)
+                            {
+                                _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
+                                _selection.EndOffset = _caret.DocumentOffset;
+                            }
+                            else if (_caret.DocumentOffset == _selection.StartOffset)
+                            {
+                                _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
+                                if (_caret.DocumentOffset > _selection.EndOffset)
+                                {
+                                    _selection.StartOffset = _selection.EndOffset;
+                                    _selection.EndOffset = _caret.DocumentOffset;
+                                }
+                                else
+                                {
+                                    _selection.StartOffset = _caret.DocumentOffset;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
+                            _selection.SetEmpty(_caret.DocumentOffset);
+                        }
+                    }
                     break;
                 case CaretMovementType.DocumentStart:
                     _caret.DocumentOffset = 0;
@@ -492,6 +577,7 @@ namespace EditorSupport.Editing
             var defaultHandler = new InputHandlerGroup(this);
             defaultHandler.Children.Add(EditingCommandHelper.CreateHandler(this));
             defaultHandler.Children.Add(CaretNavigationCommandHelper.CreateHandler(this));
+            defaultHandler.Children.Add(new SelectionMouseHandler(this));
             ActiveInputHandler = defaultHandler;
         }
 
@@ -566,19 +652,14 @@ namespace EditorSupport.Editing
                 TextDocumentWeakEventManager.UpdateStarted.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateFinished.AddListener(newDoc, this);
             }
-            if (_caret == null)
-            {
-                _caret = new Caret(this);
-            }
-            if (_selection == null)
-            {
-                _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
-            }
             if (CanContentEdit && Content is IEditInfo)
             {
                 (Content as IEditInfo).ChangeDocument(newDoc);
             }
-            MoveCaret(CaretMovementType.DocumentStart, false);
+            _caret.DocumentOffset = 0;
+            _selection.Reset();
+            ScrollToHome();
+            Measure();
             Redraw();
         }
         #endregion

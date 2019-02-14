@@ -75,6 +75,7 @@
     <Compile Include="Editing\InputCommandsHandler.cs" />
     <Compile Include="Editing\InputHandlerGroup.cs" />
     <Compile Include="Editing\Selection.cs" />
+    <Compile Include="Editing\SelectionMouseHandler.cs" />
     <Compile Include="Highlighting\CommonHighlighter.cs" />
     <Compile Include="Highlighting\HighlightingFactory.cs" />
     <Compile Include="Highlighting\HighlightStyle.cs" />

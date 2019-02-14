@@ -49,6 +49,8 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.MoveToLineEnd, ModifierKeys.None, Key.End, CaretHandler(CaretMovementType.LineEnd, false));
             AddCommandBinding(EditingCommands.MoveToDocumentStart, ModifierKeys.Control, Key.Home, CaretHandler(CaretMovementType.DocumentStart, false));
             AddCommandBinding(EditingCommands.MoveToDocumentEnd, ModifierKeys.Control, Key.End, CaretHandler(CaretMovementType.DocumentEnd, false));
+            AddCommandBinding(EditingCommands.MoveUpByPage, ModifierKeys.None, Key.PageUp, CaretHandler(CaretMovementType.PageUp, false));
+            AddCommandBinding(EditingCommands.MoveDownByPage, ModifierKeys.None, Key.PageDown, CaretHandler(CaretMovementType.PageDown, false));
 
             AddCommandBinding(EditingCommands.SelectLeftByCharacter, ModifierKeys.Shift, Key.Left, CaretHandler(CaretMovementType.CharacterLeft, true));
             AddCommandBinding(EditingCommands.SelectRightByCharacter, ModifierKeys.Shift, Key.Right, CaretHandler(CaretMovementType.CharacterRight, true));
@@ -58,6 +60,8 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.SelectToLineEnd, ModifierKeys.Shift, Key.End, CaretHandler(CaretMovementType.LineEnd, true));
             AddCommandBinding(EditingCommands.SelectToDocumentStart, ModifierKeys.Control | ModifierKeys.Shift, Key.Home, CaretHandler(CaretMovementType.DocumentStart, true));
             AddCommandBinding(EditingCommands.SelectToDocumentEnd, ModifierKeys.Control | ModifierKeys.Shift, Key.End, CaretHandler(CaretMovementType.DocumentEnd, true));
+            AddCommandBinding(EditingCommands.SelectUpByPage, ModifierKeys.Shift, Key.PageUp, CaretHandler(CaretMovementType.PageUp, true));
+            AddCommandBinding(EditingCommands.SelectDownByPage, ModifierKeys.Shift, Key.PageDown, CaretHandler(CaretMovementType.PageDown, true));
             AddCommandBinding(ApplicationCommands.SelectAll, ModifierKeys.Control, Key.A, OnSelectAll);
         }
 
@@ -81,6 +85,7 @@ namespace EditorSupport.Editing
                 EditView editor = sender as EditView;
                 editor.MoveCaret(caretMovementType, doSelect);
                 editor.Redraw();
+                e.Handled = true;
             };
         }
 
@@ -89,6 +94,7 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             editor.SelectAll();
             editor.Redraw();
+            e.Handled = true;
         }
 
         internal static List<CommandBinding> _commandBindings = new List<CommandBinding>();

@@ -246,6 +246,10 @@ namespace EditorSupport.Document
         #region Locations <=> Offsets
         public TextLocation GetLocation(Int32 offset)
         {
+            if (offset == 0)
+            {
+                return new TextLocation(1, 1);
+            }
             DocumentLine docLine = GetLineByOffset(offset);
             Int32 column = offset - docLine.StartOffset + 1;
             return new TextLocation(docLine.LineNumber, column);
@@ -253,6 +257,10 @@ namespace EditorSupport.Document
 
         public Int32 GetOffset(TextLocation location)
         {
+            if (location.Line == 1 && location.Column == 1)
+            {
+                return 0;
+            }
             return GetOffset(location.Line, location.Column);
         }
 

@@ -91,15 +91,7 @@ namespace EditorSupport.Rendering
             _scrollViewport = availableSize;
 
             // 找出所有需要绘制的VisualLine
-            _lineRenderer.VisibleLines.Clear();
-            Double relativeOffsetY = VerticalOffset;
-            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight) - 1), 0);
-            Int32 endIdx = Math.Min(Convert.ToInt32(Math.Ceiling((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
-            for (int i = startIdx; i <= endIdx; i++)
-            {
-                _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
-            }
-            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -((VerticalOffset - Padding.Top) % GlyphOption.LineHeight + Padding.Top));
+            MeasureVisibleLines();
 
             // 所有VisualLine的逻辑区域
             Double maxLineWidth = 0.0;
@@ -113,7 +105,7 @@ namespace EditorSupport.Rendering
             }
             Double docHeight = _allVisualLines.Count * GlyphOption.LineHeight;
             Double desireWidth = maxLineWidth + Padding.Left + Padding.Right;
-            Double desireHeight = docHeight + Padding.Top + Padding.Bottom + ViewportHeight;
+            Double desireHeight = docHeight + Padding.Top + Padding.Bottom + ViewportHeight * 0.5;
             Size desireSize = new Size(desireWidth, desireHeight);
 
             return desireSize;
@@ -199,6 +191,19 @@ namespace EditorSupport.Rendering
         private void ResetVisualRegion(Size availableSize)
         {
             _renderContext.Region = new Rect(availableSize);
+        }
+
+        private void MeasureVisibleLines()
+        {
+            _lineRenderer.VisibleLines.Clear();
+            Double relativeOffsetY = VerticalOffset - Padding.Top;
+            Int32 startIdx = Math.Max(Convert.ToInt32(Math.Floor(relativeOffsetY / GlyphOption.LineHeight)), 0);
+            Int32 endIdx = Math.Min(Convert.ToInt32(Math.Floor((relativeOffsetY + ViewportHeight) / GlyphOption.LineHeight)), _allVisualLines.Count - 1);
+            for (int i = startIdx; i <= endIdx; i++)
+            {
+                _lineRenderer.VisibleLines.AddLast(_allVisualLines[i]);
+            }
+            _lineRenderer.RenderOffset = new Point(-HorizontalOffset, -((VerticalOffset - Padding.Top) % GlyphOption.LineHeight + Padding.Top));
         }
 
         private void Redraw()
@@ -428,7 +433,11 @@ namespace EditorSupport.Rendering
 
         public void MeasureCaretRendering(Caret caret)
         {
-            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
+            if (_lineRenderer.VisibleLines.Count == 0)
+            {
+                return;
+            }
+            //Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Size caretSize = new Size(1.0, GlyphOption.LineHeight);
             Point caretPos = LocationToPosition(caret.Location);
             Rect caretRect = new Rect(caretPos, caretSize);
@@ -439,7 +448,11 @@ namespace EditorSupport.Rendering
 
         public void MeasureSelectionRendering(Selection selection)
         {
-            Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
+            if (_lineRenderer.VisibleLines.Count == 0)
+            {
+                return;
+            }
+            //Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             selection.RenderRects.Clear();
             selection.ViewRects.Clear();
             if (selection.IsEmpty)
@@ -594,6 +607,92 @@ namespace EditorSupport.Rendering
             return Document.GetOffset(targetLocation);
         }
 
+        public Int32 PageUpCaretOffset(Int32 currentOffset)
+        {
+            Int32 pageLines = Convert.ToInt32(Math.Floor(ViewportHeight / GlyphOption.LineHeight));
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            if (currentLocation.Line == 1)
+            {
+                // 不变化
+                return currentOffset;
+            }
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            Double currentVisualLength = currentLine.CharacterVisualOffsets.GetSumValue(currentLocation.Column - 1);
+            Int32 targetLineNum = Math.Max(currentLocation.Line - pageLines, 1);
+            VisualLine targetLine = _allVisualLines[targetLineNum - 1];
+            // 先预估一个值以免全部遍历
+            Int32 estimation = Math.Min(currentLocation.Column - 1, targetLine.Line.Length);
+            Double visualLength = targetLine.CharacterVisualOffsets.GetSumValue(estimation);
+            Int32 column = estimation;
+            if (visualLength < currentVisualLength)
+            {
+                for (int i = estimation + 1; i <= targetLine.Line.Length; i++)
+                {
+                    if (targetLine.CharacterVisualOffsets.GetSumValue(i) > currentVisualLength)
+                    {
+                        column = i - 1;
+                        break;
+                    }
+                }
+            }
+            else if (visualLength > currentVisualLength)
+            {
+                for (int i = estimation - 1; i >= 0; --i)
+                {
+                    if (targetLine.CharacterVisualOffsets.GetSumValue(i) < currentVisualLength)
+                    {
+                        column = i + 1;
+                        break;
+                    }
+                }
+            }
+            TextLocation targetLocation = new TextLocation(targetLineNum, column + 1);
+            return Document.GetOffset(targetLocation);
+        }
+
+        public Int32 PageDownCaretOffset(Int32 currentOffset)
+        {
+            Int32 pageLines = Convert.ToInt32(Math.Floor(ViewportHeight / GlyphOption.LineHeight));
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            if (currentLocation.Line == Document.LineCount)
+            {
+                // 不变化
+                return currentOffset;
+            }
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            Double currentVisualLength = currentLine.CharacterVisualOffsets.GetSumValue(currentLocation.Column - 1);
+            Int32 targetLineNum = Math.Min(currentLocation.Line + pageLines, Document.LineCount);
+            VisualLine targetLine = _allVisualLines[targetLineNum - 1];
+            // 先预估一个值以免全部遍历
+            Int32 estimation = Math.Min(currentLocation.Column - 1, targetLine.Line.Length);
+            Double visualLength = targetLine.CharacterVisualOffsets.GetSumValue(estimation);
+            Int32 column = estimation;
+            if (visualLength < currentVisualLength)
+            {
+                for (int i = estimation + 1; i <= targetLine.Line.Length; i++)
+                {
+                    if (targetLine.CharacterVisualOffsets.GetSumValue(i) > currentVisualLength)
+                    {
+                        column = i - 1;
+                        break;
+                    }
+                }
+            }
+            else if (visualLength > currentVisualLength)
+            {
+                for (int i = estimation - 1; i >= 0; --i)
+                {
+                    if (targetLine.CharacterVisualOffsets.GetSumValue(i) < currentVisualLength)
+                    {
+                        column = i + 1;
+                        break;
+                    }
+                }
+            }
+            TextLocation targetLocation = new TextLocation(targetLineNum, column + 1);
+            return Document.GetOffset(targetLocation);
+        }
+
         private Point LocationToPosition(TextLocation location)
         {
             Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
@@ -611,13 +710,13 @@ namespace EditorSupport.Rendering
         private TextLocation PositionToLocation(Point position)
         {
             position.X -= _lineRenderer.RenderOffset.X;
-            position.Y -= _lineRenderer.RenderOffset.Y;
+            position.Y -= Padding.Top;
             Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
             Int32 renderLastLineNum = _lineRenderer.VisibleLines.Last.Value.Line.LineNumber;
-            Double startY = _lineRenderer.RenderOffset.Y + Padding.Top;
+            Double startY = _lineRenderer.RenderOffset.Y;
             Double endY = startY + _lineRenderer.VisibleLines.Count * GlyphOption.LineHeight;
-            Int32 line = CommonUtilities.Clamp(Convert.ToInt32(Math.Floor((position.Y - startY) / GlyphOption.LineHeight)) + renderFirstLineNum, renderFirstLineNum, renderLastLineNum);
+            Int32 line = CommonUtilities.Clamp(Convert.ToInt32(Math.Ceiling((position.Y - startY) / GlyphOption.LineHeight)) - 1 + renderFirstLineNum, renderFirstLineNum, renderLastLineNum);
             VisualLine visualLine = _lineRenderer.VisibleLines.ElementAt(line - renderFirstLineNum);
             Double visualOffset = Padding.Left;
             Int32 column = 1;
@@ -659,6 +758,7 @@ namespace EditorSupport.Rendering
                 TextDocumentWeakEventManager.Changed.AddListener(newDoc, this);
             }
             RebuildVisualLines();
+            MeasureVisibleLines();
             Redraw();
         }
 

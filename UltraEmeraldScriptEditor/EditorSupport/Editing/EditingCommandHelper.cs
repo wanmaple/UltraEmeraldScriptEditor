@@ -80,6 +80,7 @@ namespace EditorSupport.Editing
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
             }
+            e.Handled = true;
         }
 
         private static void OnTabForward(Object sender, ExecutedRoutedEventArgs e)
@@ -91,6 +92,7 @@ namespace EditorSupport.Editing
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
             }
+            e.Handled = true;
         }
 
         private static void OnTabBackward(Object sender, ExecutedRoutedEventArgs e)
@@ -102,6 +104,7 @@ namespace EditorSupport.Editing
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
             }
+            e.Handled = true;
         }
 
         internal static List<CommandBinding> _commandBindings = new List<CommandBinding>();

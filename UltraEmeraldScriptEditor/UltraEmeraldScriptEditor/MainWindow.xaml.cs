@@ -26,6 +26,12 @@ namespace UltraEmeraldScriptEditor
         public MainWindow()
         {
             InitializeComponent();
+
+            Loaded += (sender, e) =>
+            {
+                editor.Document = new TextDocument();
+                editor.Focus();
+            };
         }
 
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)

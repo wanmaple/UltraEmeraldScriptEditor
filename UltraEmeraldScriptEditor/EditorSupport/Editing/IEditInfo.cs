@@ -42,5 +42,17 @@ namespace EditorSupport.Editing
         /// <param name="currentOffset"></param>
         /// <returns></returns>
         Int32 LineDownCaretOffset(Int32 currentOffset);
+        /// <summary>
+        /// 计算光标向上翻页的最终偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 PageUpCaretOffset(Int32 currentOffset);
+        /// <summary>
+        /// 计算光标向下翻页的最终偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 PageDownCaretOffset(Int32 currentOffset);
     }
 }
