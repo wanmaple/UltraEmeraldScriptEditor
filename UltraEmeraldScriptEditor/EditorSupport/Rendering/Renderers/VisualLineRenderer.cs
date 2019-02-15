@@ -29,7 +29,7 @@ namespace EditorSupport.Rendering.Renderers
             {
                 foreach (var visualLine in VisibleLines)
                 {
-                    if (visualLine.VisualLength + _renderOffset.X > 0)
+                    if (visualLine.VisualLength + renderContext.Offset.X > 0)
                     {
                         visualLine.Render(drawingContext, renderContext);
                     }

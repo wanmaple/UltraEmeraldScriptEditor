@@ -104,8 +104,10 @@
       <DependentUpon>TextEditor.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\CommonUtilities.cs" />
+    <Compile Include="Utils\MouseHook.cs" />
     <Compile Include="Utils\ValueSequence.cs" />
     <Compile Include="Utils\WeakEventManagerBase.cs" />
+    <Compile Include="Utils\Win32Api.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Configs\PScript.xml">

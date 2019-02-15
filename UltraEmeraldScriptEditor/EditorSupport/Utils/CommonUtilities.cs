@@ -9,7 +9,7 @@ namespace EditorSupport.Utils
 {
     public static class CommonUtilities
     {
-        public static readonly String LineBreak = "\r\n";
+        public static readonly String LineBreak = Environment.NewLine;
         public static readonly String Tab = "    ";
         public static readonly Double LineVisualUnit = 1.25;
 

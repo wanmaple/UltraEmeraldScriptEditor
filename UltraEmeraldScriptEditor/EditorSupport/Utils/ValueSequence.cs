@@ -53,6 +53,10 @@ namespace EditorSupport.Utils
             get
             {
                 VerifyIndexRange(index);
+                if (index == 0)
+                {
+                    return 0.0;
+                }
                 LinkedListNode<ValueCollection> curNode = _sequence.First;
                 while (curNode != null)
                 {
@@ -67,7 +71,7 @@ namespace EditorSupport.Utils
                     }
                     curNode = curNode.Next;
                 }
-                throw new Exception("ValueSequence program bug.");
+                return 0.0;
             }
         }
 

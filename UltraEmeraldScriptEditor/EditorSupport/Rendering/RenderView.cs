@@ -395,6 +395,7 @@ namespace EditorSupport.Rendering
             if (offset != _scrollOffset.X)
             {
                 _scrollOffset.X = offset;
+                ResetVisualRegion(_renderContext.Region.Size);
                 InvalidateMeasure(DispatcherPriority.Normal);
             }
         }
@@ -405,6 +406,7 @@ namespace EditorSupport.Rendering
             if (offset != _scrollOffset.Y)
             {
                 _scrollOffset.Y = offset;
+                ResetVisualRegion(_renderContext.Region.Size);
                 InvalidateMeasure(DispatcherPriority.Normal);
             }
         }
@@ -418,7 +420,7 @@ namespace EditorSupport.Rendering
         #endregion
 
         #region IEditInfo
-        public void ChangeDocument(TextDocument doc)
+        public virtual void ChangeDocument(TextDocument doc)
         {
             if (Document != doc)
             {
@@ -426,12 +428,7 @@ namespace EditorSupport.Rendering
             }
         }
 
-        public void OnTextChanged()
-        {
-            Redraw();
-        }
-
-        public void MeasureCaretRendering(Caret caret)
+        public virtual void MeasureCaretRendering(Caret caret)
         {
             if (_lineRenderer.VisibleLines.Count == 0)
             {
@@ -446,7 +443,7 @@ namespace EditorSupport.Rendering
             caret.RenderRect = caretRect;
         }
 
-        public void MeasureSelectionRendering(Selection selection)
+        public virtual void MeasureSelectionRendering(Selection selection)
         {
             if (_lineRenderer.VisibleLines.Count == 0)
             {
@@ -459,6 +456,7 @@ namespace EditorSupport.Rendering
             {
                 return;
             }
+            Rect visualArea = _renderContext.Region;
             TextLocation startLocation = Document.GetLocation(selection.StartOffset);
             TextLocation endLocation = Document.GetLocation(selection.EndOffset);
             if (startLocation.Line == endLocation.Line)
@@ -469,7 +467,7 @@ namespace EditorSupport.Rendering
                 viewEnd.Y += GlyphOption.LineHeight;
                 var viewRect = new Rect(viewStart, viewEnd);
                 selection.ViewRects.Add(viewRect);
-                viewRect.Intersect(_renderContext.Region);
+                viewRect.Intersect(visualArea);
                 if (!viewRect.IsEmpty)
                 {
                     selection.RenderRects.Add(viewRect);
@@ -482,7 +480,7 @@ namespace EditorSupport.Rendering
                 // 第一行到底
                 viewStart = LocationToPosition(startLocation);
                 VisualLine line = _allVisualLines[startLocation.Line - 1];
-                viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize, viewStart.Y + GlyphOption.LineHeight);
+                viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
                 viewRect = new Rect(viewStart, viewEnd);
                 selection.ViewRects.Add(viewRect);
                 viewRect.Intersect(_renderContext.Region);
@@ -495,11 +493,11 @@ namespace EditorSupport.Rendering
                 while (lineNum != endLocation.Line)
                 {
                     line = _allVisualLines[lineNum - 1];
-                    viewStart = new Point(Padding.Left, viewStart.Y + GlyphOption.LineHeight);
-                    viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize, viewEnd.Y + GlyphOption.LineHeight);
+                    viewStart = new Point(Padding.Left - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
+                    viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewEnd.Y + GlyphOption.LineHeight);
                     viewRect = new Rect(viewStart, viewEnd);
                     selection.ViewRects.Add(viewRect);
-                    viewRect.Intersect(_renderContext.Region);
+                    viewRect.Intersect(visualArea);
                     if (!viewRect.IsEmpty)
                     {
                         selection.RenderRects.Add(viewRect);
@@ -507,12 +505,12 @@ namespace EditorSupport.Rendering
                     ++lineNum;
                 }
                 // 最后一行到头
-                viewStart = new Point(Padding.Left, viewStart.Y + GlyphOption.LineHeight);
+                viewStart = new Point(Padding.Left - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
                 viewEnd = LocationToPosition(endLocation);
                 viewEnd.Y += GlyphOption.LineHeight;
                 viewRect = new Rect(viewStart, viewEnd);
                 selection.ViewRects.Add(viewRect);
-                viewRect.Intersect(_renderContext.Region);
+                viewRect.Intersect(visualArea);
                 if (!viewRect.IsEmpty)
                 {
                     selection.RenderRects.Add(viewRect);
@@ -520,12 +518,49 @@ namespace EditorSupport.Rendering
             }
         }
 
-        public void MeasureCaretLocation(Caret caret, Point positionToView)
+        public virtual void MeasureCaretLocation(Caret caret, Point positionToView)
         {
             caret.DocumentOffset = Document.GetOffset(PositionToLocation(positionToView));
         }
 
-        public Int32 WordLeftCaretOffset(Int32 currentOffset)
+        public virtual Tuple<Int32, Int32> MeasureWordOffsets(Int32 currentOffset)
+        {
+            Nullable<Boolean> isLeftSplitter = null, isRightSplitter = null;
+            // 左侧
+            Int32 wordLeft = WordLeftCaretOffset(currentOffset);
+            if (wordLeft != currentOffset)
+            {
+                isLeftSplitter = IsSplitter(Document.GetCharacterAt(currentOffset - 1));
+            }
+            // 右侧
+            Int32 wordRight = WordRightCaretOffset(currentOffset);
+            if (wordRight != currentOffset)
+            {
+                isRightSplitter = IsSplitter(Document.GetCharacterAt(currentOffset));
+            }
+            if (isLeftSplitter == null && isRightSplitter == null)
+            {
+                // 左侧右侧都没有（空行）
+                return new Tuple<int, int>(currentOffset, currentOffset);
+            }
+            if (isLeftSplitter != null && isRightSplitter != null)
+            {
+                if (isLeftSplitter != isRightSplitter)
+                {
+                    // 两侧类型不同优先取右侧
+                    return new Tuple<int, int>(currentOffset, wordRight);
+                }
+                return new Tuple<int, int>(wordLeft, wordRight);
+            }
+            if (isLeftSplitter != null)
+            {
+                // 左侧有
+                return new Tuple<int, int>(wordLeft, currentOffset);
+            }
+            return new Tuple<int, int>(currentOffset, wordRight);
+        }
+
+        public virtual Int32 WordLeftCaretOffset(Int32 currentOffset)
         {
             // 规则是不跨行选择
             TextLocation currentLocation = Document.GetLocation(currentOffset);
@@ -553,7 +588,7 @@ namespace EditorSupport.Rendering
             return lineStart + targetIdx + 1;
         }
 
-        public Int32 WordRightCaretOffset(Int32 currentOffset)
+        public virtual Int32 WordRightCaretOffset(Int32 currentOffset)
         {
             // 规则是不跨行选择
             TextLocation currentLocation = Document.GetLocation(currentOffset);
@@ -581,7 +616,7 @@ namespace EditorSupport.Rendering
             return currentOffset + targetIdx;
         }
 
-        public Int32 LineUpCaretOffset(Int32 currentOffset)
+        public virtual Int32 LineUpCaretOffset(Int32 currentOffset)
         {
             TextLocation currentLocation = Document.GetLocation(currentOffset);
             if (currentLocation.Line <= 1)
@@ -622,7 +657,7 @@ namespace EditorSupport.Rendering
             return Document.GetOffset(targetLocation);
         }
 
-        public Int32 LineDownCaretOffset(Int32 currentOffset)
+        public virtual Int32 LineDownCaretOffset(Int32 currentOffset)
         {
             TextLocation currentLocation = Document.GetLocation(currentOffset);
             if (currentLocation.Line >= Document.LineCount)
@@ -663,7 +698,7 @@ namespace EditorSupport.Rendering
             return Document.GetOffset(targetLocation);
         }
 
-        public Int32 PageUpCaretOffset(Int32 currentOffset)
+        public virtual Int32 PageUpCaretOffset(Int32 currentOffset)
         {
             Int32 pageLines = Convert.ToInt32(Math.Floor(ViewportHeight / GlyphOption.LineHeight));
             TextLocation currentLocation = Document.GetLocation(currentOffset);
@@ -706,7 +741,7 @@ namespace EditorSupport.Rendering
             return Document.GetOffset(targetLocation);
         }
 
-        public Int32 PageDownCaretOffset(Int32 currentOffset)
+        public virtual Int32 PageDownCaretOffset(Int32 currentOffset)
         {
             Int32 pageLines = Convert.ToInt32(Math.Floor(ViewportHeight / GlyphOption.LineHeight));
             TextLocation currentLocation = Document.GetLocation(currentOffset);
@@ -748,7 +783,7 @@ namespace EditorSupport.Rendering
             TextLocation targetLocation = new TextLocation(targetLineNum, column + 1);
             return Document.GetOffset(targetLocation);
         }
-        public Int32 WheelUpCaretOffset(Int32 currentOffset)
+        public virtual Int32 WheelUpCaretOffset(Int32 currentOffset)
         {
             Int32 finalOffset = currentOffset;
             for (int i = 0; i < 3; i++)
@@ -758,7 +793,7 @@ namespace EditorSupport.Rendering
             return finalOffset;
         }
 
-        public Int32 WheelDownCaretOffset(Int32 currentOffset)
+        public virtual Int32 WheelDownCaretOffset(Int32 currentOffset)
         {
             Int32 finalOffset = currentOffset;
             for (int i = 0; i < 3; i++)
@@ -766,6 +801,50 @@ namespace EditorSupport.Rendering
                 finalOffset = LineDownCaretOffset(finalOffset);
             }
             return finalOffset;
+        }
+
+        public virtual Int32 WheelLeftCaretOffset(Int32 currentOffset)
+        {
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            if (currentLocation.Column == 1)
+            {
+                return currentOffset;
+            }
+            Double visualOffset = GlyphOption.LineHeight * 3.0;
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            Int32 targetColumn = currentLocation.Column - 1;
+            while (visualOffset > 0)
+            {
+                visualOffset -= currentLine.CharacterVisualOffsets[targetColumn - 1];
+                if (targetColumn == 1)
+                {
+                    break;
+                }
+                --targetColumn;
+            }
+            return Document.GetOffset(new TextLocation(currentLocation.Line, targetColumn));
+        }
+
+        public virtual Int32 WheelRightCaretOffset(Int32 currentOffset)
+        {
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            if (currentLocation.Column == currentLine.Line.Length + 1)
+            {
+                return currentOffset;
+            }
+            Double visualOffset = GlyphOption.LineHeight * 3.0;
+            Int32 targetColumn = currentLocation.Column + 1;
+            while (visualOffset > 0)
+            {
+                visualOffset -= currentLine.CharacterVisualOffsets[targetColumn - 1];
+                if (targetColumn == currentLine.Line.Length + 1)
+                {
+                    break;
+                }
+                ++targetColumn;
+            }
+            return Document.GetOffset(new TextLocation(currentLocation.Line, targetColumn));
         }
 
         protected virtual Boolean IsSplitter(Char ch)
@@ -789,7 +868,7 @@ namespace EditorSupport.Rendering
 
         private TextLocation PositionToLocation(Point position)
         {
-            position.X -= _lineRenderer.RenderOffset.X;
+            position.X -= _lineRenderer.RenderOffset.X + Padding.Left;
             position.Y -= Padding.Top;
             Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;
@@ -814,7 +893,7 @@ namespace EditorSupport.Rendering
             return new TextLocation(line, column);
         }
 
-        private readonly Char[] SPLITTERS = { ' ', ',', '.', '=', '+', '-', '*', '/', ':', ';', };
+        private readonly Char[] SPLITTERS = { ' ', ',', '.', '=', '+', '-', '*', '/', ':', ';', '(', ')', };
         #endregion
 
         #region PropertyChange EventHandlers

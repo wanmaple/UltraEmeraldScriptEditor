@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EditorSupport.Utils;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,10 +21,6 @@ namespace EditorSupport.Editing
         /// 鼠标拖动选择
         /// </summary>
         PossiblyDragStart,
-        /// <summary>
-        /// 拖动选中项
-        /// </summary>
-        Drag,
         /// <summary>
         /// 按住Shift键选择
         /// </summary>
@@ -97,7 +94,20 @@ namespace EditorSupport.Editing
             }
             else
             {
-                _owner.SelectionFollowCaret(false, direction);
+                if (e.ClickCount == 2)
+                {
+                    _mode = SelectionMode.WholeWord;
+                    _owner.SelectWord();
+                }
+                else if (e.ClickCount == 3)
+                {
+                    _mode = SelectionMode.WholeLine;
+                    _owner.SelectLine();
+                }
+                else
+                {
+                    _owner.SelectionFollowCaret(false, direction);
+                }
             }
             _owner.Redraw();
 
@@ -137,27 +147,7 @@ namespace EditorSupport.Editing
         {
             if (_mode != SelectionMode.None)
             {
-                // 自动滚动
-                Double threshold = 0.0;
-                Point mousePos = e.GetPosition(_owner.Content as IInputElement);
-                ScrollDirection direction = ScrollDirection.None;
-                if (mousePos.X < -threshold)
-                {
-                    direction |= ScrollDirection.Left;
-                }
-                else if (mousePos.X > _owner.ViewportWidth + threshold)
-                {
-                    direction |= ScrollDirection.Right;
-                }
-                if (mousePos.Y < -threshold)
-                {
-                    direction |= ScrollDirection.Top;
-                }
-                else if (mousePos.Y > _owner.ViewportHeight + threshold)
-                {
-                    direction |= ScrollDirection.Down;
-                }
-                StartScrolling(direction);
+                StartScrolling();
             }
 
             e.Handled = true;
@@ -165,32 +155,65 @@ namespace EditorSupport.Editing
 
         private void OnScrolling(object sender, EventArgs e)
         {
-            if ((_scrollDirection & ScrollDirection.Left) == ScrollDirection.Left)
-            {
+            Mouse.Capture(_owner);
+            Point mousePos = Mouse.GetPosition(_owner.Content as IInputElement);
+            Boolean released = Mouse.LeftButton == MouseButtonState.Released;
+            Mouse.Capture(null);
 
-            }
-            else if ((_scrollDirection & ScrollDirection.Right) == ScrollDirection.Right)
+            if (released)
             {
-
+                StopScrolling();
+                _mode = SelectionMode.None;
+                return;
             }
-            if ((_scrollDirection & ScrollDirection.Top) == ScrollDirection.Top)
+
+            // 自动滚动
+            Double threshold = 0.0;
+            ScrollDirection direction = ScrollDirection.None;
+            if (mousePos.X < -threshold)
+            {
+                direction |= ScrollDirection.Left;
+            }
+            else if (mousePos.X > _owner.ViewportWidth + threshold)
+            {
+                direction |= ScrollDirection.Right;
+            }
+            if (mousePos.Y < -threshold)
+            {
+                direction |= ScrollDirection.Top;
+            }
+            else if (mousePos.Y > _owner.ViewportHeight + threshold)
+            {
+                direction |= ScrollDirection.Down;
+            }
+
+            if ((direction & ScrollDirection.Left) == ScrollDirection.Left)
+            {
+                _owner.MoveCaret(CaretMovementType.WheelLeft, true);
+                _owner.Redraw();
+            }
+            else if ((direction & ScrollDirection.Right) == ScrollDirection.Right)
+            {
+                _owner.MoveCaret(CaretMovementType.WheelRight, true);
+                _owner.Redraw();
+            }
+            if ((direction & ScrollDirection.Top) == ScrollDirection.Top)
             {                
                 _owner.MoveCaret(CaretMovementType.WheelUp, true);
                 _owner.Redraw();
             }
-            else if ((_scrollDirection & ScrollDirection.Down) == ScrollDirection.Down)
+            else if ((direction & ScrollDirection.Down) == ScrollDirection.Down)
             {
                 _owner.MoveCaret(CaretMovementType.WheelDown, true);
                 _owner.Redraw();
             }
         }
 
-        private void StartScrolling(ScrollDirection direction)
+        private void StartScrolling()
         {
             if (!_scrolling)
             {
                 _scrolling = true;
-                _scrollDirection = direction;
                 _scrollingTimer.Start();
             }
         }
@@ -200,7 +223,6 @@ namespace EditorSupport.Editing
             if (_scrolling)
             {
                 _scrolling = false;
-                _scrollDirection = ScrollDirection.None;
                 _scrollingTimer.Stop();
             }
         }
@@ -209,6 +231,5 @@ namespace EditorSupport.Editing
         private SelectionMode _mode;
         private DispatcherTimer _scrollingTimer;
         private Boolean _scrolling;
-        private ScrollDirection _scrollDirection;
     }
 }

@@ -168,6 +168,7 @@ namespace EditorSupport.Editing
         }
         #endregion
 
+        #region Caret / Selection
         public void InsertText(String content)
         {
             if (_selection.IsEmpty)
@@ -176,10 +177,21 @@ namespace EditorSupport.Editing
             }
             else
             {
+                RemoveSelection();
                 Document.Replace(_selection.StartOffset, _selection.Length, content);
             }
             _caret.MoveRight(content.Length);
             SelectionFollowCaret(false, FlowDirection.LeftToRight);
+            MoveCaretInVisual();
+        }
+
+        public void InsertLine(String content)
+        {
+            DocumentLine line = Document.GetLineByOffset(_caret.DocumentOffset);
+            Document.Insert(line.StartOffset, content);
+            _caret.DocumentOffset += content.Length;     // 光标位置不变
+            SelectionFollowCaret(false, FlowDirection.LeftToRight);
+            MoveCaretInVisual();
         }
 
         public void RemoveSelection()
@@ -223,6 +235,34 @@ namespace EditorSupport.Editing
                 _caret.MoveLeft(removeLength);
                 SelectionFollowCaret(false, FlowDirection.LeftToRight);
             }
+            MoveCaretInVisual();
+        }
+
+        public void SelectWord()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                var offsets = (Content as IEditInfo).MeasureWordOffsets(_caret.DocumentOffset);
+                Int32 wordStart = offsets.Item1;
+                Int32 wordEnd = offsets.Item2;
+                if (wordStart != wordEnd)
+                {
+                    _caret.DocumentOffset = wordEnd;
+                    _selection.StartOffset = wordStart;
+                    _selection.EndOffset = wordEnd;
+                    MoveCaretInVisual();
+                }
+            }
+        }
+
+        public void SelectLine()
+        {
+            DocumentLine line = Document.GetLineByOffset(_caret.DocumentOffset);
+            Int32 lineStart = line.StartOffset;
+            Int32 lineEnd = lineStart + line._exactLength;
+            _caret.DocumentOffset = lineStart;
+            _selection.StartOffset = lineStart;
+            _selection.EndOffset = lineEnd;
             MoveCaretInVisual();
         }
 
@@ -314,6 +354,22 @@ namespace EditorSupport.Editing
             }
         }
 
+        internal void MoveCaretWheelLeft()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WheelLeftCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretWheelRight()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WheelRightCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
         internal void MoveCaret(CaretMovementType movementType, Boolean doSelect)
         {
             TextLocation location;
@@ -342,13 +398,11 @@ namespace EditorSupport.Editing
                     MoveCaretWordRight();
                     break;
                 case CaretMovementType.LineStart:
-                    location = Document.GetLocation(_caret.DocumentOffset);
                     line = Document.GetLineByOffset(_caret.DocumentOffset);
                     _caret.DocumentOffset = line.StartOffset;
                     SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.LineEnd:
-                    location = Document.GetLocation(_caret.DocumentOffset);
                     line = Document.GetLineByOffset(_caret.DocumentOffset);
                     _caret.DocumentOffset = line.EndOffset;
                     SelectionFollowCaret(doSelect, direction);
@@ -378,8 +432,12 @@ namespace EditorSupport.Editing
                     SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.WheelLeft:
+                    MoveCaretWheelLeft();
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.WheelRight:
+                    MoveCaretWheelRight();
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.DocumentStart:
                     _caret.DocumentOffset = 0;
@@ -491,7 +549,7 @@ namespace EditorSupport.Editing
         {
             if (CanContentEdit && Content is IEditInfo)
             {
-                (Content as IEditInfo).MeasureSelectionRendering(_selection);
+                (Content as IEditInfo).MeasureCaretRendering(_caret);
             }
         }
 
@@ -499,7 +557,7 @@ namespace EditorSupport.Editing
         {
             if (CanContentEdit && Content is IEditInfo)
             {
-                (Content as IEditInfo).MeasureCaretRendering(_caret);
+                (Content as IEditInfo).MeasureSelectionRendering(_selection);
             }
         }
 
@@ -514,13 +572,15 @@ namespace EditorSupport.Editing
 
         private void OnSelectionOffsetChanged(object sender, EventArgs e)
         {
-            MeasureCaret();
+            MeasureSelection();
         }
 
         private void OnCaretPositionChanged(object sender, EventArgs e)
         {
-            MeasureSelection();
+            MeasureCaret();
         }
+
+        #endregion
 
         #region IWeakEventListener
         public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs e)
