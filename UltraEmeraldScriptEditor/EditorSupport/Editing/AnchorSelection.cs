@@ -37,6 +37,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_startAnchor, -diff);
                     }
+                    TriggerOffsetChanged();
                 }
             }
         }
@@ -73,6 +74,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_endAnchor, -diff);
                     }
+                    TriggerOffsetChanged();
                 }
             }
         }

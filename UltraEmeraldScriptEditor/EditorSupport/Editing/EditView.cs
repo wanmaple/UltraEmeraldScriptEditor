@@ -68,12 +68,17 @@ namespace EditorSupport.Editing
         public EditView()
         {
             _renderContext = new RenderContext();
-            Cursor = Cursors.IBeam;
 
             _caret = new Caret(this);
+            _caret.PositionChanged += OnCaretPositionChanged;
             _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            _selection.OffsetChanged += OnSelectionOffsetChanged;
 
-            CreateDefaultInputHandler();
+            Loaded += (s, e) =>
+            {
+                Cursor = Cursors.IBeam;
+                CreateDefaultInputHandler();
+            };
         }
         #endregion
 
@@ -125,39 +130,34 @@ namespace EditorSupport.Editing
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            if (Content != null && Content is IInputElement)
+            Focus();
+        }
+
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            foreach (var handler in _mouseLeftDownHandlers)
             {
-                Point pos = e.GetPosition(Content as IInputElement);
-                if (CanContentEdit && Content is IEditInfo)
-                {
-                    (Content as IEditInfo).MeasureCaretLocation(_caret, pos);
-                    _selection.SetEmpty(_caret.DocumentOffset);
-                }
-                Focus();
-                Measure();
-                MoveCaretInVisual();
-                Redraw();
+                handler(e);
             }
         }
 
-        protected override void OnMouseUp(MouseButtonEventArgs e)
+        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            base.OnMouseUp(e);
+            base.OnMouseLeftButtonUp(e);
+            foreach (var handler in _mouseLeftUpHandlers)
+            {
+                handler(e);
+            }
         }
 
-        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
-            base.OnMouseDoubleClick(e);
-        }
-
-        protected override void OnPreviewKeyDown(KeyEventArgs e)
-        {
-            base.OnPreviewKeyDown(e);
-        }
-
-        protected override void OnPreviewKeyUp(KeyEventArgs e)
-        {
-            base.OnPreviewKeyUp(e);
+            base.OnMouseMove(e);
+            foreach (var handler in _mouseMoveHandlers)
+            {
+                handler(e);
+            }
         }
 
         protected override void OnTextInput(TextCompositionEventArgs e)
@@ -179,8 +179,7 @@ namespace EditorSupport.Editing
                 Document.Replace(_selection.StartOffset, _selection.Length, content);
             }
             _caret.MoveRight(content.Length);
-            _selection.SetEmpty(_caret.DocumentOffset);
-            Measure();
+            SelectionFollowCaret(false, FlowDirection.LeftToRight);
         }
 
         public void RemoveSelection()
@@ -191,13 +190,13 @@ namespace EditorSupport.Editing
             }
             Document.Remove(_selection.StartOffset, _selection.Length);
             _caret.DocumentOffset = _selection.StartOffset;
-            _selection.SetEmpty(_caret.DocumentOffset);
-            Measure();
+            SelectionFollowCaret(false, FlowDirection.LeftToRight);
         }
 
         public void TabForward()
         {
             InsertText(CommonUtilities.Tab);
+            MoveCaretInVisual();
         }
 
         public void TabBackward()
@@ -222,304 +221,226 @@ namespace EditorSupport.Editing
             {
                 Document.Remove(_caret.DocumentOffset - removeLength, removeLength);
                 _caret.MoveLeft(removeLength);
-                _selection.Move(-removeLength);
+                SelectionFollowCaret(false, FlowDirection.LeftToRight);
             }
+            MoveCaretInVisual();
         }
 
         public void SelectAll()
         {
+            _caret.DocumentOffset = Document.Length;
             _selection.StartOffset = 0;
             _selection.EndOffset = Document.Length;
-            _caret.DocumentOffset = Document.Length;
-            Measure();
             MoveCaretInVisual();
         }
 
-        public void Redraw()
+        internal void Redraw()
         {
             base.InvalidateVisual();
+        }
+
+        internal void MeasureCaretLocation(Point positionToView)
+        {
+            if (Content != null && Content is IInputElement)
+            {
+                if (CanContentEdit && Content is IEditInfo)
+                {
+                    (Content as IEditInfo).MeasureCaretLocation(_caret, positionToView);
+                }
+            }
+        }
+
+        internal void MoveCaretWordLeft()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WordLeftCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretWordRight()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WordRightCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretLineUp()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).LineUpCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretLineDown()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).LineDownCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretPageUp()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretPageDown()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretWheelUp()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WheelUpCaretOffset(_caret.DocumentOffset);
+            }
+        }
+
+        internal void MoveCaretWheelDown()
+        {
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                _caret.DocumentOffset = (Content as IEditInfo).WheelDownCaretOffset(_caret.DocumentOffset);
+            }
         }
 
         internal void MoveCaret(CaretMovementType movementType, Boolean doSelect)
         {
             TextLocation location;
             Int32 length;
-            DocumentLine line, prevLine, nextLine;
+            DocumentLine line;
+            FlowDirection direction = _caret.DocumentOffset == _selection.StartOffset ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
             switch (movementType)
             {
                 case CaretMovementType.CharacterLeft:
-                    if (doSelect)
-                    {
-                        if (_caret.DocumentOffset == _selection.StartOffset)
-                        {
-                            location = Document.GetLocation(_caret.DocumentOffset);
-                            length = location.Column == 1 ? CommonUtilities.LineBreak.Length : 1;
-                            _caret.MoveLeft(length);
-                            _selection.MoveStart(-length);
-                        }
-                        else if (_caret.DocumentOffset == _selection.EndOffset)
-                        {
-                            location = Document.GetLocation(_caret.DocumentOffset);
-                            length = location.Column == 1 ? CommonUtilities.LineBreak.Length : 1;
-                            _caret.MoveLeft(length);
-                            _selection.MoveEnd(-length);
-                        }
-                    }
-                    else
-                    {
-                        location = Document.GetLocation(_caret.DocumentOffset);
-                        length = location.Column == 1 ? CommonUtilities.LineBreak.Length : 1;
-                        _caret.MoveLeft(length);
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    location = Document.GetLocation(_caret.DocumentOffset);
+                    length = location.Column == 1 ? CommonUtilities.LineBreak.Length : 1;
+                    _caret.MoveLeft(length);
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.CharacterRight:
-                    if (doSelect)
-                    {
-                        if (_caret.DocumentOffset == _selection.EndOffset)
-                        {
-                            location = Document.GetLocation(_caret.DocumentOffset);
-                            line = Document.GetLineByNumber(location.Line);
-                            length = location.Column == (line.Length + 1) ? CommonUtilities.LineBreak.Length : 1;
-                            _caret.MoveRight(length);
-                            _selection.MoveEnd(length);
-                        }
-                        else if (_caret.DocumentOffset == _selection.StartOffset)
-                        {
-                            location = Document.GetLocation(_caret.DocumentOffset);
-                            line = Document.GetLineByNumber(location.Line);
-                            length = location.Column == (line.Length + 1) ? CommonUtilities.LineBreak.Length : 1;
-                            _caret.MoveRight(length);
-                            _selection.MoveStart(length);
-                        }
-                    }
-                    else
-                    {
-                        location = Document.GetLocation(_caret.DocumentOffset);
-                        line = Document.GetLineByNumber(location.Line);
-                        length = location.Column == (line.Length + 1) ? CommonUtilities.LineBreak.Length : 1;
-                        _caret.MoveRight(length);
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    location = Document.GetLocation(_caret.DocumentOffset);
+                    line = Document.GetLineByNumber(location.Line);
+                    length = location.Column == (line.Length + 1) ? CommonUtilities.LineBreak.Length : 1;
+                    _caret.MoveRight(length);
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.WordLeft:
+                    MoveCaretWordLeft();
                     break;
                 case CaretMovementType.WordRight:
+                    MoveCaretWordRight();
                     break;
                 case CaretMovementType.LineStart:
                     location = Document.GetLocation(_caret.DocumentOffset);
                     line = Document.GetLineByOffset(_caret.DocumentOffset);
-                    if (doSelect)
-                    {
-                        if (_selection.IsEmpty || _caret.DocumentOffset < _selection.EndOffset)
-                        {
-                            _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
-                            _selection.StartOffset = _caret.DocumentOffset;
-                        }
-                        else if (_caret.DocumentOffset > _selection.StartOffset)
-                        {
-                            prevLine = Document.GetLineByOffset(_selection.StartOffset);
-                            _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
-                            if (prevLine.LineNumber == location.Line)
-                            {
-                                _selection.EndOffset = _selection.StartOffset;
-                                _selection.StartOffset = _caret.DocumentOffset;
-                            }
-                            else
-                            {
-                                _selection.EndOffset = _caret.DocumentOffset;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _caret.MoveLeft(_caret.DocumentOffset - line.StartOffset);
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    _caret.DocumentOffset = line.StartOffset;
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.LineEnd:
                     location = Document.GetLocation(_caret.DocumentOffset);
                     line = Document.GetLineByOffset(_caret.DocumentOffset);
-                    if (doSelect)
-                    {
-                        if (_selection.IsEmpty || _caret.DocumentOffset > _selection.StartOffset)
-                        {
-                            _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
-                            _selection.EndOffset = _caret.DocumentOffset;
-                        }
-                        else if (_caret.DocumentOffset < _selection.EndOffset)
-                        {
-                            nextLine = Document.GetLineByOffset(_selection.EndOffset);
-                            _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
-                            if (nextLine.LineNumber == location.Line)
-                            {
-                                _selection.StartOffset = _selection.EndOffset;
-                                _selection.EndOffset = _caret.DocumentOffset;
-                            }
-                            else
-                            {
-                                _selection.StartOffset = _caret.DocumentOffset;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        _caret.MoveRight(line.EndOffset - _caret.DocumentOffset);
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    _caret.DocumentOffset = line.EndOffset;
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.LineUp:
-                    if (CanContentEdit && Content is IEditInfo)
-                    {
-                        if (doSelect)
-                        {
-                            if (_caret.DocumentOffset == _selection.StartOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).LineUpCaretOffset(_caret.DocumentOffset);
-                                _selection.StartOffset = _caret.DocumentOffset;
-                            }
-                            else if (_caret.DocumentOffset == _selection.EndOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).LineUpCaretOffset(_caret.DocumentOffset);
-                                if (_caret.DocumentOffset < _selection.StartOffset)
-                                {
-                                    _selection.EndOffset = _selection.StartOffset;
-                                    _selection.StartOffset = _caret.DocumentOffset;
-                                }
-                                else
-                                {
-                                    _selection.EndOffset = _caret.DocumentOffset;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            _caret.DocumentOffset = (Content as IEditInfo).LineUpCaretOffset(_caret.DocumentOffset);
-                            _selection.SetEmpty(_caret.DocumentOffset);
-                        }
-                    }
+                    MoveCaretLineUp();
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.LineDown:
-                    if (CanContentEdit && Content is IEditInfo)
-                    {
-                        if (doSelect)
-                        {
-                            if (_caret.DocumentOffset == _selection.EndOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).LineDownCaretOffset(_caret.DocumentOffset);
-                                _selection.EndOffset = _caret.DocumentOffset;
-                            }
-                            else if (_caret.DocumentOffset == _selection.StartOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).LineDownCaretOffset(_caret.DocumentOffset);
-                                if (_caret.DocumentOffset > _selection.EndOffset)
-                                {
-                                    _selection.StartOffset = _selection.EndOffset;
-                                    _selection.EndOffset = _caret.DocumentOffset;
-                                }
-                                else
-                                {
-                                    _selection.StartOffset = _caret.DocumentOffset;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            _caret.DocumentOffset = (Content as IEditInfo).LineDownCaretOffset(_caret.DocumentOffset);
-                            _selection.SetEmpty(_caret.DocumentOffset);
-                        }
-                    }
+                    MoveCaretLineDown();
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.PageUp:
-                    if (CanContentEdit && Content is IEditInfo)
-                    {
-                        if (doSelect)
-                        {
-                            if (_caret.DocumentOffset == _selection.StartOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
-                                _selection.StartOffset = _caret.DocumentOffset;
-                            }
-                            else if (_caret.DocumentOffset == _selection.EndOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
-                                if (_caret.DocumentOffset < _selection.StartOffset)
-                                {
-                                    _selection.EndOffset = _selection.StartOffset;
-                                    _selection.StartOffset = _caret.DocumentOffset;
-                                }
-                                else
-                                {
-                                    _selection.EndOffset = _caret.DocumentOffset;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            _caret.DocumentOffset = (Content as IEditInfo).PageUpCaretOffset(_caret.DocumentOffset);
-                            _selection.SetEmpty(_caret.DocumentOffset);
-                        }
-                    }
+                    MoveCaretPageUp();
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.PageDown:
-                    if (CanContentEdit && Content is IEditInfo)
-                    {
-                        if (doSelect)
-                        {
-                            if (_caret.DocumentOffset == _selection.EndOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
-                                _selection.EndOffset = _caret.DocumentOffset;
-                            }
-                            else if (_caret.DocumentOffset == _selection.StartOffset)
-                            {
-                                _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
-                                if (_caret.DocumentOffset > _selection.EndOffset)
-                                {
-                                    _selection.StartOffset = _selection.EndOffset;
-                                    _selection.EndOffset = _caret.DocumentOffset;
-                                }
-                                else
-                                {
-                                    _selection.StartOffset = _caret.DocumentOffset;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            _caret.DocumentOffset = (Content as IEditInfo).PageDownCaretOffset(_caret.DocumentOffset);
-                            _selection.SetEmpty(_caret.DocumentOffset);
-                        }
-                    }
+                    MoveCaretPageDown();
+                    SelectionFollowCaret(doSelect, direction);
+                    break;
+                case CaretMovementType.WheelUp:
+                    MoveCaretWheelUp();
+                    SelectionFollowCaret(doSelect, direction);
+                    break;
+                case CaretMovementType.WheelDown:
+                    MoveCaretWheelDown();
+                    SelectionFollowCaret(doSelect, direction);
+                    break;
+                case CaretMovementType.WheelLeft:
+                    break;
+                case CaretMovementType.WheelRight:
                     break;
                 case CaretMovementType.DocumentStart:
                     _caret.DocumentOffset = 0;
-                    if (doSelect)
-                    {
-                        _selection.StartOffset = _caret.DocumentOffset;
-                    }
-                    else
-                    {
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 case CaretMovementType.DocumentEnd:
                     _caret.DocumentOffset = Document.Length;
-                    if (doSelect)
-                    {
-                        _selection.EndOffset = _caret.DocumentOffset;
-                    }
-                    else
-                    {
-                        _selection.SetEmpty(_caret.DocumentOffset);
-                    }
+                    SelectionFollowCaret(doSelect, direction);
                     break;
                 default:
                     break;
             }
-            Measure();
             MoveCaretInVisual();
-            _caret.RestartAnimation();
+        }
+
+        internal void SelectionFollowCaret(Boolean doSelect, FlowDirection direction)
+        {
+            if (!doSelect)
+            {
+                _selection.SetEmpty(_caret.DocumentOffset);
+                return;
+            }
+
+            if (_selection.IsEmpty)
+            {
+                if (_caret.DocumentOffset < _selection.StartOffset)
+                {
+                    _selection.StartOffset = _caret.DocumentOffset;
+                }
+                else if (_caret.DocumentOffset > _selection.EndOffset)
+                {
+                    _selection.EndOffset = _caret.DocumentOffset;
+                }
+            }
+            else
+            {
+                if (direction == FlowDirection.LeftToRight)
+                {
+                    if (_caret.DocumentOffset < _selection.StartOffset)
+                    {
+                        _selection.EndOffset = _selection.StartOffset;
+                        _selection.StartOffset = _caret.DocumentOffset;
+                    }
+                    else
+                    {
+                        _selection.EndOffset = _caret.DocumentOffset;
+                    }
+                }
+                else
+                {
+                    if (_caret.DocumentOffset > _selection.EndOffset)
+                    {
+                        _selection.StartOffset = _selection.EndOffset;
+                        _selection.EndOffset = _caret.DocumentOffset;
+                    }
+                    else
+                    {
+                        _selection.StartOffset = _caret.DocumentOffset;
+                    }
+                }
+            }
         }
 
         internal void MoveCaretInVisual()
@@ -562,10 +483,20 @@ namespace EditorSupport.Editing
 
         private void Measure()
         {
+            MeasureCaret();
+            MeasureSelection();
+        }
+
+        private void MeasureCaret()
+        {
             if (CanContentEdit && Content is IEditInfo)
             {
                 (Content as IEditInfo).MeasureSelectionRendering(_selection);
             }
+        }
+
+        private void MeasureSelection()
+        {
             if (CanContentEdit && Content is IEditInfo)
             {
                 (Content as IEditInfo).MeasureCaretRendering(_caret);
@@ -579,6 +510,16 @@ namespace EditorSupport.Editing
             defaultHandler.Children.Add(CaretNavigationCommandHelper.CreateHandler(this));
             defaultHandler.Children.Add(new SelectionMouseHandler(this));
             ActiveInputHandler = defaultHandler;
+        }
+
+        private void OnSelectionOffsetChanged(object sender, EventArgs e)
+        {
+            MeasureCaret();
+        }
+
+        private void OnCaretPositionChanged(object sender, EventArgs e)
+        {
+            MeasureSelection();
         }
 
         #region IWeakEventListener
@@ -668,5 +609,8 @@ namespace EditorSupport.Editing
         private Caret _caret;
         private Selection _selection;
         private IInputHandler _activeInputHandler;
+        internal List<Action<MouseButtonEventArgs>> _mouseLeftDownHandlers = new List<Action<MouseButtonEventArgs>>();
+        internal List<Action<MouseButtonEventArgs>> _mouseLeftUpHandlers = new List<Action<MouseButtonEventArgs>>();
+        internal List<Action<MouseEventArgs>> _mouseMoveHandlers = new List<Action<MouseEventArgs>>();
     }
 }

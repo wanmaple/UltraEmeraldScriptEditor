@@ -16,8 +16,24 @@ namespace EditorSupport.Editing
     /// </summary>
     public class Caret : IRenderable
     {
+        public event EventHandler PositionChanged;
+
         #region Properties
-        public Int32 DocumentOffset { get => _docOffset; set => _docOffset = value; }
+        public Int32 DocumentOffset
+        {
+            get => _docOffset;
+            set
+            {
+                if (_docOffset != value)
+                {
+                    _docOffset = value;
+                    if (PositionChanged != null)
+                    {
+                        PositionChanged(this, EventArgs.Empty);
+                    }
+                }
+            }
+        }
         public TextLocation Location { get => _owner.Document.GetLocation(_docOffset); }
         /// <summary>
         /// 绘制矩形
@@ -54,7 +70,7 @@ namespace EditorSupport.Editing
             {
                 throw new ArgumentException("'length' must be positive.");
             }
-            _docOffset = Math.Max(_docOffset - length, 0);
+            DocumentOffset = Math.Max(_docOffset - length, 0);
         }
 
         public void MoveRight(Int32 length = 1)
@@ -63,7 +79,7 @@ namespace EditorSupport.Editing
             {
                 throw new ArgumentException("'length' must be positive.");
             }
-            _docOffset = Math.Min(_docOffset + length, _owner.Document.Length);
+            DocumentOffset = Math.Min(_docOffset + length, _owner.Document.Length);
         }
 
         #region Animation
@@ -107,7 +123,7 @@ namespace EditorSupport.Editing
             drawingContext.DrawRectangle(_fgBrush, null, new Rect(renderX, renderY, _renderRect.Width, _renderRect.Height));
         }
         #endregion
-        
+
         protected Int32 _docOffset;
         protected Boolean _visible;
         protected Brush _fgBrush;

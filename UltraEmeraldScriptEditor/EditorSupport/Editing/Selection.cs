@@ -13,6 +13,8 @@ namespace EditorSupport.Editing
 {
     public abstract class Selection : ISegment, IRenderable
     {
+        public event EventHandler OffsetChanged;
+
         #region Abstraction
         public abstract int StartOffset { get; set; }
 
@@ -110,6 +112,14 @@ namespace EditorSupport.Editing
             foreach (Rect rect in _renderRects)
             {
                 drawingContext.DrawRectangle(_brush, null, rect);
+            }
+        }
+
+        protected void TriggerOffsetChanged()
+        {
+            if (OffsetChanged != null)
+            {
+                OffsetChanged(this, EventArgs.Empty);
             }
         }
 

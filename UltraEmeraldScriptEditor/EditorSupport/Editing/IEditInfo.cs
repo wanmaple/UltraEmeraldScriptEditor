@@ -31,6 +31,18 @@ namespace EditorSupport.Editing
         /// <param name="caret"></param>
         void MeasureCaretLocation(Caret caret, Point positionToView);
         /// <summary>
+        /// 计算光标左移单词的偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 WordLeftCaretOffset(Int32 currentOffset);
+        /// <summary>
+        /// 计算光标右移单词的偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 WordRightCaretOffset(Int32 currentOffset);
+        /// <summary>
         /// 计算光标上移的最终偏移
         /// </summary>
         /// <param name="currentOffset"></param>
@@ -54,5 +66,17 @@ namespace EditorSupport.Editing
         /// <param name="currentOffset"></param>
         /// <returns></returns>
         Int32 PageDownCaretOffset(Int32 currentOffset);
+        /// <summary>
+        /// 计算光标向上滚动的最终偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 WheelUpCaretOffset(Int32 currentOffset);
+        /// <summary>
+        /// 计算光标向下滚动的最终偏移
+        /// </summary>
+        /// <param name="currentOffset"></param>
+        /// <returns></returns>
+        Int32 WheelDownCaretOffset(Int32 currentOffset);
     }
 }

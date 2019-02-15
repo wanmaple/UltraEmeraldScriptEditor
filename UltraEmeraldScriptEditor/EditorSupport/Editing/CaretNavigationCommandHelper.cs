@@ -19,6 +19,10 @@ namespace EditorSupport.Editing
         LineDown,
         PageUp,
         PageDown,
+        WheelUp,
+        WheelDown,
+        WheelLeft,
+        WheelRight,
         DocumentStart,
         DocumentEnd,
     }
@@ -51,6 +55,8 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.MoveToDocumentEnd, ModifierKeys.Control, Key.End, CaretHandler(CaretMovementType.DocumentEnd, false));
             AddCommandBinding(EditingCommands.MoveUpByPage, ModifierKeys.None, Key.PageUp, CaretHandler(CaretMovementType.PageUp, false));
             AddCommandBinding(EditingCommands.MoveDownByPage, ModifierKeys.None, Key.PageDown, CaretHandler(CaretMovementType.PageDown, false));
+            AddCommandBinding(EditingCommands.MoveLeftByWord, ModifierKeys.Control, Key.Left, CaretHandler(CaretMovementType.WordLeft, false));
+            AddCommandBinding(EditingCommands.MoveRightByWord, ModifierKeys.Control, Key.Right, CaretHandler(CaretMovementType.WordRight, false));
 
             AddCommandBinding(EditingCommands.SelectLeftByCharacter, ModifierKeys.Shift, Key.Left, CaretHandler(CaretMovementType.CharacterLeft, true));
             AddCommandBinding(EditingCommands.SelectRightByCharacter, ModifierKeys.Shift, Key.Right, CaretHandler(CaretMovementType.CharacterRight, true));
@@ -62,6 +68,8 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.SelectToDocumentEnd, ModifierKeys.Control | ModifierKeys.Shift, Key.End, CaretHandler(CaretMovementType.DocumentEnd, true));
             AddCommandBinding(EditingCommands.SelectUpByPage, ModifierKeys.Shift, Key.PageUp, CaretHandler(CaretMovementType.PageUp, true));
             AddCommandBinding(EditingCommands.SelectDownByPage, ModifierKeys.Shift, Key.PageDown, CaretHandler(CaretMovementType.PageDown, true));
+            AddCommandBinding(EditingCommands.SelectLeftByWord, ModifierKeys.Control | ModifierKeys.Shift, Key.Left, CaretHandler(CaretMovementType.WordLeft, true));
+            AddCommandBinding(EditingCommands.SelectRightByWord, ModifierKeys.Control | ModifierKeys.Shift, Key.Right, CaretHandler(CaretMovementType.WordRight, true));
             AddCommandBinding(ApplicationCommands.SelectAll, ModifierKeys.Control, Key.A, OnSelectAll);
         }
 

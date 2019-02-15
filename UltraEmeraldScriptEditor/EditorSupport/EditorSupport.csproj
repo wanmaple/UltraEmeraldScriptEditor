@@ -60,6 +60,7 @@
     <Compile Include="Document\RopeTextReader.cs" />
     <Compile Include="Document\RopeTextSource.cs" />
     <Compile Include="Document\SimpleSegment.cs" />
+    <Compile Include="Document\StringTextSource.cs" />
     <Compile Include="Document\TextAnchor.cs" />
     <Compile Include="Document\TextAnchorTree.cs" />
     <Compile Include="Document\TextDocument.cs" />

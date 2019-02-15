@@ -22,7 +22,7 @@ namespace EditorSupport.Rendering
     /// <summary>
     /// 编辑器的渲染逻辑都在这里
     /// </summary>
-    public sealed class RenderView : FrameworkElement, IWeakEventListener, IScrollInfo, IEditInfo
+    public class RenderView : FrameworkElement, IWeakEventListener, IScrollInfo, IEditInfo
     {
         #region Properties
         public static readonly DependencyProperty DocumentProperty =
@@ -525,6 +525,62 @@ namespace EditorSupport.Rendering
             caret.DocumentOffset = Document.GetOffset(PositionToLocation(positionToView));
         }
 
+        public Int32 WordLeftCaretOffset(Int32 currentOffset)
+        {
+            // 规则是不跨行选择
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            if (currentLocation.Column == 1)
+            {
+                return currentOffset;
+            }
+            Int32 lineStart = currentLine.Line.StartOffset;
+            String text = Document.GetTextAt(lineStart, currentOffset - lineStart);
+            ITextSource source = new StringTextSource(text);
+            Int32 targetIdx = source.Length - 1;
+            Char firstChar = source.GetCharacterAt(targetIdx);
+            Boolean isSplitter = IsSplitter(firstChar);
+            --targetIdx;
+            while (targetIdx >= 0)
+            {
+                Char ch = source.GetCharacterAt(targetIdx);
+                if (IsSplitter(ch) != isSplitter)
+                {
+                    break;
+                }
+                --targetIdx;
+            }
+            return lineStart + targetIdx + 1;
+        }
+
+        public Int32 WordRightCaretOffset(Int32 currentOffset)
+        {
+            // 规则是不跨行选择
+            TextLocation currentLocation = Document.GetLocation(currentOffset);
+            VisualLine currentLine = _allVisualLines[currentLocation.Line - 1];
+            if (currentLocation.Column == currentLine.Line.Length + 1)
+            {
+                return currentOffset;
+            }
+            Int32 lineEnd = currentLine.Line.EndOffset;
+            String text = Document.GetTextAt(currentOffset, lineEnd - currentOffset);
+            ITextSource source = new StringTextSource(text);
+            Int32 targetIdx = 0;
+            Char firstChar = source.GetCharacterAt(targetIdx);
+            Boolean isSplitter = IsSplitter(firstChar);
+            ++targetIdx;
+            while (targetIdx < source.Length)
+            {
+                Char ch = source.GetCharacterAt(targetIdx);
+                if (IsSplitter(ch) != isSplitter)
+                {
+                    break;
+                }
+                ++targetIdx;
+            }
+            return currentOffset + targetIdx;
+        }
+
         public Int32 LineUpCaretOffset(Int32 currentOffset)
         {
             TextLocation currentLocation = Document.GetLocation(currentOffset);
@@ -692,6 +748,30 @@ namespace EditorSupport.Rendering
             TextLocation targetLocation = new TextLocation(targetLineNum, column + 1);
             return Document.GetOffset(targetLocation);
         }
+        public Int32 WheelUpCaretOffset(Int32 currentOffset)
+        {
+            Int32 finalOffset = currentOffset;
+            for (int i = 0; i < 3; i++)
+            {
+                finalOffset = LineUpCaretOffset(finalOffset);
+            }
+            return finalOffset;
+        }
+
+        public Int32 WheelDownCaretOffset(Int32 currentOffset)
+        {
+            Int32 finalOffset = currentOffset;
+            for (int i = 0; i < 3; i++)
+            {
+                finalOffset = LineDownCaretOffset(finalOffset);
+            }
+            return finalOffset;
+        }
+
+        protected virtual Boolean IsSplitter(Char ch)
+        {
+            return SPLITTERS.Contains(ch);
+        }
 
         private Point LocationToPosition(TextLocation location)
         {
@@ -733,6 +813,8 @@ namespace EditorSupport.Rendering
 
             return new TextLocation(line, column);
         }
+
+        private readonly Char[] SPLITTERS = { ' ', ',', '.', '=', '+', '-', '*', '/', ':', ';', };
         #endregion
 
         #region PropertyChange EventHandlers
