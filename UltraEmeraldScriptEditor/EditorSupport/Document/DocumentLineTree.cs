@@ -469,8 +469,15 @@ namespace EditorSupport.Document
                 {
                     if (toReplace == successor)
                     {
-                        updateNode = node;
-                        successor = node;
+                        if (successor.TotalCount == 1)
+                        {
+                            // 如果successor是叶子节点，那么这个时候node不会更新了
+                            updateNode = node.Parent;
+                        }
+                        else
+                        {
+                            updateNode = node;
+                        }
                     }
                     else
                     {

@@ -1,5 +1,6 @@
 ﻿using EditorSupport.Document;
 using EditorSupport.Rendering;
+using EditorSupport.Undo;
 using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
@@ -73,6 +74,7 @@ namespace EditorSupport.Editing
             _caret.PositionChanged += OnCaretPositionChanged;
             _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
             _selection.OffsetChanged += OnSelectionOffsetChanged;
+            _undoStack = new UndoStack();
 
             Loaded += (s, e) =>
             {
@@ -83,11 +85,6 @@ namespace EditorSupport.Editing
         #endregion
 
         #region Overrides
-        protected override Size MeasureOverride(Size constraint)
-        {
-            return base.MeasureOverride(constraint);
-        }
-
         protected override Size ArrangeOverride(Size arrangeBounds)
         {
             _renderContext.Region = new Rect(new Point(0, 0), arrangeBounds);
@@ -163,7 +160,9 @@ namespace EditorSupport.Editing
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
+            BeginUpdating();
             InsertText(e.Text);
+            EndUpdating();
             Redraw();
         }
         #endregion
@@ -171,14 +170,21 @@ namespace EditorSupport.Editing
         #region Caret / Selection
         public void InsertText(String content)
         {
+            if (String.IsNullOrEmpty(content))
+            {
+                return;
+            }
             if (_selection.IsEmpty)
             {
                 Document.Insert(_selection.StartOffset, content);
             }
             else
             {
-                RemoveSelection();
-                Document.Replace(_selection.StartOffset, _selection.Length, content);
+                Int32 offset = _selection.StartOffset;
+                Int32 length = _selection.Length;
+                _caret.DocumentOffset = _selection.StartOffset;
+                SelectionFollowCaret(false, FlowDirection.LeftToRight);
+                Document.Replace(offset, length, content);
             }
             _caret.MoveRight(content.Length);
             SelectionFollowCaret(false, FlowDirection.LeftToRight);
@@ -187,6 +193,10 @@ namespace EditorSupport.Editing
 
         public void InsertLine(String content)
         {
+            if (String.IsNullOrEmpty(content))
+            {
+                return;
+            }
             DocumentLine line = Document.GetLineByOffset(_caret.DocumentOffset);
             Document.Insert(line.StartOffset, content);
             _caret.DocumentOffset += content.Length;     // 光标位置不变
@@ -582,6 +592,62 @@ namespace EditorSupport.Editing
 
         #endregion
 
+        #region Undo / Redo
+        public void Undo()
+        {
+            Document._undoing = true;
+            Document.Undo();
+            Document._undoing = false;
+            _undoStack.Undo();
+        }
+
+        public void Redo()
+        {
+            Document._undoing = true;
+            Document.Redo();
+            Document._undoing = false;
+            _undoStack.Redo();
+        }
+
+        public Boolean CanUndo()
+        {
+            return _undoStack.CanUndo();
+        }
+
+        public Boolean CanRedo()
+        {
+            return _undoStack.CanRedo();
+        }
+
+        internal void BeginUpdating()
+        {
+            if (_updating)
+            {
+                return;
+            }
+            _updating = true;
+            _update.CaretMoving = _caret.DocumentOffset;
+            _update.SelectionStartMoving = _selection.StartOffset;
+            _update.SelectionEndMoving = _selection.EndOffset;
+        }
+
+        internal void EndUpdating()
+        {
+            if (!_updating)
+            {
+                return;
+            }
+            _updating = false;
+            _update.CaretMoving = _caret.DocumentOffset - _update.CaretMoving;
+            _update.SelectionStartMoving = _selection.StartOffset - _update.SelectionStartMoving;
+            _update.SelectionEndMoving = _selection.EndOffset - _update.SelectionEndMoving;
+            _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
+        }
+
+        private Boolean _updating = false;
+        private EditingOffsetUpdate _update = new EditingOffsetUpdate();
+        #endregion
+
         #region IWeakEventListener
         public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs e)
         {
@@ -659,6 +725,7 @@ namespace EditorSupport.Editing
             }
             _caret.DocumentOffset = 0;
             _selection.Reset();
+            _undoStack.Reset();
             ScrollToHome();
             Measure();
             Redraw();
@@ -669,6 +736,7 @@ namespace EditorSupport.Editing
         private Caret _caret;
         private Selection _selection;
         private IInputHandler _activeInputHandler;
+        private UndoStack _undoStack;
         internal List<Action<MouseButtonEventArgs>> _mouseLeftDownHandlers = new List<Action<MouseButtonEventArgs>>();
         internal List<Action<MouseButtonEventArgs>> _mouseLeftUpHandlers = new List<Action<MouseButtonEventArgs>>();
         internal List<Action<MouseEventArgs>> _mouseMoveHandlers = new List<Action<MouseEventArgs>>();

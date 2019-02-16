@@ -23,6 +23,14 @@ namespace EditorSupport.Document
         /// </summary>
         public Int32 RemovalLength { get; set; }
         /// <summary>
+        /// 插入的文本
+        /// </summary>
+        public String InsertionText { get; set; }
+        /// <summary>
+        /// 删除的文本
+        /// </summary>
+        public String RemovalText { get; set; }
+        /// <summary>
         /// 需要更新的行号
         /// </summary>
         public Int32 LineNumberNeedUpdate { get; set; }

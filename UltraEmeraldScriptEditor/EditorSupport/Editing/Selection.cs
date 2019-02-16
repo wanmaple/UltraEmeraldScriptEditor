@@ -45,6 +45,7 @@ namespace EditorSupport.Editing
             _brush = new SolidColorBrush(CommonUtilities.ColorFromHexString("#7F7D7D7D"));
             _renderRects = new List<Rect>();
             _viewRects = new List<Rect>();
+            _noTrigging = false;
         }
         #endregion
 
@@ -72,17 +73,36 @@ namespace EditorSupport.Editing
         /// <param name="offset"></param>
         public void Move(Int32 offset)
         {
-            Int32 oldLength = Length;
-            if (offset > 0)
+            Move(offset, offset);
+        }
+
+        public void Move(Int32 startOffset, Int32 endOffset)
+        {
+            _noTrigging = true;
+            Int32 oldStart = StartOffset, oldEnd = EndOffset;
+            if (endOffset > 0)
             {
-                MoveEnd(offset);
-                StartOffset = EndOffset - oldLength;
+                MoveEnd(endOffset);
+                MoveStart(startOffset);
             }
-            else if (offset < 0)
+            else if (startOffset < 0)
             {
-                MoveStart(offset);
-                EndOffset = StartOffset + oldLength;
+                MoveStart(startOffset);
+                MoveEnd(endOffset);
             }
+            else
+            {
+                if (startOffset != 0)
+                {
+                    MoveStart(startOffset);
+                }
+                if (endOffset != 0)
+                {
+                    MoveEnd(endOffset);
+                }
+            } 
+            _noTrigging = false;
+            TriggerOffsetChanged();
         }
 
         /// <summary>
@@ -95,7 +115,10 @@ namespace EditorSupport.Editing
             {
                 throw new ArgumentException(String.Format("{0} <= offset <= {1}", offset, _owner.Document.Length));
             }
+            _noTrigging = true;
             EndOffset = StartOffset = offset;
+            _noTrigging = false;
+            TriggerOffsetChanged();
         }
 
         public void Reset()
@@ -117,7 +140,7 @@ namespace EditorSupport.Editing
 
         protected void TriggerOffsetChanged()
         {
-            if (OffsetChanged != null)
+            if (!_noTrigging && OffsetChanged != null)
             {
                 OffsetChanged(this, EventArgs.Empty);
             }
@@ -127,5 +150,6 @@ namespace EditorSupport.Editing
         protected List<Rect> _renderRects;
         protected List<Rect> _viewRects;
         protected EditView _owner;
+        protected Boolean _noTrigging;
     }
 }

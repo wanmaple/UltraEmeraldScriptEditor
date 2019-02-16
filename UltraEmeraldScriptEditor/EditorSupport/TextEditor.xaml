@@ -6,13 +6,14 @@
              xmlns:local="clr-namespace:EditorSupport"
              xmlns:render="clr-namespace:EditorSupport.Rendering"
              xmlns:edit="clr-namespace:EditorSupport.Editing"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
+             x:Name="editor"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <edit:EditView x:Name="editor" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <render:RenderView Syntax="PScript">
+        <edit:EditView x:Name="editview" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <render:RenderView x:Name="renderview" Syntax="{Binding ElementName=editor, Path=Syntax}" Document="{Binding ElementName=editor, Path=Document}" Padding="{Binding ElementName=editor, Path=EditorPadding}">
                 <render:RenderView.GlyphOption>
-                    <render:GlyphProperties FontFamily="Lucida Console" FontSize="15" />
+                    <render:GlyphProperties FontFamily="{Binding ElementName=editor, Path=EditorFontFamily}" FontSize="{Binding ElementName=editor, Path=EditorFontSize}" />
                 </render:RenderView.GlyphOption>
             </render:RenderView>
         </edit:EditView>

@@ -4,8 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
-        xmlns:render="clr-namespace:EditorSupport.Rendering;assembly=EditorSupport"
-        xmlns:edit="clr-namespace:EditorSupport.Editing;assembly=EditorSupport"
+        xmlns:editor="clr-namespace:EditorSupport;assembly=EditorSupport"
         mc:Ignorable="d"
         Title="{DynamicResource lang_wintitle_main}" Height="640" Width="1024"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
@@ -46,8 +45,8 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_exit}" InputGestureText="Alt+F4" Command="ApplicationCommands.Close" />
             </MenuItem>
             <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_edit}">
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_undo}" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_redo}" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_undo}" InputGestureText="Ctrl+Z" Command="ApplicationCommands.Undo" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_redo}" InputGestureText="Ctrl+Y" Command="ApplicationCommands.Redo" />
                 <Separator />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_cut}" InputGestureText="Ctrl+X" Command="ApplicationCommands.Cut" />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy" />
@@ -62,13 +61,7 @@
         </Menu>
         <TabControl x:Name="tcDocs" Grid.Row="1">
             <TabItem Header="New" MinWidth="65">
-                <edit:EditView x:Name="editor" CanContentEdit="True" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <render:RenderView Syntax="PScript">
-                        <render:RenderView.GlyphOption>
-                            <render:GlyphProperties FontFamily="Lucida Console" FontSize="15" />
-                        </render:RenderView.GlyphOption>
-                    </render:RenderView>
-                </edit:EditView>
+                <editor:TextEditor x:Name="editor" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
             </TabItem>
         </TabControl>
     </Grid>

@@ -269,17 +269,25 @@ namespace EditorSupport.Document
             {
                 return;
             }
-            if (length == 0 && items.Length > 0)
-            {
-                InsertRange(index, items);
-            }
-            else if (length > 0 && items.Length == 0)
+            //if (length == 0 && items.Length > 0)
+            //{
+            //    InsertRange(index, items);
+            //}
+            //else if (length > 0 && items.Length == 0)
+            //{
+            //    RemoveRange(index, length);
+            //}
+            //else
+            //{
+            //    InnerReplace(_root, index, items, 0, items.Length);
+            //}
+            if (length > 0)
             {
                 RemoveRange(index, length);
             }
-            else
+            if (items.Length > 0)
             {
-                InnerReplace(_root, index, items, 0, items.Length);
+                InsertRange(index, items);
             }
 #if DEBUG
             VerifySelf();
@@ -484,6 +492,7 @@ namespace EditorSupport.Document
 
         internal void InnerReplace(RopeNode node, Int32 offset, T[] array, Int32 arrayIndex, Int32 length)
         {
+            // 有bug 有空修复 todo
             if (length <= 0)
             {
                 return;

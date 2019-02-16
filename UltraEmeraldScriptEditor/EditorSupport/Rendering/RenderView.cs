@@ -30,7 +30,7 @@ namespace EditorSupport.Rendering
         public static readonly DependencyProperty GlyphOptionProperty =
     DependencyProperty.Register("GlyphOption", typeof(GlyphProperties), typeof(RenderView), new PropertyMetadata(OnGlyphOptionChanged));
         public static readonly DependencyProperty PaddingProperty =
-            DependencyProperty.Register("Padding", typeof(Thickness), typeof(RenderView), new PropertyMetadata(new Thickness(10, 5, 10, 5), OnPaddingChanged));
+            DependencyProperty.Register("Padding", typeof(Thickness), typeof(RenderView), new PropertyMetadata(OnPaddingChanged));
         public static readonly DependencyProperty SyntaxProperty =
             DependencyProperty.Register("Syntax", typeof(String), typeof(RenderView), new PropertyMetadata("Plain", OnSyntaxChanged));
 
@@ -72,6 +72,8 @@ namespace EditorSupport.Rendering
             _bgRenderers = new List<BackgroundRenderer>();
             _lineRenderer = new VisualLineRenderer(this);
             _allVisualLines = new List<VisualLine>();
+
+            GlyphOption = new GlyphProperties();
 
             _highlighter = HighlightingFactory.GetInstance().GetHighlighter(Syntax);
             _highlightRuler = HighlightingFactory.GetInstance().GetHighlightRuler(Syntax);

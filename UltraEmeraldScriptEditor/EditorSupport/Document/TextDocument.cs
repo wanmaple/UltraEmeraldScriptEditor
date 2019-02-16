@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EditorSupport.Undo;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -25,6 +26,7 @@ namespace EditorSupport.Document
             _anchorTree = new TextAnchorTree(this);
             _lineTree = new DocumentLineTree(this);
             _lineMgr = new DocumentLineManager(this, _lineTree);
+            _undoStack = new UndoStack();
         }
         #endregion
 
@@ -161,8 +163,9 @@ namespace EditorSupport.Document
             docUpdate.Offset = offset;
             docUpdate.InsertionLength = content.Length;
             docUpdate.RemovalLength = length;
+            docUpdate.InsertionText = content;
+            docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
 
-            _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 //_anchorTree.RemoveText(offset, length);
@@ -173,9 +176,15 @@ namespace EditorSupport.Document
                 //_anchorTree.InsertText(offset, content.Length);
                 _lineMgr.Insert(offset, content, docUpdate);
             }
+            _rope.Replace(offset, length, content.ToArray());
             if (Changed != null)
             {
                 Changed(this, new DocumentUpdateEventArgs(docUpdate));
+            }
+
+            if (!_undoing)
+            {
+                _undoStack.AddOperation(new DocumentEditingOperation(this, docUpdate));
             }
 #if DEBUG
             _anchorTree.VerifySelf();
@@ -241,6 +250,30 @@ namespace EditorSupport.Document
             VerifyAccess();
             _anchorTree.MoveRight(anchor._node, length);
         }
+        #endregion
+
+        #region Undo / Redo
+        public Boolean Undo()
+        {
+            return _undoStack.Undo();
+        }
+
+        public Boolean Redo()
+        {
+            return _undoStack.Redo();
+        }
+
+        public Boolean CanUndo()
+        {
+            return _undoStack.CanUndo();
+        }
+
+        public Boolean CanRedo()
+        {
+            return _undoStack.CanRedo();
+        }
+
+        internal Boolean _undoing = false;
         #endregion
 
         #region Locations <=> Offsets
@@ -320,5 +353,6 @@ namespace EditorSupport.Document
         private readonly TextAnchorTree _anchorTree;
         private readonly DocumentLineTree _lineTree;
         private readonly DocumentLineManager _lineMgr;
+        private UndoStack _undoStack;
     }
 }

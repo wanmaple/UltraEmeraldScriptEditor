@@ -70,6 +70,7 @@
     <Compile Include="Editing\Caret.cs" />
     <Compile Include="Editing\CaretNavigationCommandHelper.cs" />
     <Compile Include="Editing\EditingCommandHelper.cs" />
+    <Compile Include="Editing\EditingOffsetUpdate.cs" />
     <Compile Include="Editing\EditView.cs" />
     <Compile Include="Editing\IEditInfo.cs" />
     <Compile Include="Editing\IInputHandler.cs" />
@@ -103,6 +104,11 @@
     <Compile Include="TextEditor.xaml.cs">
       <DependentUpon>TextEditor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Undo\DocumentOperation.cs" />
+    <Compile Include="Undo\EditingOperation.cs" />
+    <Compile Include="Undo\IUndoableOperation.cs" />
+    <Compile Include="Undo\DocumentEditingOperation.cs" />
+    <Compile Include="Undo\UndoStack.cs" />
     <Compile Include="Utils\CommonUtilities.cs" />
     <Compile Include="Utils\MouseHook.cs" />
     <Compile Include="Utils\ValueSequence.cs" />

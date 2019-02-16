@@ -36,9 +36,11 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.Delete, ModifierKeys.None, Key.Delete, RemoveHandler(EditingCommands.SelectRightByCharacter));
             AddCommandBinding(EditingCommands.TabForward, ModifierKeys.None, Key.Tab, OnTabForward);
             AddCommandBinding(EditingCommands.TabBackward, ModifierKeys.Shift, Key.Tab, OnTabBackward);
-            AddCommandBinding(ApplicationCommands.Copy, ModifierKeys.Control, Key.C, OnCopy, CanCutOrCopy);
-            AddCommandBinding(ApplicationCommands.Cut, ModifierKeys.Control, Key.X, OnCut, CanCutOrCopy);
-            AddCommandBinding(ApplicationCommands.Paste, ModifierKeys.Control, Key.V, OnPaste, CanCutOrCopy);
+            AddCommandBinding(ApplicationCommands.Copy, ModifierKeys.Control, Key.C, OnCopy, CanEdit);
+            AddCommandBinding(ApplicationCommands.Cut, ModifierKeys.Control, Key.X, OnCut, CanEdit);
+            AddCommandBinding(ApplicationCommands.Paste, ModifierKeys.Control, Key.V, OnPaste, CanEdit);
+            AddCommandBinding(ApplicationCommands.Undo, ModifierKeys.Control, Key.Z, OnUndo, CanUndo);
+            AddCommandBinding(ApplicationCommands.Redo, ModifierKeys.Control, Key.Y, OnRedo, CanRedo);
         }
 
         internal static void AddCommandBinding(ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler handler, CanExecuteRoutedEventHandler canExecuteHandler = null)
@@ -66,11 +68,13 @@ namespace EditorSupport.Editing
                 EditView editor = sender as EditView;
                 if (editor != null && editor.Document != null)
                 {
+                    editor.BeginUpdating();
                     if (editor.Selection.IsEmpty)
                     {
                         command.Execute(e.Parameter, editor);
                     }
                     editor.RemoveSelection();
+                    editor.EndUpdating();
                     editor.Redraw();
                     e.Handled = true;
                 }
@@ -82,19 +86,41 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
+                editor.BeginUpdating();
                 editor.InsertText(CommonUtilities.LineBreak);
+                editor.EndUpdating();
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
                 e.Handled = true;
             }
         }
 
-        private static void CanCutOrCopy(Object sender, CanExecuteRoutedEventArgs e)
+        private static void CanEdit(Object sender, CanExecuteRoutedEventArgs e)
         {
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null && editor.IsFocused)
             {
                 e.CanExecute = true;
+                e.Handled = true;
+            }
+        }
+
+        private static void CanUndo(Object sender, CanExecuteRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null && editor.IsFocused)
+            {
+                e.CanExecute = editor.CanUndo() && editor.Document.CanUndo();
+                e.Handled = true;
+            }
+        }
+
+        private static void CanRedo(Object sender, CanExecuteRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null && editor.IsFocused)
+            {
+                e.CanExecute = editor.CanRedo() && editor.Document.CanRedo();
                 e.Handled = true;
             }
         }
@@ -136,7 +162,9 @@ namespace EditorSupport.Editing
                     // 剪切选中的文字
                     CopySelectedText(editor);
                 }
+                editor.BeginUpdating();
                 editor.RemoveSelection();
+                editor.EndUpdating();
                 editor.Redraw();
                 e.Handled = true;
             }
@@ -164,6 +192,7 @@ namespace EditorSupport.Editing
                 text = CommonUtilities.NormalizeText(new StringReader(text));
                 if (!String.IsNullOrEmpty(text))
                 {
+                    editor.BeginUpdating();
                     if (obj.GetDataPresent(LineCopyFormat))
                     {
                         // 粘贴整行
@@ -175,7 +204,32 @@ namespace EditorSupport.Editing
                         editor.InsertText(text);
                         editor.Redraw();
                     }
+                    editor.EndUpdating();
                 }
+                e.Handled = true;
+            }
+        }
+
+        private static void OnUndo(Object sender, ExecutedRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null)
+            {
+                editor.Undo();
+                editor.MoveCaretInVisual();
+                editor.Redraw();
+                e.Handled = true;
+            }
+        }
+
+        private static void OnRedo(Object sender, ExecutedRoutedEventArgs e)
+        {
+            EditView editor = sender as EditView;
+            if (editor != null && editor.Document != null)
+            {
+                editor.Redo();
+                editor.MoveCaretInVisual();
+                editor.Redraw();
                 e.Handled = true;
             }
         }
@@ -185,7 +239,9 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
+                editor.BeginUpdating();
                 editor.TabForward();
+                editor.EndUpdating();
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
                 e.Handled = true;
@@ -197,7 +253,9 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
+                editor.BeginUpdating();
                 editor.TabBackward();
+                editor.EndUpdating();
                 editor.Caret.RestartAnimation();
                 editor.Redraw();
                 e.Handled = true;
