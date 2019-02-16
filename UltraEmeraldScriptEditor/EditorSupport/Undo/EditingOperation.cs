@@ -20,32 +20,18 @@ namespace EditorSupport.Undo
         #region IUndoableOperation
         public void Redo()
         {
-            Int32 caretMoving = _update.CaretMoving;
-            Int32 selectionStartMoving = _update.SelectionStartMoving;
-            Int32 selectionEndMoving = _update.SelectionEndMoving;
-            MoveCaretAndSelection(caretMoving, selectionStartMoving, selectionEndMoving);
+            _view.Caret.DocumentOffset = _update.CaretOffsetLater;
+            _view.Caret.DocumentOffset = _update.SelectionStartLater;
+            _view.Caret.DocumentOffset = _update.SelectionEndLater;
         }
 
         public void Undo()
         {
-            Int32 caretMoving = -_update.CaretMoving;
-            Int32 selectionStartMoving = -_update.SelectionStartMoving;
-            Int32 selectionEndMoving = -_update.SelectionEndMoving;
-            MoveCaretAndSelection(caretMoving, selectionStartMoving, selectionEndMoving);
+            _view.Caret.DocumentOffset = _update.CaretOffsetEarlier;
+            _view.Caret.DocumentOffset = _update.SelectionStartEarlier;
+            _view.Caret.DocumentOffset = _update.SelectionEndEarlier;
         }
         #endregion
-
-        private void MoveCaretAndSelection(Int32 caretMoving, Int32 selectionStartMoving, Int32 selectionEndMoving)
-        {
-            if (selectionStartMoving != 0 || selectionEndMoving != 0)
-            {
-                _view.Selection.Move(selectionStartMoving, selectionEndMoving);
-            }
-            if (caretMoving != 0)
-            {
-                _view.Caret.DocumentOffset += caretMoving;
-            }
-        }
 
         private EditView _view;
         private EditingOffsetUpdate _update;

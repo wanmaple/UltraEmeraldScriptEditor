@@ -11,7 +11,7 @@ namespace EditorSupport.Rendering.Renderers
     /// <summary>
     /// VisualLine绘制器。
     /// </summary>
-    public class VisualLineRenderer : IRenderable
+    public sealed class VisualLineRenderer : IRenderable
     {
         public LinkedList<VisualLine> VisibleLines { get; private set; }
         public Point RenderOffset { get => _renderOffset; set => _renderOffset = value; }

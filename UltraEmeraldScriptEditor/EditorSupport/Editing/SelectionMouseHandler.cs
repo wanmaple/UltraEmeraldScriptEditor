@@ -138,6 +138,17 @@ namespace EditorSupport.Editing
             e.Handled = true;
         }
 
+        private void OnMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            _mode = SelectionMode.None;
+
+            _owner.MeasureCaretLocation(e.GetPosition(_owner.Content as IInputElement));
+            _owner.SelectionFollowCaret(false, FlowDirection.LeftToRight);
+            _owner.Redraw();
+
+            e.Handled = true;
+        }
+
         private void OnMouseEnter(object sender, MouseEventArgs e)
         {
             StopScrolling();

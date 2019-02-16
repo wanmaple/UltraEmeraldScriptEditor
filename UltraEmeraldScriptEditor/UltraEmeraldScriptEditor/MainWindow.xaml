@@ -10,6 +10,14 @@
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
         <RoutedUICommand x:Key="Settings" Text="SettingsCommand" />
+        <ContextMenu x:Key="cmEditing">
+            <MenuItem Header="{DynamicResource lang_mi_undo}" InputGestureText="Ctrl+Z" Command="ApplicationCommands.Undo" />
+            <MenuItem Header="{DynamicResource lang_mi_redo}" InputGestureText="Ctrl+Y" Command="ApplicationCommands.Redo" />
+            <Separator />
+            <MenuItem Header="{DynamicResource lang_mi_cut}" InputGestureText="Ctrl+X" Command="ApplicationCommands.Cut" />
+            <MenuItem Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy" />
+            <MenuItem Header="{DynamicResource lang_mi_paste}" InputGestureText="Ctrl+V" Command="ApplicationCommands.Paste" />
+        </ContextMenu>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Ctrl" Command="ApplicationCommands.New" />
@@ -59,10 +67,19 @@
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_settings}" Command="{StaticResource Settings}" />
             </MenuItem>
         </Menu>
-        <TabControl x:Name="tcDocs" Grid.Row="1">
-            <TabItem Header="New" MinWidth="65">
-                <editor:TextEditor x:Name="editor" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
-            </TabItem>
-        </TabControl>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0"></Grid>
+            <GridSplitter Grid.Column="1" Width="2" VerticalAlignment="Stretch" />
+            <TabControl x:Name="tcDocs" Grid.Column="2" MinWidth="500">
+                <TabItem Header="New" MinWidth="65">
+                    <editor:TextEditor x:Name="editor" ContextMenu="{StaticResource cmEditing}" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
+                </TabItem>
+            </TabControl>
+        </Grid>
     </Grid>
 </Window>

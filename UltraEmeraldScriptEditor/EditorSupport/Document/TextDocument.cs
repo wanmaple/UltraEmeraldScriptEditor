@@ -166,6 +166,7 @@ namespace EditorSupport.Document
             docUpdate.InsertionText = content;
             docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
 
+            _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 //_anchorTree.RemoveText(offset, length);
@@ -176,7 +177,6 @@ namespace EditorSupport.Document
                 //_anchorTree.InsertText(offset, content.Length);
                 _lineMgr.Insert(offset, content, docUpdate);
             }
-            _rope.Replace(offset, length, content.ToArray());
             if (Changed != null)
             {
                 Changed(this, new DocumentUpdateEventArgs(docUpdate));

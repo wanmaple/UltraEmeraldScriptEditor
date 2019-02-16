@@ -9,6 +9,7 @@
       <keyword>^.word$</keyword>
       <keyword>^.hword$</keyword>
       <keyword>^.endm$</keyword>
+      <keyword>^.global$</keyword>
     </rule>
     <!--comment-->
     <rule type="prefix">
@@ -19,6 +20,15 @@
     <rule type="regex">
       <keyword>^[-+]?\d+(\.\d+)?$</keyword>
       <keyword>^[-+]?0[xX][0-9a-fA-F]+$</keyword>
+    </rule>
+    <!--include-->
+    <rule type="prefix">
+      <keyword>.include</keyword>
+    </rule>
+    <!--address search-->
+    <rule type="regex">
+      <keyword>^.freespace$</keyword>
+      <keyword>^.org$</keyword>
     </rule>
   </ruler>
   <styles>
@@ -44,6 +54,22 @@
       <background>#00000000</background>
       <fontstyle>normal</fontstyle>
       <fontweight>normal</fontweight>
+      <fontstretch>normal</fontstretch>
+    </style>
+    <!--include-->
+    <style>
+      <foreground>#FF7D7D7D</foreground>
+      <background>#00000000</background>
+      <fontstyle>normal</fontstyle>
+      <fontweight>bold</fontweight>
+      <fontstretch>normal</fontstretch>
+    </style>
+    <!--address search-->
+    <style>
+      <foreground>#FF4EC9B0</foreground>
+      <background>#00000000</background>
+      <fontstyle>normal</fontstyle>
+      <fontweight>bold</fontweight>
       <fontstretch>normal</fontstretch>
     </style>
   </styles>

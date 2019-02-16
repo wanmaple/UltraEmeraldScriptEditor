@@ -71,6 +71,7 @@ namespace EditorSupport.Rendering
             _renderContext = new RenderContext();
             _bgRenderers = new List<BackgroundRenderer>();
             _lineRenderer = new VisualLineRenderer(this);
+            _lineNumRenderer = new LineNumberRenderer(this);
             _allVisualLines = new List<VisualLine>();
 
             GlyphOption = new GlyphProperties();
@@ -83,8 +84,12 @@ namespace EditorSupport.Rendering
         #region Overrides
         protected override void OnRender(DrawingContext drawingContext)
         {
-            //RenderBackground(drawingContext);
+            _renderContext.PrepareRendering();
+
+            RenderLineNumbers(drawingContext);
             RenderLines(drawingContext);
+
+            _renderContext.FinishRendering();
         }
 
         protected override Size MeasureOverride(Size availableSize)
@@ -144,17 +149,19 @@ namespace EditorSupport.Rendering
 
         private void RenderLines(DrawingContext drawingContext)
         {
-            _renderContext.PrepareRendering();
-
-            _renderContext.PushTranslation(Padding.Left + _lineRenderer.RenderOffset.X, Padding.Top + _lineRenderer.RenderOffset.Y);
+            _renderContext.PushTranslation(Padding.Left + _lineNumRenderer.RenderWidth + _lineRenderer.RenderOffset.X, Padding.Top + _lineRenderer.RenderOffset.Y);
             _lineRenderer.Render(drawingContext, _renderContext);
+        }
 
-            _renderContext.FinishRendering();
+        private void RenderLineNumbers(DrawingContext drawingContext)
+        {
+            _lineNumRenderer.Render(drawingContext, _renderContext);
         }
 
         private RenderContext _renderContext;
         private List<BackgroundRenderer> _bgRenderers;
-        private VisualLineRenderer _lineRenderer;
+        internal VisualLineRenderer _lineRenderer;
+        private LineNumberRenderer _lineNumRenderer;
         #endregion
 
         #region Highlighting control
@@ -482,7 +489,7 @@ namespace EditorSupport.Rendering
                 // 第一行到底
                 viewStart = LocationToPosition(startLocation);
                 VisualLine line = _allVisualLines[startLocation.Line - 1];
-                viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
+                viewEnd = new Point(line.VisualLength + _lineNumRenderer.RenderWidth + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
                 viewRect = new Rect(viewStart, viewEnd);
                 selection.ViewRects.Add(viewRect);
                 viewRect.Intersect(_renderContext.Region);
@@ -495,8 +502,8 @@ namespace EditorSupport.Rendering
                 while (lineNum != endLocation.Line)
                 {
                     line = _allVisualLines[lineNum - 1];
-                    viewStart = new Point(Padding.Left - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
-                    viewEnd = new Point(line.VisualLength + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewEnd.Y + GlyphOption.LineHeight);
+                    viewStart = new Point(Padding.Left + _lineNumRenderer.RenderWidth - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
+                    viewEnd = new Point(line.VisualLength + _lineNumRenderer.RenderWidth + CommonUtilities.LineVisualUnit * GlyphOption.FontSize - HorizontalOffset, viewEnd.Y + GlyphOption.LineHeight);
                     viewRect = new Rect(viewStart, viewEnd);
                     selection.ViewRects.Add(viewRect);
                     viewRect.Intersect(visualArea);
@@ -507,7 +514,7 @@ namespace EditorSupport.Rendering
                     ++lineNum;
                 }
                 // 最后一行到头
-                viewStart = new Point(Padding.Left - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
+                viewStart = new Point(Padding.Left + _lineNumRenderer.RenderWidth - HorizontalOffset, viewStart.Y + GlyphOption.LineHeight);
                 viewEnd = LocationToPosition(endLocation);
                 viewEnd.Y += GlyphOption.LineHeight;
                 viewRect = new Rect(viewStart, viewEnd);
@@ -865,12 +872,12 @@ namespace EditorSupport.Rendering
             Double caretPosX = caretVisualOffset + _lineRenderer.RenderOffset.X;
             Double caretPosY = _lineRenderer.RenderOffset.Y + visualLineIdx * GlyphOption.LineHeight;
 
-            return new Point(caretPosX + Padding.Left, caretPosY + Padding.Top);
+            return new Point(caretPosX + Padding.Left + _lineNumRenderer.RenderWidth, caretPosY + Padding.Top);
         }
 
         private TextLocation PositionToLocation(Point position)
         {
-            position.X -= _lineRenderer.RenderOffset.X + Padding.Left;
+            position.X -= _lineRenderer.RenderOffset.X + Padding.Left + _lineNumRenderer.RenderWidth;
             position.Y -= Padding.Top;
             Debug.Assert(_lineRenderer.VisibleLines.Count > 0);
             Int32 renderFirstLineNum = _lineRenderer.VisibleLines.First.Value.Line.LineNumber;

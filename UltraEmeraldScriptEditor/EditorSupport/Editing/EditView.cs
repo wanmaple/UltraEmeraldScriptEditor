@@ -626,9 +626,9 @@ namespace EditorSupport.Editing
                 return;
             }
             _updating = true;
-            _update.CaretMoving = _caret.DocumentOffset;
-            _update.SelectionStartMoving = _selection.StartOffset;
-            _update.SelectionEndMoving = _selection.EndOffset;
+            _update.CaretOffsetEarlier = _caret.DocumentOffset;
+            _update.SelectionStartEarlier = _selection.StartOffset;
+            _update.SelectionEndEarlier = _selection.EndOffset;
         }
 
         internal void EndUpdating()
@@ -638,9 +638,9 @@ namespace EditorSupport.Editing
                 return;
             }
             _updating = false;
-            _update.CaretMoving = _caret.DocumentOffset - _update.CaretMoving;
-            _update.SelectionStartMoving = _selection.StartOffset - _update.SelectionStartMoving;
-            _update.SelectionEndMoving = _selection.EndOffset - _update.SelectionEndMoving;
+            _update.CaretOffsetLater = _caret.DocumentOffset;
+            _update.SelectionStartLater = _selection.StartOffset;
+            _update.SelectionEndLater = _selection.EndOffset;
             _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
         }
 

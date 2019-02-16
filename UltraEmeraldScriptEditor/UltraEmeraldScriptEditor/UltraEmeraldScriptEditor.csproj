@@ -101,6 +101,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CompileSupport\CompileSupport.csproj">
+      <Project>{87b2cb45-1e22-43e6-82a3-6089a12036f3}</Project>
+      <Name>CompileSupport</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EditorSupport\EditorSupport.csproj">
       <Project>{8f29407d-f5a7-40d8-a20b-8f8dc303b5ff}</Project>
       <Name>EditorSupport</Name>

@@ -58,10 +58,6 @@ namespace EditorSupport.Editing
             get => _endAnchor.Offset;
             set
             {
-                if (value < StartOffset)
-                {
-                    throw new ArgumentException("'EndOffset' can't be less than 'StartOffset'.");
-                }
                 Int32 oldOffset = EndOffset;
                 if (oldOffset != value)
                 {

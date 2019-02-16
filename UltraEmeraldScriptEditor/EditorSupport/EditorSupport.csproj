@@ -46,6 +46,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeCompletion\CompletionWindowBase.cs" />
     <Compile Include="Document\AnchorSegment.cs" />
     <Compile Include="Document\CharRopeExtensions.cs" />
     <Compile Include="Document\DocumentLine.cs" />
@@ -91,6 +92,7 @@
     <Compile Include="Rendering\RenderContext.cs" />
     <Compile Include="Rendering\Renderers\BackgroundRenderer.cs" />
     <Compile Include="Rendering\Renderers\BrushBackgroundRenderer.cs" />
+    <Compile Include="Rendering\Renderers\LineNumberRenderer.cs" />
     <Compile Include="Rendering\RenderView.cs" />
     <Compile Include="Rendering\Renderers\ImageBackgroundRenderer.cs" />
     <Compile Include="Rendering\Renderers\IRenderable.cs" />
@@ -99,8 +101,6 @@
     <Compile Include="Rendering\VisualLine.cs" />
     <Compile Include="Rendering\VisualLineElement.cs" />
     <Compile Include="Rendering\VisualLineImageCache.cs" />
-    <Compile Include="Syntax\ILexicalAnalyzer.cs" />
-    <Compile Include="Syntax\PokemonScript\PokemonScriptWriter.cs" />
     <Compile Include="TextEditor.xaml.cs">
       <DependentUpon>TextEditor.xaml</DependentUpon>
     </Compile>
