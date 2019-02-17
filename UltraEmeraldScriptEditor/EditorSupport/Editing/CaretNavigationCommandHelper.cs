@@ -90,6 +90,10 @@ namespace EditorSupport.Editing
         {
             return (sender, e) =>
             {
+                if (e.Handled)
+                {
+                    return;
+                }
                 EditView editor = sender as EditView;
                 editor.MoveCaret(caretMovementType, doSelect);
                 editor.Redraw();
@@ -99,6 +103,10 @@ namespace EditorSupport.Editing
 
         private static void OnSelectAll(Object sender, ExecutedRoutedEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             EditView editor = sender as EditView;
             editor.SelectAll();
             editor.Redraw();

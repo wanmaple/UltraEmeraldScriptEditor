@@ -20,11 +20,13 @@ namespace EditorSupport.Editing
     /// </summary>
     public sealed class EditView : ScrollViewer, IWeakEventListener
     {
+        public event EventHandler<ScrollChangedEventArgs> ScrollOffsetChanged;
+
         #region Properties
         public static readonly DependencyProperty DocumentProperty =
     DependencyProperty.Register("Document", typeof(TextDocument), typeof(EditView), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
         public static readonly DependencyProperty CanContentEditProperty =
-            DependencyProperty.Register("CanContentEdit", typeof(Boolean), typeof(EditView), new PropertyMetadata(false));
+            DependencyProperty.Register("CanContentEdit", typeof(Boolean), typeof(EditView), new PropertyMetadata(Boxes.False));
 
         public TextDocument Document
         {
@@ -75,11 +77,13 @@ namespace EditorSupport.Editing
             _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
             _selection.OffsetChanged += OnSelectionOffsetChanged;
             _undoStack = new UndoStack();
+            _inputHandlers = new InputHandlerGroup(this);
 
             Loaded += (s, e) =>
             {
                 Cursor = Cursors.IBeam;
-                CreateDefaultInputHandler();
+                _inputHandlers.Children.Add(CreateDefaultInputHandler());
+                ActiveInputHandler = _inputHandlers;
             };
         }
         #endregion
@@ -108,6 +112,10 @@ namespace EditorSupport.Editing
         {
             Measure();
             Redraw();
+            if (ScrollOffsetChanged != null)
+            {
+                ScrollOffsetChanged(this, e);
+            }
         }
 
         protected override void OnGotFocus(RoutedEventArgs e)
@@ -132,7 +140,6 @@ namespace EditorSupport.Editing
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            base.OnMouseLeftButtonDown(e);
             foreach (var handler in _mouseLeftDownHandlers)
             {
                 handler(e);
@@ -141,7 +148,6 @@ namespace EditorSupport.Editing
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            base.OnMouseLeftButtonUp(e);
             foreach (var handler in _mouseLeftUpHandlers)
             {
                 handler(e);
@@ -150,7 +156,6 @@ namespace EditorSupport.Editing
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            base.OnMouseMove(e);
             foreach (var handler in _mouseMoveHandlers)
             {
                 handler(e);
@@ -168,6 +173,8 @@ namespace EditorSupport.Editing
         #endregion
 
         #region Caret / Selection
+        public event EventHandler Redrawed;
+
         public void InsertText(String content)
         {
             if (String.IsNullOrEmpty(content))
@@ -287,6 +294,10 @@ namespace EditorSupport.Editing
         internal void Redraw()
         {
             base.InvalidateVisual();
+            if (Redrawed != null)
+            {
+                Redrawed(this, EventArgs.Empty);
+            }
         }
 
         internal void MeasureCaretLocation(Point positionToView)
@@ -571,13 +582,13 @@ namespace EditorSupport.Editing
             }
         }
 
-        private void CreateDefaultInputHandler()
+        private IInputHandler CreateDefaultInputHandler()
         {
             var defaultHandler = new InputHandlerGroup(this);
             defaultHandler.Children.Add(EditingCommandHelper.CreateHandler(this));
             defaultHandler.Children.Add(CaretNavigationCommandHelper.CreateHandler(this));
             defaultHandler.Children.Add(new SelectionMouseHandler(this));
-            ActiveInputHandler = defaultHandler;
+            return defaultHandler;
         }
 
         private void OnSelectionOffsetChanged(object sender, EventArgs e)
@@ -646,6 +657,21 @@ namespace EditorSupport.Editing
 
         private Boolean _updating = false;
         private EditingOffsetUpdate _update = new EditingOffsetUpdate();
+        #endregion
+
+        #region InputHandler operations
+        public void PushInputHandler(IInputHandler handler)
+        {
+            // 至少有一个默认handler
+            Debug.Assert(_inputHandlers.Children.Count > 0);
+            _inputHandlers.Children.Add(handler);
+        }
+
+        public void PopInputHandler()
+        {
+            Debug.Assert(_inputHandlers.Children.Count > 1);
+            _inputHandlers.Children.RemoveAt(0);
+        }
         #endregion
 
         #region IWeakEventListener
@@ -736,6 +762,7 @@ namespace EditorSupport.Editing
         private Caret _caret;
         private Selection _selection;
         private IInputHandler _activeInputHandler;
+        private InputHandlerGroup _inputHandlers;
         private UndoStack _undoStack;
         internal List<Action<MouseButtonEventArgs>> _mouseLeftDownHandlers = new List<Action<MouseButtonEventArgs>>();
         internal List<Action<MouseButtonEventArgs>> _mouseLeftUpHandlers = new List<Action<MouseButtonEventArgs>>();

@@ -82,6 +82,10 @@ namespace EditorSupport.Editing
 
         private void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             ModifierKeys modifiers = Keyboard.Modifiers;
             Boolean shift = (modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
 
@@ -116,6 +120,10 @@ namespace EditorSupport.Editing
 
         private void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             _mode = SelectionMode.None;
 
             e.Handled = true;
@@ -123,6 +131,10 @@ namespace EditorSupport.Editing
 
         private void OnMouseMove(MouseEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             if (_mode == SelectionMode.PossiblyDragStart)
             {
                 FlowDirection direction = _owner.Caret.DocumentOffset == _owner.Selection.StartOffset ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
@@ -138,24 +150,23 @@ namespace EditorSupport.Editing
             e.Handled = true;
         }
 
-        private void OnMouseRightButtonDown(MouseButtonEventArgs e)
+        private void OnMouseEnter(object sender, MouseEventArgs e)
         {
-            _mode = SelectionMode.None;
-
-            _owner.MeasureCaretLocation(e.GetPosition(_owner.Content as IInputElement));
-            _owner.SelectionFollowCaret(false, FlowDirection.LeftToRight);
-            _owner.Redraw();
+            if (e.Handled)
+            {
+                return;
+            }
+            StopScrolling();
 
             e.Handled = true;
         }
 
-        private void OnMouseEnter(object sender, MouseEventArgs e)
-        {
-            StopScrolling();
-        }
-
         private void OnMouseLeave(object sender, MouseEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             if (_mode != SelectionMode.None)
             {
                 StartScrolling();

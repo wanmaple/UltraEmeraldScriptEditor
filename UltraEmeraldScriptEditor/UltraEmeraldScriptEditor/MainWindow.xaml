@@ -43,23 +43,55 @@
         <Menu Grid.Row="0">
             <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_file}">
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_new}">
-                    <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_new_script}" InputGestureText="Ctrl+N" Command="ApplicationCommands.New" />
+                    <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_new_script}" InputGestureText="Ctrl+N" Command="ApplicationCommands.New">
+                        <MenuItem.Icon>
+                            <Image Source="pack://siteoforigin:,,,/Resources/Icons/new_file.png" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </MenuItem>
                 <Separator />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_open}" InputGestureText="Ctrl+O" Command="ApplicationCommands.Open" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_save}" InputGestureText="Ctrl+S" Command="ApplicationCommands.Save" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_save}" InputGestureText="Ctrl+S" Command="ApplicationCommands.Save">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/save.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_save_as}" InputGestureText="Ctrl+Shift+S" Command="ApplicationCommands.SaveAs" />
                 <Separator />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_exit}" InputGestureText="Alt+F4" Command="ApplicationCommands.Close" />
             </MenuItem>
             <MenuItem Style="{StaticResource MenuItemHeaderStyle}" Header="{DynamicResource lang_mi_edit}">
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_undo}" InputGestureText="Ctrl+Z" Command="ApplicationCommands.Undo" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_redo}" InputGestureText="Ctrl+Y" Command="ApplicationCommands.Redo" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_undo}" InputGestureText="Ctrl+Z" Command="ApplicationCommands.Undo">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/undo.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_redo}" InputGestureText="Ctrl+Y" Command="ApplicationCommands.Redo">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/redo.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_cut}" InputGestureText="Ctrl+X" Command="ApplicationCommands.Cut" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_paste}" InputGestureText="Ctrl+V" Command="ApplicationCommands.Paste" />
-                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_delete}" InputGestureText="Delete" Command="EditingCommands.Delete" />
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_cut}" InputGestureText="Ctrl+X" Command="ApplicationCommands.Cut">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/cut.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/copy.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_paste}" InputGestureText="Ctrl+V" Command="ApplicationCommands.Paste">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/paste.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_delete}" InputGestureText="Delete" Command="EditingCommands.Delete">
+                    <MenuItem.Icon>
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/delete.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator />
                 <MenuItem Style="{StaticResource MenuItemStyle}" Header="{DynamicResource lang_mi_select_all}" InputGestureText="Ctrl+A" Command="ApplicationCommands.SelectAll" />
             </MenuItem>

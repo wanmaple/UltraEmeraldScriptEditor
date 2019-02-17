@@ -65,6 +65,10 @@ namespace EditorSupport.Editing
         {
             return (sender, e) =>
             {
+                if (e.Handled)
+                {
+                    return;
+                }
                 EditView editor = sender as EditView;
                 if (editor != null && editor.Document != null)
                 {
@@ -83,6 +87,10 @@ namespace EditorSupport.Editing
 
         private static void OnEnter(Object sender, ExecutedRoutedEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
@@ -236,6 +244,10 @@ namespace EditorSupport.Editing
 
         private static void OnTabForward(Object sender, ExecutedRoutedEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
@@ -250,6 +262,10 @@ namespace EditorSupport.Editing
 
         private static void OnTabBackward(Object sender, ExecutedRoutedEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {

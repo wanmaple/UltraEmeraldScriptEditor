@@ -46,7 +46,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeCompletion\CompletionList.xaml.cs">
+      <DependentUpon>CompletionList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CodeCompletion\CompletionWindow.cs" />
     <Compile Include="CodeCompletion\CompletionWindowBase.cs" />
+    <Compile Include="CodeCompletion\ICompletionData.cs" />
     <Compile Include="Document\AnchorSegment.cs" />
     <Compile Include="Document\CharRopeExtensions.cs" />
     <Compile Include="Document\DocumentLine.cs" />
@@ -109,6 +114,7 @@
     <Compile Include="Undo\IUndoableOperation.cs" />
     <Compile Include="Undo\DocumentEditingOperation.cs" />
     <Compile Include="Undo\UndoStack.cs" />
+    <Compile Include="Utils\Boxes.cs" />
     <Compile Include="Utils\CommonUtilities.cs" />
     <Compile Include="Utils\MouseHook.cs" />
     <Compile Include="Utils\ValueSequence.cs" />
@@ -124,6 +130,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="CodeCompletion\CompletionList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="TextEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

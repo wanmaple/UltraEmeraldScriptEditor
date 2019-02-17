@@ -1,4 +1,5 @@
-﻿using EditorSupport.Document;
+﻿using EditorSupport.CodeCompletion;
+using EditorSupport.Document;
 using EditorSupport.Utils;
 using Microsoft.Win32;
 using System;
@@ -34,6 +35,7 @@ namespace UltraEmeraldScriptEditor
             };
         }
 
+        #region Command handlers
         private void NewScript(Object sender, ExecutedRoutedEventArgs e)
         {
             var doc = new TextDocument();
@@ -89,5 +91,6 @@ namespace UltraEmeraldScriptEditor
             editor.Document = doc;
             editor.Focus();
         }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
-﻿using EditorSupport.Document;
+﻿using EditorSupport.CodeCompletion;
+using EditorSupport.Document;
 using EditorSupport.Rendering;
 using System;
 using System.Collections.Generic;
@@ -21,8 +22,9 @@ namespace EditorSupport
     /// </summary>
     public partial class TextEditor : UserControl
     {
+        #region Properties
         public static readonly DependencyProperty DocumentProperty =
-            DependencyProperty.Register("Document", typeof(TextDocument), typeof(TextEditor), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
+    DependencyProperty.Register("Document", typeof(TextDocument), typeof(TextEditor), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
         public static readonly DependencyProperty SyntaxProperty =
             DependencyProperty.Register("Syntax", typeof(String), typeof(TextEditor), new PropertyMetadata("PScript"));
         public static readonly DependencyProperty EditorPaddingProperty =
@@ -58,11 +60,21 @@ namespace EditorSupport
             get { return (Int32)GetValue(EditorFontSizeProperty); }
             set { SetValue(EditorFontSizeProperty, value); }
         }
+        #endregion
 
+        #region Constructor
         public TextEditor()
         {
             InitializeComponent();
         }
+        #endregion
+
+        #region Overrides
+        protected override void OnTextInput(TextCompositionEventArgs e)
+        {
+            base.OnTextInput(e);
+        } 
+        #endregion
 
         #region PropertyChange EventHandlers
         private static void OnDocumentChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
@@ -87,5 +99,7 @@ namespace EditorSupport
             renderview.GlyphOption.FontSize = EditorFontSize;
         }
         #endregion
+
+        private CompletionWindowBase _completionWindow;
     }
 }

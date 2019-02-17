@@ -24,6 +24,12 @@ namespace EditorSupport.Editing
 
         public void Attach()
         {
+            if (_attached)
+            {
+                throw new InvalidOperationException("Input handler has already attached.");
+            }
+            _attached = true;
+
             foreach (IInputHandler handler in _children)
             {
                 handler.Attach();
@@ -32,6 +38,12 @@ namespace EditorSupport.Editing
 
         public void Detach()
         {
+            if (!_attached)
+            {
+                throw new InvalidOperationException("Input handler hasn't been attached yet.");
+            }
+            _attached = false;
+
             foreach (IInputHandler handler in _children)
             {
                 handler.Detach();
