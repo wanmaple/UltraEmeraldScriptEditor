@@ -34,6 +34,8 @@ namespace EditorSupport
         // Using a DependencyProperty as the backing store for FontSize.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty EditorFontSizeProperty =
             DependencyProperty.Register("EditorFontSize", typeof(Int32), typeof(TextEditor), new PropertyMetadata(15, OnFontOptionChanged));
+        public static readonly DependencyProperty CodeCompletionWindowProperty =
+            DependencyProperty.Register("CodeCompletionWindow", typeof(CompletionWindow), typeof(TextEditor), new PropertyMetadata(OnCompletionWindowChanged));
 
         public TextDocument Document
         {
@@ -60,6 +62,11 @@ namespace EditorSupport
             get { return (Int32)GetValue(EditorFontSizeProperty); }
             set { SetValue(EditorFontSizeProperty, value); }
         }
+        public CompletionWindow CodeCompletionWindow
+        {
+            get { return (CompletionWindow)GetValue(CodeCompletionWindowProperty); }
+            set { SetValue(CodeCompletionWindowProperty, value); }
+        }
         #endregion
 
         #region Constructor
@@ -73,7 +80,12 @@ namespace EditorSupport
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
-        } 
+            if (e.Text == ".")
+            {
+                CodeCompletionWindow.Completions.Add(new DefaultCompletion());
+                CodeCompletionWindow.Show();
+            }
+        }
         #endregion
 
         #region PropertyChange EventHandlers
@@ -98,8 +110,19 @@ namespace EditorSupport
             renderview.GlyphOption.FontFamily = EditorFontFamily;
             renderview.GlyphOption.FontSize = EditorFontSize;
         }
-        #endregion
 
-        private CompletionWindowBase _completionWindow;
+        private static void OnCompletionWindowChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        {
+            TextEditor editor = dp as TextEditor;
+            editor.OnCompletionWindowChanged();
+        }
+        private void OnCompletionWindowChanged()
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.EditView = editview;
+            }
+        }
+        #endregion
     }
 }

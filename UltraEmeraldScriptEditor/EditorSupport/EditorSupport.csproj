@@ -46,11 +46,10 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CodeCompletion\CompletionList.xaml.cs">
-      <DependentUpon>CompletionList.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="CodeCompletion\CompletionList.cs" />
     <Compile Include="CodeCompletion\CompletionWindow.cs" />
     <Compile Include="CodeCompletion\CompletionWindowBase.cs" />
+    <Compile Include="CodeCompletion\DefaultCompletion.cs" />
     <Compile Include="CodeCompletion\ICompletionData.cs" />
     <Compile Include="Document\AnchorSegment.cs" />
     <Compile Include="Document\CharRopeExtensions.cs" />
@@ -122,6 +121,10 @@
     <Compile Include="Utils\Win32Api.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="CodeCompletion\CompletionList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Content Include="Configs\PScript.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -130,10 +133,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="CodeCompletion\CompletionList.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="TextEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

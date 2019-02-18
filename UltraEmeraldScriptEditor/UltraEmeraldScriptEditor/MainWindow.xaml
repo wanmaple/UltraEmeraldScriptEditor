@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
         xmlns:editor="clr-namespace:EditorSupport;assembly=EditorSupport"
+        xmlns:cc="clr-namespace:EditorSupport.CodeCompletion;assembly=EditorSupport"
         mc:Ignorable="d"
         Title="{DynamicResource lang_wintitle_main}" Height="640" Width="1024"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
@@ -18,6 +19,8 @@
             <MenuItem Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy" />
             <MenuItem Header="{DynamicResource lang_mi_paste}" InputGestureText="Ctrl+V" Command="ApplicationCommands.Paste" />
         </ContextMenu>
+        <cc:CompletionWindow x:Key="winCompletion" Width="200" Height="120">
+        </cc:CompletionWindow>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Ctrl" Command="ApplicationCommands.New" />
@@ -109,7 +112,7 @@
             <GridSplitter Grid.Column="1" Width="2" VerticalAlignment="Stretch" />
             <TabControl x:Name="tcDocs" Grid.Column="2" MinWidth="500">
                 <TabItem Header="New" MinWidth="65">
-                    <editor:TextEditor x:Name="editor" ContextMenu="{StaticResource cmEditing}" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
+                    <editor:TextEditor x:Name="editor" ContextMenu="{StaticResource cmEditing}" CodeCompletionWindow="{StaticResource winCompletion}" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
                 </TabItem>
             </TabControl>
         </Grid>

@@ -45,7 +45,7 @@ namespace EditorSupport.Editing
         public IInputHandler ActiveInputHandler
         {
             get => _activeInputHandler;
-            set
+            internal set
             {
                 if (value != null && value.Owner != this)
                 {
