@@ -25,12 +25,24 @@ namespace EditorSupport.CodeCompletion
         /// </summary>
         public Boolean IsFiltering { get => _isFiltering; set => _isFiltering = value; }
 
+        static CompletionList()
+        {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(CompletionList), new FrameworkPropertyMetadata(typeof(CompletionList)));
+        }
+
         public CompletionList()
+            : base()
         {
         }
 
-        public void CheckTemplate()
+        public override void OnApplyTemplate()
         {
+            base.OnApplyTemplate();
+
+            _listBox = GetTemplateChild("TemplateListBox") as ListBox;
+            _listBox.ItemsSource = Completions;
+            _emptyRegion = GetTemplateChild("TemplateEmptyRegion") as Grid;
+            CheckCompletionsEmpty();
         }
 
         protected static void OnCompletionsChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
@@ -51,9 +63,33 @@ namespace EditorSupport.CodeCompletion
 
         private void OnCompletionCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            CheckTemplate();
+            if (_listBox == null || _emptyRegion == null)
+            {
+                ApplyTemplate();
+            }
+            CheckCompletionsEmpty();
+        }
+
+        private void CheckCompletionsEmpty()
+        {
+            if (_listBox == null || _emptyRegion == null)
+            {
+                return;
+            }
+            if (Completions.Count > 0)
+            {
+                _listBox.Visibility = Visibility.Visible;
+                _emptyRegion.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                _listBox.Visibility = Visibility.Hidden;
+                _emptyRegion.Visibility = Visibility.Visible;
+            }
         }
 
         protected Boolean _isFiltering;
+        private Grid _emptyRegion;
+        private ListBox _listBox;
     }
 }

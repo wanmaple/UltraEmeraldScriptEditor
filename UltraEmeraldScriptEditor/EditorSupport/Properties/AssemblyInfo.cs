@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Markup;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
@@ -8,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("EditorSupport")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Lilith Games")]
 [assembly: AssemblyProduct("EditorSupport")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
@@ -34,3 +36,13 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+// 加上这个才能编译类库中的Generic.xaml文件
+[assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
+
+// 给类库注册命名空间
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport")]
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport.Document")]
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport.CodeCompletion")]
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport.Editing")]
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport.Rendering")]
+[assembly: XmlnsDefinition("wanmaple:editor", "EditorSupport.Rendering.Renderers")]

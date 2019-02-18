@@ -4,8 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
-        xmlns:editor="clr-namespace:EditorSupport;assembly=EditorSupport"
-        xmlns:cc="clr-namespace:EditorSupport.CodeCompletion;assembly=EditorSupport"
+        xmlns:editor="wanmaple:editor"
         mc:Ignorable="d"
         Title="{DynamicResource lang_wintitle_main}" Height="640" Width="1024"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
@@ -19,8 +18,8 @@
             <MenuItem Header="{DynamicResource lang_mi_copy}" InputGestureText="Ctrl+C" Command="ApplicationCommands.Copy" />
             <MenuItem Header="{DynamicResource lang_mi_paste}" InputGestureText="Ctrl+V" Command="ApplicationCommands.Paste" />
         </ContextMenu>
-        <cc:CompletionWindow x:Key="winCompletion" Width="200" Height="120">
-        </cc:CompletionWindow>
+        <editor:CompletionWindow x:Key="winCompletion" Width="200" Height="120">
+        </editor:CompletionWindow>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="N" Modifiers="Ctrl" Command="ApplicationCommands.New" />

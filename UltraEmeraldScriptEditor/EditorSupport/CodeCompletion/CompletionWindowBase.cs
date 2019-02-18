@@ -14,6 +14,16 @@ namespace EditorSupport.CodeCompletion
 {
     public class CompletionWindowBase : Window
     {
+        public Int32 StartOffset
+        {
+            get => _startOffset;
+            set => _startOffset = value;
+        }
+        public Int32 EndOffset
+        {
+            get => _endOffset;
+            set => _endOffset = value;
+        }
         public EditView EditView
         {
             get => _editview;
@@ -57,33 +67,28 @@ namespace EditorSupport.CodeCompletion
         protected CompletionWindowBase()
         {
             AddHandler(MouseUpEvent, new MouseButtonEventHandler(OnMouseUp), true);
-            Loaded += OnLoaded;
-            Closed += OnClosed;
         }
         #endregion
-
-        #region Virtual
-        public new virtual void Show()
+        
+        public void Display()
         {
-            Owner = _parentWindow;
-            base.Show();
+            if (Owner == null)
+            {
+                Owner = _parentWindow;
+                base.Show();
+            }
+            else
+            {
+                Visibility = Visibility.Visible;
+            }
         }
 
-        protected virtual void OnLoaded(object sender, RoutedEventArgs e)
+        public void Collapse()
         {
-            Debug.WriteLine("loaded");
-            UpdateLocation();
-        }
-
-        protected virtual void OnClosed(object sender, EventArgs e)
-        {
-            Debug.WriteLine("closed");
-        }
-        #endregion
-
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            base.OnSourceInitialized(e);
+            if (Owner != null)
+            {
+                Visibility = Visibility.Collapsed;
+            }
         }
 
         #region Event handlers
@@ -119,7 +124,14 @@ namespace EditorSupport.CodeCompletion
                 Left = Top = 0.0;
                 return;
             }
+
             Rect caretRect = _editview.Caret.RenderRect;
+            if (caretRect.IsEmpty)
+            {
+                // 如果不在范围内，就关闭对话框
+                Collapse();
+                return;
+            }
             Point pos = new Point(caretRect.Left, caretRect.Bottom + 5.0);
             // 判断下方能否足够显示
             if (pos.Y + ActualHeight > _editview.ActualHeight)
@@ -135,5 +147,7 @@ namespace EditorSupport.CodeCompletion
         protected EditView _editview;
         protected Window _parentWindow;
         protected WindowInteropHelper _interopHelper;
+        protected Int32 _startOffset;
+        protected Int32 _endOffset;
     }
 }

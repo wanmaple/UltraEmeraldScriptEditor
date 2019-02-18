@@ -82,8 +82,7 @@ namespace EditorSupport
             base.OnTextInput(e);
             if (e.Text == ".")
             {
-                CodeCompletionWindow.Completions.Add(new DefaultCompletion());
-                CodeCompletionWindow.Show();
+                CodeCompletionWindow.Display();
             }
         }
         #endregion
