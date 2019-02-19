@@ -90,6 +90,6 @@ namespace EditorSupport.CodeCompletion
 
         protected Boolean _isFiltering;
         private Grid _emptyRegion;
-        private ListBox _listBox;
+        internal ListBox _listBox;
     }
 }

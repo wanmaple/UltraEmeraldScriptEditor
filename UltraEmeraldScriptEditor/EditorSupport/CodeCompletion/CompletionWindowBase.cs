@@ -2,6 +2,7 @@
 using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ using System.Windows.Interop;
 
 namespace EditorSupport.CodeCompletion
 {
-    public class CompletionWindowBase : Window
+    public abstract class CompletionWindowBase : Window
     {
         public Int32 StartOffset
         {
@@ -24,7 +25,8 @@ namespace EditorSupport.CodeCompletion
             get => _endOffset;
             set => _endOffset = value;
         }
-        public EditView EditView
+        public ObservableCollection<ICompletionData> Completions => _allCompletions;
+        internal EditView EditView
         {
             get => _editview;
             set
@@ -66,18 +68,27 @@ namespace EditorSupport.CodeCompletion
 
         protected CompletionWindowBase()
         {
+            _allCompletions = new ObservableCollection<ICompletionData>();
             AddHandler(MouseUpEvent, new MouseButtonEventHandler(OnMouseUp), true);
         }
         #endregion
-        
+
+        #region Abstraction
+        public abstract void RequestCompletion(ICompletionData completion);
+        public abstract void Filter(String filterText);
+        public abstract void SelectPreviousCompletion();
+        public abstract void SelectNextCompletion();
+        #endregion
+
         public void Display()
         {
             if (Owner == null)
             {
                 Owner = _parentWindow;
                 base.Show();
+                UpdateLocation();
             }
-            else
+            else if (!IsVisible)
             {
                 Visibility = Visibility.Visible;
             }
@@ -85,9 +96,18 @@ namespace EditorSupport.CodeCompletion
 
         public void Collapse()
         {
-            if (Owner != null)
+            if (Owner != null && IsVisible)
             {
                 Visibility = Visibility.Collapsed;
+            }
+        }
+
+        public void ResetCompletions(IEnumerable<ICompletionData> completions)
+        {
+            _allCompletions.Clear();
+            foreach (var completion in completions)
+            {
+                _allCompletions.Add(completion);
             }
         }
 
@@ -149,5 +169,6 @@ namespace EditorSupport.CodeCompletion
         protected WindowInteropHelper _interopHelper;
         protected Int32 _startOffset;
         protected Int32 _endOffset;
+        protected ObservableCollection<ICompletionData> _allCompletions;
     }
 }

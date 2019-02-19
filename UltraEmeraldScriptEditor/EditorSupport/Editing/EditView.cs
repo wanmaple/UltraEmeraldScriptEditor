@@ -78,13 +78,9 @@ namespace EditorSupport.Editing
             _selection.OffsetChanged += OnSelectionOffsetChanged;
             _undoStack = new UndoStack();
             _inputHandlers = new InputHandlerGroup(this);
-
-            Loaded += (s, e) =>
-            {
-                Cursor = Cursors.IBeam;
-                _inputHandlers.Children.Add(CreateDefaultInputHandler());
-                ActiveInputHandler = _inputHandlers;
-            };
+            _inputHandlers.Children.Add(CreateDefaultInputHandler());
+            ActiveInputHandler = _inputHandlers;
+            Cursor = Cursors.IBeam;
         }
         #endregion
 
@@ -670,7 +666,7 @@ namespace EditorSupport.Editing
         public void PopInputHandler()
         {
             Debug.Assert(_inputHandlers.Children.Count > 1);
-            _inputHandlers.Children.RemoveAt(0);
+            _inputHandlers.Children.RemoveAt(_inputHandlers.Children.Count - 1);
         }
         #endregion
 

@@ -10,6 +10,15 @@ namespace EditorSupport.CodeCompletion
 {
     public sealed class StringCompletion : ICompletionData
     {
+        public StringCompletion(String content, String description, ImageSource image = null)
+        {
+            _content = _text = content;
+            _description = description;
+            _image = image;
+            _priority = 0;
+        }
+
+        #region ICompletionData
         public ImageSource Image
         {
             get => _image;
@@ -40,9 +49,20 @@ namespace EditorSupport.CodeCompletion
             set => _priority = value;
         }
 
-        public void PerformCompletion(EditView editview, ISegment segment)
+        public void PerformCompletion(EditView editview, int startOffset, int endOffset)
         {
+            // 合并操作
+            editview.BeginUpdating();
+
+            editview.Caret.DocumentOffset = startOffset;
+            editview.Selection.StartOffset = startOffset;
+            editview.Selection.EndOffset = endOffset;
+            editview.InsertText(Text);
+            editview.Redraw();
+
+            editview.EndUpdating();
         }
+        #endregion
 
         private ImageSource _image;
         private String _text;

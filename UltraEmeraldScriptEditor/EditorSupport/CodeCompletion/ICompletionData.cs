@@ -34,7 +34,8 @@ namespace EditorSupport.CodeCompletion
         /// 处理自动完成
         /// </summary>
         /// <param name="editview">所在<see cref="EditView"/></param>
-        /// <param name="segment">表示Completion所生效的文本范围</param>
-        void PerformCompletion(EditView editview, ISegment segment);
+        /// <param name="startOffset">表示Completion作用范围的起始偏移</param>
+        /// <param name="endOffset">表示Completion作用范围的结束偏移</param>
+        void PerformCompletion(EditView editview, Int32 startOffset, Int32 endOffset);
     }
 }

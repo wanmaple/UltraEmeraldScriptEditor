@@ -1,5 +1,6 @@
 ﻿using EditorSupport.CodeCompletion;
 using EditorSupport.Document;
+using EditorSupport.Editing;
 using EditorSupport.Rendering;
 using System;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ namespace EditorSupport
         public static readonly DependencyProperty EditorFontSizeProperty =
             DependencyProperty.Register("EditorFontSize", typeof(Int32), typeof(TextEditor), new PropertyMetadata(15, OnFontOptionChanged));
         public static readonly DependencyProperty CodeCompletionWindowProperty =
-            DependencyProperty.Register("CodeCompletionWindow", typeof(CompletionWindow), typeof(TextEditor), new PropertyMetadata(OnCompletionWindowChanged));
+            DependencyProperty.Register("CodeCompletionWindow", typeof(CompletionWindowBase), typeof(TextEditor), new PropertyMetadata(OnCompletionWindowChanged));
 
         public TextDocument Document
         {
@@ -62,9 +63,9 @@ namespace EditorSupport
             get { return (Int32)GetValue(EditorFontSizeProperty); }
             set { SetValue(EditorFontSizeProperty, value); }
         }
-        public CompletionWindow CodeCompletionWindow
+        public CompletionWindowBase CodeCompletionWindow
         {
-            get { return (CompletionWindow)GetValue(CodeCompletionWindowProperty); }
+            get { return (CompletionWindowBase)GetValue(CodeCompletionWindowProperty); }
             set { SetValue(CodeCompletionWindowProperty, value); }
         }
         #endregion
@@ -73,16 +74,126 @@ namespace EditorSupport
         public TextEditor()
         {
             InitializeComponent();
+
+            Loaded += OnLoaded;
         }
         #endregion
 
-        #region Overrides
-        protected override void OnTextInput(TextCompositionEventArgs e)
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
-            base.OnTextInput(e);
-            if (e.Text == ".")
+            base.OnPreviewKeyDown(e);
+
+            if (CodeCompletionWindow == null || !CodeCompletionWindow.IsVisible)
             {
+                return;
+            }
+
+            if (e.Key == Key.Back)
+            {
+                if (CodeCompletionWindow.EndOffset > CodeCompletionWindow.StartOffset)
+                {
+                    --CodeCompletionWindow.EndOffset;
+                }
+            }
+            else if (e.Key == Key.Space || e.Key == Key.Tab)
+            {
+                CodeCompletionWindow.Collapse();
+            }
+        }
+
+        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseDown(e);
+
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.Collapse();
+            }
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
+
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.Collapse();
+            }
+        }
+
+        private IInputHandler CreateCodeCompletionInputHandler()
+        {
+            var inputHandler = new InputCommandsHandler(editview);
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectPreviousCompletion, ModifierKeys.None, Key.Up, new ExecutedRoutedEventHandler(SelectPreviousCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectNextCompletion, ModifierKeys.None, Key.Down, new ExecutedRoutedEventHandler(SelectNextCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            return inputHandler;
+        }
+
+        private void SelectPreviousCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectPreviousCompletion();
+            }
+        }
+
+        private void SelectNextCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectNextCompletion();
+            }
+        }
+
+        private void CanOperate(Object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = CodeCompletionWindow != null && CodeCompletionWindow.IsVisible;
+        }
+
+        private void AddCommandBinding(InputCommandsHandler commandsHandler, ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler executeHandler, CanExecuteRoutedEventHandler canExecuteHandler = null)
+        {
+            commandsHandler.CommandBindings.Add(new CommandBinding(command, executeHandler, canExecuteHandler));
+            commandsHandler.InputBindings.Add(CreateFrozenKeyBinding(command, modifiers, key));
+        }
+
+        private KeyBinding CreateFrozenKeyBinding(ICommand command, ModifierKeys modifiers, Key key)
+        {
+            var kb = new KeyBinding(command, key, modifiers);
+            kb.Freeze();
+            return kb;
+        }
+
+        #region Event handlers
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            editview.PreviewTextInput += OnPreviewTextInput;
+            editview.Caret.PositionChanged += OnCaretPositionChanged;
+        }
+
+        private void OnPreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (CodeCompletionWindow == null)
+            {
+                return;
+            }
+            if (!CodeCompletionWindow.IsVisible && e.Text == ".")
+            {
+                CodeCompletionWindow.StartOffset = CodeCompletionWindow.EndOffset = editview.Caret.DocumentOffset;
                 CodeCompletionWindow.Display();
+            }
+            ++CodeCompletionWindow.EndOffset;
+        }
+
+        private void OnCaretPositionChanged(object sender, EventArgs e)
+        {
+            if (CodeCompletionWindow == null || !CodeCompletionWindow.IsVisible)
+            {
+                return;
+            }
+
+            if (editview.Caret.DocumentOffset <= CodeCompletionWindow.StartOffset || editview.Caret.DocumentOffset > CodeCompletionWindow.EndOffset)
+            {
+                CodeCompletionWindow.Collapse();
             }
         }
         #endregion
@@ -113,13 +224,30 @@ namespace EditorSupport
         private static void OnCompletionWindowChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         {
             TextEditor editor = dp as TextEditor;
-            editor.OnCompletionWindowChanged();
+            editor.OnCompletionWindowChanged(e.OldValue as CompletionWindowBase, e.NewValue as CompletionWindowBase);
         }
-        private void OnCompletionWindowChanged()
+        private void OnCompletionWindowChanged(CompletionWindowBase oldWindow, CompletionWindowBase newWindow)
         {
-            if (CodeCompletionWindow != null)
+            if (oldWindow != null)
             {
-                CodeCompletionWindow.EditView = editview;
+                oldWindow.EditView = null;
+                oldWindow.IsVisibleChanged -= OnCompletionWindowVisibleChanged;
+            }
+            if (newWindow != null)
+            {
+                newWindow.EditView = editview;
+                newWindow.IsVisibleChanged += OnCompletionWindowVisibleChanged;
+            }
+        }
+        private void OnCompletionWindowVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (CodeCompletionWindow.IsVisible)
+            {
+                editview.PushInputHandler(CreateCodeCompletionInputHandler());
+            }
+            else
+            {
+                editview.PopInputHandler();
             }
         }
         #endregion

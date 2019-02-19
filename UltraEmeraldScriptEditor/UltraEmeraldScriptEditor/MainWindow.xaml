@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UltraEmeraldScriptEditor"
         xmlns:editor="wanmaple:editor"
-        mc:Ignorable="d"
+        mc:Ignorable="d" WindowState="Maximized"
         Title="{DynamicResource lang_wintitle_main}" Height="640" Width="1024"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
