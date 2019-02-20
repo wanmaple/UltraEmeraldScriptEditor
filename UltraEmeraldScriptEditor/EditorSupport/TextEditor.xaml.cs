@@ -95,7 +95,7 @@ namespace EditorSupport
                     --CodeCompletionWindow.EndOffset;
                 }
             }
-            else if (e.Key == Key.Space || e.Key == Key.Tab)
+            else if (e.Key == Key.Space)
             {
                 CodeCompletionWindow.Collapse();
             }

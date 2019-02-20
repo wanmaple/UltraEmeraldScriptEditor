@@ -40,7 +40,7 @@ namespace EditorSupport.CodeCompletion
             _allCompletions.Add(new StringCompletion(".global", ".global"));
             Content = _completionList;
             _enterCommandPushed = false;
-            _selectionEventRegistered = false;
+            _listBoxEventRegistered = false;
 
             IsVisibleChanged += OnWindowVisibleChanged;
         }
@@ -53,10 +53,11 @@ namespace EditorSupport.CodeCompletion
             }
             if (!IsVisible)
             {
-                if (_selectionEventRegistered)
+                if (_listBoxEventRegistered)
                 {
                     _completionList._listBox.SelectionChanged -= OnCompletionListSelectionChanged;
-                    _selectionEventRegistered = false;
+                    _completionList._listBox.PreviewMouseDoubleClick -= OnCompletionListDoubleClick;
+                    _listBoxEventRegistered = false;
                 }
                 if (_enterCommandPushed)
                 {
@@ -64,11 +65,26 @@ namespace EditorSupport.CodeCompletion
                     _enterCommandPushed = false;
                 }
             }
-            else if (IsVisible && !_selectionEventRegistered)
+            else if (IsVisible && !_listBoxEventRegistered)
             {
                 _completionList._listBox.SelectionChanged += OnCompletionListSelectionChanged;
-                _selectionEventRegistered = true;
+                _completionList._listBox.PreviewMouseDoubleClick += OnCompletionListDoubleClick;
+                _listBoxEventRegistered = true;
             }
+        }
+
+        private void OnCompletionListDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                if (_completionList._listBox.SelectedIndex >= 0)
+                {
+                    ICompletionData completion = _completionList._listBox.SelectedItem as ICompletionData;
+                    completion.PerformCompletion(_editview, _startOffset, _endOffset);
+                    e.Handled = true;
+                }
+            }
+            e.Handled = false;
         }
 
         private void OnCompletionListSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -77,20 +93,23 @@ namespace EditorSupport.CodeCompletion
             {
                 if (!_enterCommandPushed)
                 {
-                    if (_enterInputHandler == null)
+                    if (_completionRequestInputHandler == null)
                     {
                         var inputHandler = new InputCommandsHandler(_editview);
-                        inputHandler.CommandBindings.Add(new CommandBinding(CodeCompletionCommands.RequestCompletion, new ExecutedRoutedEventHandler(OnEnterInput)));
+                        var cmdBinding = new CommandBinding(CodeCompletionCommands.RequestCompletion, new ExecutedRoutedEventHandler(OnCompletionRequest));
+                        inputHandler.CommandBindings.Add(cmdBinding);
                         inputHandler.InputBindings.Add(new KeyBinding(CodeCompletionCommands.RequestCompletion, Key.Enter, ModifierKeys.None));
-                        _enterInputHandler = inputHandler;
+                        inputHandler.CommandBindings.Add(cmdBinding);
+                        inputHandler.InputBindings.Add(new KeyBinding(CodeCompletionCommands.RequestCompletion, Key.Tab, ModifierKeys.None));
+                        _completionRequestInputHandler = inputHandler;
                     }
-                    _editview.PushInputHandler(_enterInputHandler);
+                    _editview.PushInputHandler(_completionRequestInputHandler);
                     _enterCommandPushed = true;
                 }
             }
         }
 
-        private void OnEnterInput(Object sender, ExecutedRoutedEventArgs e)
+        private void OnCompletionRequest(Object sender, ExecutedRoutedEventArgs e)
         {
             ICompletionData completion = _completionList._listBox.SelectedItem as ICompletionData;
             completion.PerformCompletion(_editview, _startOffset, _endOffset);
@@ -145,8 +164,8 @@ namespace EditorSupport.CodeCompletion
         #endregion
 
         protected CompletionList _completionList;
-        private Boolean _selectionEventRegistered;
+        private Boolean _listBoxEventRegistered;
         private Boolean _enterCommandPushed;
-        private IInputHandler _enterInputHandler;
+        private IInputHandler _completionRequestInputHandler;
     }
 }
