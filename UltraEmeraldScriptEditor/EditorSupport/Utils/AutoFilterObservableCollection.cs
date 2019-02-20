@@ -16,7 +16,7 @@ namespace EditorSupport.Utils
     /// 为了避免排序带来的性能消耗，
     /// </remarks>
     /// <typeparam name="T"></typeparam>
-    public sealed class AutoFilterObservableCollection<T> : ICollection<T>, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged
+    public sealed class AutoFilterObservableCollection<T> : ICollection<T>, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged where T : new()
     {
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
@@ -42,53 +42,63 @@ namespace EditorSupport.Utils
         {
             get
             {
-                if (index < 0 || index >= _count)
-                {
-                    throw new ArgumentOutOfRangeException("0 <= index < " + _count.ToString());
-                }
+                VerifyIndexRange(index);
                 return _innerCollection[_orders.ElementAt(index)];
             }
             set
             {
-                if (index < 0 || index >= _count)
-                {
-                    throw new ArgumentOutOfRangeException("0 <= index < " + _count.ToString());
-                }
+                VerifyIndexRange(index);
                 _innerCollection[_orders.ElementAt(index)] = value;
             }
         }
 
         public void Add(T item)
         {
-            _innerCollection.Add(item);
-            ++_count;
+            if (Contains(item))
+            {
+                throw new InvalidOperationException(String.Format("{0} already exists.", item));
+            }
+            Int32 index = _innerCollection.IndexOf(item);
+            if (index >= 0)
+            {
+                _orders.AddLast(index);
+                ++_count;
+            }
         }
 
         public void Clear()
         {
-            _innerCollection.Clear();
+            _count = 0;
         }
 
         public bool Contains(T item)
         {
-            return _innerCollection.Contains(item);
+            return IndexOf(item) >= 0;
         }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            _innerCollection.CopyTo(array, arrayIndex);
+            for (int i = 0; i < _count; i++)
+            {
+                Int32 idx = _orders.ElementAt(i);
+                array[arrayIndex + i] = _innerCollection[idx];
+            }
         }
 
         public bool Remove(T item)
         {
-            return _innerCollection.Remove(item);
+            Int32 idx = IndexOf(item);
+            if (idx < 0)
+            {
+                return false;
+            }
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = 0; i < _orders.Count; i++)
+            for (int i = 0; i < _count; i++)
             {
-                Int32 index = _orders[i];
+                Int32 index = _orders.ElementAt(i);
                 yield return _innerCollection[index];
             }
         }
@@ -100,12 +110,20 @@ namespace EditorSupport.Utils
 
         public int IndexOf(T item)
         {
-            return _innerCollection.IndexOf(item);
+            for (int i = 0; i < _count; i++)
+            {
+                Int32 idx = _orders.ElementAt(i);
+                if (_innerCollection[idx].Equals(item))
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         public void Insert(int index, T item)
         {
-            _innerCollection.Insert(_orders[index], item);
+            throw new NotSupportedException("Insert is not supported in AutoFilterObservableCollection. Use Insert of inner collection instead.");
         }
 
         public void RemoveAt(int index)
@@ -118,6 +136,14 @@ namespace EditorSupport.Utils
             if (CollectionChanged != null)
             {
                 CollectionChanged(this, e);
+            }
+        }
+
+        private void VerifyIndexRange(Int32 index)
+        {
+            if (index < 0 || index >= _count)
+            {
+                throw new ArgumentOutOfRangeException("0 <= index < " + _count.ToString());
             }
         }
 
