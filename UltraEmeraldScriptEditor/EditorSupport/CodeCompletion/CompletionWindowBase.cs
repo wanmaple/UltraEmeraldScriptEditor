@@ -78,6 +78,10 @@ namespace EditorSupport.CodeCompletion
         public abstract void Filter(String filterText);
         public abstract void SelectPreviousCompletion();
         public abstract void SelectNextCompletion();
+        public abstract void SelectPreviousPageCompletion();
+        public abstract void SelectNextPageCompletion();
+        public abstract void SelectFirstCompletion();
+        public abstract void SelectLastCompletion();
         #endregion
 
         public void Display()

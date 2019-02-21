@@ -111,7 +111,7 @@
             <GridSplitter Grid.Column="1" Width="2" VerticalAlignment="Stretch" />
             <TabControl x:Name="tcDocs" Grid.Column="2" MinWidth="500">
                 <TabItem Header="New" MinWidth="65">
-                    <editor:TextEditor x:Name="editor" ContextMenu="{StaticResource cmEditing}" CodeCompletionWindow="{StaticResource winCompletion}" Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
+                    <editor:TextEditor x:Name="editor" ContextMenu="{StaticResource cmEditing}" CodeCompletionWindow="{StaticResource winCompletion}" CompletionRequesting="CompletionRequesting"  Syntax="PScript" EditorFontFamily="Lucida Console" EditorFontSize="15" EditorPadding="10 5" />
                 </TabItem>
             </TabControl>
         </Grid>

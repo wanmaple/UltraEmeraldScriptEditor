@@ -29,7 +29,7 @@ namespace EditorSupport.CodeCompletion
         /// <summary>
         /// 优先级，优先级高的显示在前面
         /// </summary>
-        Int32 Priority { get; }
+        Int32 Priority { get; set; }
         /// <summary>
         /// 处理自动完成
         /// </summary>

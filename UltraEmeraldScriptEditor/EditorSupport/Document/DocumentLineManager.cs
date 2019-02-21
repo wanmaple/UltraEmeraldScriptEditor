@@ -102,8 +102,11 @@ namespace EditorSupport.Document
             {
                 // 清除后会有空行
                 update.LineNumberNeedUpdate = 1;
-                update.RemovedStartLineNumber = 2;
-                update.RemovedLineCount = _lineTree.LineCount - 1;
+                if (_lineTree.LineCount > 1)
+                {
+                    update.RemovedStartLineNumber = 2;
+                    update.RemovedLineCount = _lineTree.LineCount - 1;
+                }
                 // 全删，直接重置
                 _lineTree.Clear();
                 return;

@@ -21,8 +21,18 @@ namespace EditorSupport
     /// <summary>
     /// Interaction logic for TextEditor.xaml
     /// </summary>
-    public partial class TextEditor : UserControl
+    public partial class TextEditor : UserControl, IWeakEventListener
     {
+        #region Routed events
+        public static readonly RoutedEvent CompletionRequestingEvent = EventManager.RegisterRoutedEvent("CompletionRequesting", RoutingStrategy.Bubble, typeof(CodeCompletionRoutedEventHandler), typeof(TextEditor));
+
+        public event CodeCompletionRoutedEventHandler CompletionRequesting
+        {
+            add { AddHandler(CompletionRequestingEvent, value); }
+            remove { RemoveHandler(CompletionRequestingEvent, value); }
+        }
+        #endregion
+
         #region Properties
         public static readonly DependencyProperty DocumentProperty =
     DependencyProperty.Register("Document", typeof(TextDocument), typeof(TextEditor), new PropertyMetadata(new TextDocument(), OnDocumentChanged));
@@ -74,11 +84,24 @@ namespace EditorSupport
         public TextEditor()
         {
             InitializeComponent();
-
+            
             Loaded += OnLoaded;
         }
         #endregion
 
+        #region IWeakEventListener
+        public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs e)
+        {
+            if (managerType == typeof(TextDocumentWeakEventManager.Changed))
+            {
+                OnDocumentContentChanged(sender as TextDocument, e as DocumentUpdateEventArgs);
+                return true;
+            }
+            return false;
+        }
+        #endregion
+
+        #region Overrides
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
@@ -93,9 +116,14 @@ namespace EditorSupport
                 if (CodeCompletionWindow.EndOffset > CodeCompletionWindow.StartOffset)
                 {
                     --CodeCompletionWindow.EndOffset;
+                    _needDoFilter = true;
                 }
             }
             else if (e.Key == Key.Space)
+            {
+                CodeCompletionWindow.Collapse();
+            }
+            else if (e.Key == Key.Escape)
             {
                 CodeCompletionWindow.Collapse();
             }
@@ -120,12 +148,18 @@ namespace EditorSupport
                 CodeCompletionWindow.Collapse();
             }
         }
+        #endregion
 
+        #region Input handlers
         private IInputHandler CreateCodeCompletionInputHandler()
         {
             var inputHandler = new InputCommandsHandler(editview);
             AddCommandBinding(inputHandler, CodeCompletionCommands.SelectPreviousCompletion, ModifierKeys.None, Key.Up, new ExecutedRoutedEventHandler(SelectPreviousCompletion), new CanExecuteRoutedEventHandler(CanOperate));
             AddCommandBinding(inputHandler, CodeCompletionCommands.SelectNextCompletion, ModifierKeys.None, Key.Down, new ExecutedRoutedEventHandler(SelectNextCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectFirstCompletion, ModifierKeys.None, Key.Home, new ExecutedRoutedEventHandler(SelectFirstCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectLastCompletion, ModifierKeys.None, Key.End, new ExecutedRoutedEventHandler(SelectLastCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectPreviousPageCompletion, ModifierKeys.None, Key.PageUp, new ExecutedRoutedEventHandler(SelectPreviousPageCompletion), new CanExecuteRoutedEventHandler(CanOperate));
+            AddCommandBinding(inputHandler, CodeCompletionCommands.SelectNextPageCompletion, ModifierKeys.None, Key.PageDown, new ExecutedRoutedEventHandler(SelectNextPageCompletion), new CanExecuteRoutedEventHandler(CanOperate));
             return inputHandler;
         }
 
@@ -145,6 +179,38 @@ namespace EditorSupport
             }
         }
 
+        private void SelectPreviousPageCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectPreviousPageCompletion();
+            }
+        }
+
+        private void SelectNextPageCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectNextPageCompletion();
+            }
+        }
+
+        private void SelectFirstCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectFirstCompletion();
+            }
+        }
+
+        private void SelectLastCompletion(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CodeCompletionWindow != null)
+            {
+                CodeCompletionWindow.SelectLastCompletion();
+            }
+        }
+
         private void CanOperate(Object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = CodeCompletionWindow != null && CodeCompletionWindow.IsVisible;
@@ -161,13 +227,17 @@ namespace EditorSupport
             var kb = new KeyBinding(command, key, modifiers);
             kb.Freeze();
             return kb;
-        }
+        } 
+        #endregion
 
         #region Event handlers
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             editview.PreviewTextInput += OnPreviewTextInput;
+            editview.DocumentChanging += OnDocumentChanging;
+            editview.DocumentChanged += OnDocumentChanged;
             editview.Caret.PositionChanged += OnCaretPositionChanged;
+            editview.Document = new TextDocument();
         }
 
         private void OnPreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -176,12 +246,52 @@ namespace EditorSupport
             {
                 return;
             }
-            if (!CodeCompletionWindow.IsVisible && e.Text == ".")
+            if (!CodeCompletionWindow.IsVisible)
             {
-                CodeCompletionWindow.StartOffset = CodeCompletionWindow.EndOffset = editview.Caret.DocumentOffset;
-                CodeCompletionWindow.Display();
+                var args = new CodeCompletionRoutedEventArgs(CompletionRequestingEvent, e);
+                RaiseEvent(args);
+                if (args.CompletionWindowHandler != null)
+                {
+                    args.CompletionWindowHandler(CodeCompletionWindow);
+                }
+                if (args.ShowCompletion)
+                {
+                    CodeCompletionWindow.StartOffset = CodeCompletionWindow.EndOffset = editview.Caret.DocumentOffset;
+                    CodeCompletionWindow.Display();
+                }
             }
             ++CodeCompletionWindow.EndOffset;
+            _needDoFilter = true;
+        }
+
+        private void OnDocumentChanging(object sender, EventArgs e)
+        {
+            if (editview.Document != null)
+            {
+                TextDocumentWeakEventManager.Changed.RemoveListener(editview.Document, this);
+            }
+        }
+
+        private void OnDocumentChanged(object sender, EventArgs e)
+        {
+            if (editview.Document != null)
+            {
+                TextDocumentWeakEventManager.Changed.AddListener(editview.Document, this);
+            }
+        }
+
+        private void OnDocumentContentChanged(object sender, DocumentUpdateEventArgs e)
+        {
+            if (CodeCompletionWindow == null)
+            {
+                return;
+            }
+            if (CodeCompletionWindow.IsVisible && _needDoFilter)
+            {
+                String filterText = editview.Document.GetTextAt(CodeCompletionWindow.StartOffset, CodeCompletionWindow.EndOffset - CodeCompletionWindow.StartOffset);
+                CodeCompletionWindow.Filter(filterText);
+                _needDoFilter = false;
+            }
         }
 
         private void OnCaretPositionChanged(object sender, EventArgs e)
@@ -251,5 +361,7 @@ namespace EditorSupport
             }
         }
         #endregion
+
+        private Boolean _needDoFilter;
     }
 }

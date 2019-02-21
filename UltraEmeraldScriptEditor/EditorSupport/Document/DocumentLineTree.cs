@@ -141,7 +141,14 @@ namespace EditorSupport.Document
         internal DocumentLineTree(TextDocument document)
         {
             _doc = document ?? throw new ArgumentNullException("document");
-            Clear();
+#if DEBUG
+            var emptyLine = new DocumentLine(_doc);
+#else
+            var emptyLine = new DocumentLine();
+#endif
+            _root = new DocumentLineNode(emptyLine);
+            _root.Color = NodeColor.BLACK;
+            emptyLine._node = _root;
         }
         #endregion
 
@@ -408,14 +415,11 @@ namespace EditorSupport.Document
 
         internal void Clear()
         {
-#if DEBUG
-            var emptyLine = new DocumentLine(_doc);
-#else
-            var emptyLine = new DocumentLine();
-#endif
-            _root = new DocumentLineNode(emptyLine);
+            DocumentLine firstLine = GetLineByNumber(1);
+            firstLine._exactLength = firstLine._delimiterLength = 0;
+            _root = new DocumentLineNode(firstLine);
             _root.Color = NodeColor.BLACK;
-            emptyLine._node = _root;
+            firstLine._node = _root;
         }
 
         internal void InsertAsLeft(DocumentLineNode node, DocumentLineNode newNode)

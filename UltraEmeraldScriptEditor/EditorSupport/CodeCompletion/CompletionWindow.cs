@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using EditorSupport.Editing;
 using EditorSupport.Utils;
@@ -23,26 +24,28 @@ namespace EditorSupport.CodeCompletion
             HeightProperty.OverrideMetadata(typeof(CompletionWindow), new FrameworkPropertyMetadata(120.0));
         }
 
-        public CompletionWindow() 
+        public CompletionWindow()
             : base()
         {
+            _tip = new ToolTip();
+            _tip.PlacementTarget = this;
+            _tip.Placement = PlacementMode.Right;
+            _tip.Closed += OnTipClosed;
             _completionList = new CompletionList();
-            _completionList.Completions = _allCompletions;
-            _allCompletions.Add(new StringCompletion(".equ", ".equ"));
-            _allCompletions.Add(new StringCompletion(".word", ".word"));
-            _allCompletions.Add(new StringCompletion(".hword", ".hword"));
-            _allCompletions.Add(new StringCompletion(".byte", ".byte"));
-            _allCompletions.Add(new StringCompletion(".include", ".include"));
-            _allCompletions.Add(new StringCompletion(".macro", ".macro"));
-            _allCompletions.Add(new StringCompletion(".freespace", ".freespace"));
-            _allCompletions.Add(new StringCompletion(".endm", ".endm"));
-            _allCompletions.Add(new StringCompletion(".org", ".org"));
-            _allCompletions.Add(new StringCompletion(".global", ".global"));
+            _completionList.Completions = new AutoFilterObservableCollection<ICompletionData>(_allCompletions);
             Content = _completionList;
             _enterCommandPushed = false;
             _listBoxEventRegistered = false;
 
             IsVisibleChanged += OnWindowVisibleChanged;
+        }
+
+        private void OnTipClosed(object sender, RoutedEventArgs e)
+        {
+            if (_tip != null)
+            {
+                _tip.Content = null;
+            }
         }
 
         private void OnWindowVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -64,12 +67,17 @@ namespace EditorSupport.CodeCompletion
                     _editview.PopInputHandler();
                     _enterCommandPushed = false;
                 }
+                _tip.IsOpen = false;
             }
-            else if (IsVisible && !_listBoxEventRegistered)
+            else if (IsVisible)
             {
-                _completionList._listBox.SelectionChanged += OnCompletionListSelectionChanged;
-                _completionList._listBox.PreviewMouseDoubleClick += OnCompletionListDoubleClick;
-                _listBoxEventRegistered = true;
+                if (!_listBoxEventRegistered)
+                {
+                    _completionList._listBox.SelectionChanged += OnCompletionListSelectionChanged;
+                    _completionList._listBox.PreviewMouseDoubleClick += OnCompletionListDoubleClick;
+                    _listBoxEventRegistered = true;
+                }
+                _completionList._listBox.SelectedIndex = -1;
             }
         }
 
@@ -106,6 +114,29 @@ namespace EditorSupport.CodeCompletion
                     _editview.PushInputHandler(_completionRequestInputHandler);
                     _enterCommandPushed = true;
                 }
+                ICompletionData completion = _completionList._listBox.SelectedItem as ICompletionData;
+                Object description = completion.Description;
+                if (description != null)
+                {
+                    if (description is UIElement)
+                    {
+                        _tip.Content = description;
+                    }
+                    else
+                    {
+                        var textblock = new TextBlock
+                        {
+                            Text = description.ToString(),
+                            TextWrapping = TextWrapping.Wrap,
+                        };
+                        _tip.Content = textblock;
+                    }
+                    _tip.IsOpen = true;
+                }
+            }
+            else
+            {
+                _tip.IsOpen = false;
             }
         }
 
@@ -124,14 +155,15 @@ namespace EditorSupport.CodeCompletion
 
         public override void Filter(string filterText)
         {
-            if (_completionList.IsFiltering)
-            {
-
-            }
+            _completionList.Filter(filterText);
         }
 
         public override void SelectPreviousCompletion()
         {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
             if (_completionList._listBox != null)
             {
                 if (_completionList._listBox.SelectedIndex < 0)
@@ -148,6 +180,10 @@ namespace EditorSupport.CodeCompletion
 
         public override void SelectNextCompletion()
         {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
             if (_completionList._listBox != null)
             {
                 if (_completionList._listBox.SelectedIndex < 0)
@@ -161,9 +197,76 @@ namespace EditorSupport.CodeCompletion
                 _completionList._listBox.ScrollIntoView(_completionList._listBox.SelectedItem);
             }
         }
+
+        public override void SelectFirstCompletion()
+        {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
+            if (_completionList._listBox != null)
+            {
+                _completionList._listBox.SelectedIndex = 0;
+            }
+            _completionList._listBox.ScrollIntoView(_completionList._listBox.SelectedItem);
+        }
+
+        public override void SelectLastCompletion()
+        {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
+            if (_completionList._listBox != null)
+            {
+                _completionList._listBox.SelectedIndex = _completionList.Completions.Count - 1;
+            }
+            _completionList._listBox.ScrollIntoView(_completionList._listBox.SelectedItem);
+        }
+
+        public override void SelectPreviousPageCompletion()
+        {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
+            if (_completionList._listBox != null)
+            {
+                if (_completionList._listBox.SelectedIndex < 0)
+                {
+                    _completionList._listBox.SelectedIndex = 0;
+                }
+                else
+                {
+                    _completionList._listBox.SelectedIndex = Math.Max(_completionList._listBox.SelectedIndex - _completionList.VisibleChildrenCount, 0);
+                }
+            }
+            _completionList._listBox.ScrollIntoView(_completionList._listBox.SelectedItem);
+        }
+
+        public override void SelectNextPageCompletion()
+        {
+            if (Completions.Count == 0)
+            {
+                return;
+            }
+            if (_completionList._listBox != null)
+            {
+                if (_completionList._listBox.SelectedIndex < 0)
+                {
+                    _completionList._listBox.SelectedIndex = 0;
+                }
+                else
+                {
+                    _completionList._listBox.SelectedIndex = Math.Min(_completionList._listBox.SelectedIndex + _completionList.VisibleChildrenCount, _completionList.Completions.Count - 1);
+                }
+            }
+            _completionList._listBox.ScrollIntoView(_completionList._listBox.SelectedItem);
+        }
         #endregion
 
         protected CompletionList _completionList;
+        protected ToolTip _tip;
         private Boolean _listBoxEventRegistered;
         private Boolean _enterCommandPushed;
         private IInputHandler _completionRequestInputHandler;

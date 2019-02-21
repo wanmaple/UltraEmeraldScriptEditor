@@ -16,7 +16,7 @@ namespace EditorSupport.Utils
     /// 为了避免排序带来的性能消耗，
     /// </remarks>
     /// <typeparam name="T"></typeparam>
-    public sealed class AutoFilterObservableCollection<T> : ICollection<T>, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged where T : new()
+    public sealed class AutoFilterObservableCollection<T> : ICollection<T>, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged
     {
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
@@ -24,13 +24,8 @@ namespace EditorSupport.Utils
         public AutoFilterObservableCollection(ObservableCollection<T> innerCollection)
         {
             _innerCollection = innerCollection ?? throw new ArgumentNullException("innerCollection");
-            _count = _innerCollection.Count;
-            Int32 idx = 0;
-            foreach (var item in _innerCollection)
-            {
-                _orders.AddLast(idx);
-                ++idx;
-            }
+            _orders = new LinkedList<int>();
+            Filter(null, null);
         }
 
         public int Count => _count;
@@ -72,15 +67,15 @@ namespace EditorSupport.Utils
                 }
                 ++idx;
             }
-            priorities.Sort((item1, item2) =>
-            {
-                return item1.priority > item2.priority ? 1 : item1.priority < item2.priority ? -1 : 0;
-            });
+            // Sort是不稳定排序，所以要用Linq的OrderBy
+            priorities.OrderBy(item => item.priority);
             foreach (var data in priorities)
             {
                 _orders.AddLast(data.index);
                 ++_count;
             }
+
+            RaiseCollectionChanged();
         }
 
         public void Add(T item)
@@ -95,7 +90,7 @@ namespace EditorSupport.Utils
                 _orders.AddLast(index);
                 ++_count;
 
-                TriggerCollectionChanged();
+                RaiseCollectionChanged();
             }
         }
 
@@ -104,7 +99,7 @@ namespace EditorSupport.Utils
             _count = 0;
             _orders.Clear();
 
-            TriggerCollectionChanged();
+            RaiseCollectionChanged();
         }
 
         public bool Contains(T item)
@@ -137,7 +132,7 @@ namespace EditorSupport.Utils
             _orders.Remove(curNode);
             --_count;
 
-            TriggerCollectionChanged();
+            RaiseCollectionChanged();
             return true;
         }
 
@@ -185,7 +180,7 @@ namespace EditorSupport.Utils
             _orders.AddBefore(curNode, idx);
             ++_count;
 
-            TriggerCollectionChanged();
+            RaiseCollectionChanged();
         }
 
         public void RemoveAt(int index)
@@ -200,10 +195,10 @@ namespace EditorSupport.Utils
             _orders.Remove(curNode);
             --_count;
 
-            TriggerCollectionChanged();
+            RaiseCollectionChanged();
         }
 
-        private void TriggerCollectionChanged()
+        private void RaiseCollectionChanged()
         {
             if (CollectionChanged != null)
             {

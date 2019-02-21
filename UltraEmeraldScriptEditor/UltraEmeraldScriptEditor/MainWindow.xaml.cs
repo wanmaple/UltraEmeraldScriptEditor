@@ -28,11 +28,13 @@ namespace UltraEmeraldScriptEditor
         {
             InitializeComponent();
 
-            Loaded += (sender, e) =>
-            {
-                editor.Document = new TextDocument();
-                editor.Focus();
-            };
+            Loaded += OnWindowLoaded;
+        }
+
+        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            editor.Document = new TextDocument();
+            editor.Focus();
         }
 
         #region Command handlers
@@ -86,11 +88,36 @@ namespace UltraEmeraldScriptEditor
             e.Handled = true;
         }
 
+        private void CompletionRequesting(Object sender, CodeCompletionRoutedEventArgs e)
+        {
+            if (e.InputArgs.Text == ".")
+            {
+                e.ShowCompletion = true;
+                e.CompletionWindowHandler = new Action<CompletionWindowBase>(ResetKeywordsCodeCompletion);
+            }
+            e.Handled = true;
+        }
+        #endregion
+
+        private void ResetKeywordsCodeCompletion(CompletionWindowBase completionWindow)
+        {
+            completionWindow.Completions.Clear();
+            completionWindow.Completions.Add(new StringCompletion(".equ", ".equ description"));
+            completionWindow.Completions.Add(new StringCompletion(".word", ".word description"));
+            completionWindow.Completions.Add(new StringCompletion(".hword", ".hword description"));
+            completionWindow.Completions.Add(new StringCompletion(".byte", ".byte description"));
+            completionWindow.Completions.Add(new StringCompletion(".include", ".include description"));
+            completionWindow.Completions.Add(new StringCompletion(".macro", ".macro description"));
+            completionWindow.Completions.Add(new StringCompletion(".freespace", ".freespace description"));
+            completionWindow.Completions.Add(new StringCompletion(".endm", ".endm description"));
+            completionWindow.Completions.Add(new StringCompletion(".org", ".org description"));
+            completionWindow.Completions.Add(new StringCompletion(".global", ".global description"));
+        }
+
         private void AddNewDocument(TextDocument doc)
         {
             editor.Document = doc;
             editor.Focus();
         }
-        #endregion
     }
 }

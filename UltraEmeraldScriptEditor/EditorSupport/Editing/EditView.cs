@@ -20,6 +20,8 @@ namespace EditorSupport.Editing
     /// </summary>
     public sealed class EditView : ScrollViewer, IWeakEventListener
     {
+        public event EventHandler DocumentChanging;
+        public event EventHandler DocumentChanged;
         public event EventHandler<ScrollChangedEventArgs> ScrollOffsetChanged;
 
         #region Properties
@@ -285,6 +287,16 @@ namespace EditorSupport.Editing
             _selection.StartOffset = 0;
             _selection.EndOffset = Document.Length;
             MoveCaretInVisual();
+        }
+
+        public void CancelSelection()
+        {
+            if (!_selection.IsEmpty)
+            {
+                _caret.DocumentOffset = _selection.EndOffset;
+                _selection.SetEmpty(_caret.DocumentOffset);
+                MoveCaretInVisual();
+            }
         }
 
         internal void Redraw()
@@ -727,6 +739,10 @@ namespace EditorSupport.Editing
         }
         private void OnDocumentChanged(TextDocument oldDoc, TextDocument newDoc)
         {
+            if (DocumentChanging != null)
+            {
+                DocumentChanging(this, EventArgs.Empty);
+            }
             if (oldDoc != null)
             {
                 TextDocumentWeakEventManager.Changing.RemoveListener(oldDoc, this);
@@ -751,6 +767,10 @@ namespace EditorSupport.Editing
             ScrollToHome();
             Measure();
             Redraw();
+            if (DocumentChanged != null)
+            {
+                DocumentChanged(this, EventArgs.Empty);
+            }
         }
         #endregion
 

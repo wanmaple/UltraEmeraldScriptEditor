@@ -70,8 +70,12 @@ namespace EditorSupport.Editing
             AddCommandBinding(EditingCommands.SelectDownByPage, ModifierKeys.Shift, Key.PageDown, CaretHandler(CaretMovementType.PageDown, true));
             AddCommandBinding(EditingCommands.SelectLeftByWord, ModifierKeys.Control | ModifierKeys.Shift, Key.Left, CaretHandler(CaretMovementType.WordLeft, true));
             AddCommandBinding(EditingCommands.SelectRightByWord, ModifierKeys.Control | ModifierKeys.Shift, Key.Right, CaretHandler(CaretMovementType.WordRight, true));
+
+            AddCommandBinding(CancelSelection, ModifierKeys.None, Key.Escape, OnCancelSelection);
             AddCommandBinding(ApplicationCommands.SelectAll, ModifierKeys.Control, Key.A, OnSelectAll);
         }
+
+        internal static RoutedUICommand CancelSelection = new RoutedUICommand("CancelSelection", "CancelSelection", typeof(EditView));
 
         internal static void AddCommandBinding(ICommand command, ModifierKeys modifiers, Key key, ExecutedRoutedEventHandler handler)
         {
@@ -109,6 +113,18 @@ namespace EditorSupport.Editing
             }
             EditView editor = sender as EditView;
             editor.SelectAll();
+            editor.Redraw();
+            e.Handled = true;
+        }
+
+        private static void OnCancelSelection(Object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.Handled)
+            {
+                return;
+            }
+            EditView editor = sender as EditView;
+            editor.CancelSelection();
             editor.Redraw();
             e.Handled = true;
         }

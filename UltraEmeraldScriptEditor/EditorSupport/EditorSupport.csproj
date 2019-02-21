@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeCompletion\CodeCompletionCommands.cs" />
+    <Compile Include="CodeCompletion\CodeCompletionRoutedEventArgs.cs" />
     <Compile Include="CodeCompletion\CompletionList.cs" />
     <Compile Include="CodeCompletion\CompletionWindow.cs" />
     <Compile Include="CodeCompletion\CompletionWindowBase.cs" />
