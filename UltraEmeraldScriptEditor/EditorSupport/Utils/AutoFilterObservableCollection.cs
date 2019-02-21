@@ -24,7 +24,6 @@ namespace EditorSupport.Utils
         public AutoFilterObservableCollection(ObservableCollection<T> innerCollection)
         {
             _innerCollection = innerCollection ?? throw new ArgumentNullException("innerCollection");
-            _innerCollection.CollectionChanged += OnCollectionChanged;
             _count = _innerCollection.Count;
             Int32 idx = 0;
             foreach (var item in _innerCollection)
@@ -52,23 +51,60 @@ namespace EditorSupport.Utils
             }
         }
 
+        private struct PriorityData
+        {
+            public Int32 index;
+            public Int32 priority;
+        }
+
+        public void Filter(Predicate<T> filterFunc, Func<T, Int32> priorityFunc)
+        {
+            _count = 0;
+            _orders.Clear();
+            var priorities = new List<PriorityData>();
+            Int32 idx = 0;
+            foreach (var item in _innerCollection)
+            {
+                if (filterFunc == null || filterFunc(item))
+                {
+                    Int32 priority = priorityFunc == null ? 0 : priorityFunc(item);
+                    priorities.Add(new PriorityData { index = idx, priority = priority });
+                }
+                ++idx;
+            }
+            priorities.Sort((item1, item2) =>
+            {
+                return item1.priority > item2.priority ? 1 : item1.priority < item2.priority ? -1 : 0;
+            });
+            foreach (var data in priorities)
+            {
+                _orders.AddLast(data.index);
+                ++_count;
+            }
+        }
+
         public void Add(T item)
         {
             if (Contains(item))
             {
-                throw new InvalidOperationException(String.Format("{0} already exists.", item));
+                return;
             }
             Int32 index = _innerCollection.IndexOf(item);
             if (index >= 0)
             {
                 _orders.AddLast(index);
                 ++_count;
+
+                TriggerCollectionChanged();
             }
         }
 
         public void Clear()
         {
             _count = 0;
+            _orders.Clear();
+
+            TriggerCollectionChanged();
         }
 
         public bool Contains(T item)
@@ -92,6 +128,17 @@ namespace EditorSupport.Utils
             {
                 return false;
             }
+            LinkedListNode<Int32> curNode = _orders.First;
+            while (idx > 0)
+            {
+                --idx;
+                curNode = curNode.Next;
+            }
+            _orders.Remove(curNode);
+            --_count;
+
+            TriggerCollectionChanged();
+            return true;
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -123,19 +170,44 @@ namespace EditorSupport.Utils
 
         public void Insert(int index, T item)
         {
-            throw new NotSupportedException("Insert is not supported in AutoFilterObservableCollection. Use Insert of inner collection instead.");
+            VerifyIndexRange(index);
+            if (Contains(item))
+            {
+                return;
+            }
+            Int32 idx = _innerCollection.IndexOf(item);
+            LinkedListNode<Int32> curNode = _orders.First;
+            while (index > 0)
+            {
+                --index;
+                curNode = curNode.Next;
+            }
+            _orders.AddBefore(curNode, idx);
+            ++_count;
+
+            TriggerCollectionChanged();
         }
 
         public void RemoveAt(int index)
         {
-            _innerCollection.RemoveAt(index);
+            VerifyIndexRange(index);
+            LinkedListNode<Int32> curNode = _orders.First;
+            while (index > 0)
+            {
+                --index;
+                curNode = curNode.Next;
+            }
+            _orders.Remove(curNode);
+            --_count;
+
+            TriggerCollectionChanged();
         }
 
-        private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void TriggerCollectionChanged()
         {
             if (CollectionChanged != null)
             {
-                CollectionChanged(this, e);
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
 
