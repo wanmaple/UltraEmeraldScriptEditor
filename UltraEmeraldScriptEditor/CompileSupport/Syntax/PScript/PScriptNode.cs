@@ -24,10 +24,9 @@ namespace CompileSupport.Syntax.PScript
 
         public PscriptNodeType NodeType => _nodeType;
 
-        protected PScriptNode(String source, Object value)
+        protected PScriptNode(String source)
         {
             _source = source ?? throw new ArgumentNullException("source");
-            _value = value ?? throw new ArgumentNullException("value");
             _nodeType = PscriptNodeType.None;
         }
         

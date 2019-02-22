@@ -45,7 +45,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Syntax\ISyntaxNode.cs" />
     <Compile Include="Syntax\IStatement.cs" />
+    <Compile Include="Syntax\PScript\PScriptKeyword.cs" />
     <Compile Include="Syntax\PScript\PScriptNode.cs" />
+    <Compile Include="Syntax\PScript\PScriptStatement.cs" />
+    <Compile Include="Syntax\PScript\PScriptValueType.cs" />
     <Compile Include="Syntax\SyntaxContext.cs" />
   </ItemGroup>
   <ItemGroup>

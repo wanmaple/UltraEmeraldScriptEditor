@@ -18,7 +18,8 @@
     </rule>
     <!--number-->
     <rule type="regex">
-      <keyword>^[-+]?\d+(\.\d+)?$</keyword>
+      <!--<keyword>^[-+]?\d+(\.\d+)?$</keyword>-->
+      <keyword>^[-+]?\d+$</keyword>
       <keyword>^[-+]?0[xX][0-9a-fA-F]+$</keyword>
     </rule>
     <!--include-->
