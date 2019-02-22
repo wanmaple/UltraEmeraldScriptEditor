@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace CompileSupport.Syntax
 {
-    public class SyntaxCheckContext
+    public interface IStatement
     {
+        IEnumerable<ISyntaxNode> Nodes { get; }
+
+        void Serialize();
     }
 }

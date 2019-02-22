@@ -143,8 +143,11 @@ namespace EditorSupport.CodeCompletion
         private void OnCompletionRequest(Object sender, ExecutedRoutedEventArgs e)
         {
             ICompletionData completion = _completionList._listBox.SelectedItem as ICompletionData;
-            completion.PerformCompletion(_editview, _startOffset, _endOffset);
-            e.Handled = true;
+            if (completion != null)
+            {
+                completion.PerformCompletion(_editview, _startOffset, _endOffset);
+                e.Handled = true;
+            }
         }
 
         #region Overrides

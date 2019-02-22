@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace CompileSupport.Syntax
 {
-    public abstract class Statement
+    public class SyntaxContext
     {
-
     }
 }
