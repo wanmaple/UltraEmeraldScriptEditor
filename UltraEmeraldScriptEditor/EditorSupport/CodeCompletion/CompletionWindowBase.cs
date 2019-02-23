@@ -95,6 +95,7 @@ namespace EditorSupport.CodeCompletion
             else if (!IsVisible)
             {
                 Visibility = Visibility.Visible;
+                UpdateLocation();
             }
         }
 
