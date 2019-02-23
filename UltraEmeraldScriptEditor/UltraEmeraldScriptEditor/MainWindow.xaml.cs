@@ -4,6 +4,7 @@ using EditorSupport.Utils;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -35,6 +36,13 @@ namespace UltraEmeraldScriptEditor
         {
             editor.Document = new TextDocument();
             editor.Focus();
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            // 需要加上这行代码，不然进程无法完全杀掉
+            editor.CodeCompletionWindow.Close();
         }
 
         #region Command handlers

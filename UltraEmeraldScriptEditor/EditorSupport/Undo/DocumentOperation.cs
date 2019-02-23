@@ -6,6 +6,9 @@ using System.Text;
 
 namespace EditorSupport.Undo
 {
+    /// <summary>
+    /// 文本操作抽象类。
+    /// </summary>
     public abstract class DocumentOperation : IUndoableOperation
     {
         #region Abstraction

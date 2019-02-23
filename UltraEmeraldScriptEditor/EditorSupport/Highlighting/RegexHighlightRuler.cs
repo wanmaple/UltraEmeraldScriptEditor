@@ -27,20 +27,21 @@ namespace EditorSupport.Highlighting
         public void FormulateRule(IHighlightee highlightee)
         {
             String text = highlightee.Content.Trim();
-            foreach (String expression in _regexMap.Keys)
-            {
-                Regex reg = new Regex(expression);
-                if (reg.IsMatch(text))
-                {
-                    highlightee.HighlightRule = _regexMap[expression];
-                    return;
-                }
-            }
             foreach (String prefix in _prefixMap.Keys)
             {
                 if (text.StartsWith(prefix))
                 {
                     highlightee.HighlightRule = _prefixMap[prefix];
+                    return;
+                }
+            }
+            foreach (String expression in _regexMap.Keys)
+            {
+                Regex reg = new Regex(expression);
+                var match = reg.Match(text);
+                if (match.Length > 0)
+                {
+                    highlightee.HighlightRule = _regexMap[expression];
                     return;
                 }
             }
