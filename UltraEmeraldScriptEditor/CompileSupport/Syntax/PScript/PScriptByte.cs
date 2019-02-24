@@ -1,4 +1,5 @@
 ﻿using CompileSupport.Syntax.Exceptions;
+using CompileSupport.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,28 +8,29 @@ using System.Text;
 
 namespace CompileSupport.Syntax.PScript
 {
-    public sealed class PScriptByte : PScriptData
+    /// <summary>
+    /// Byte数据（一个字节）。
+    /// </summary>
+    public sealed class PScriptByte : PScriptToken
     {
-        public PScriptByte(string source) 
+        public PScriptByte(string source)
             : base(source)
         {
-            if (!Byte.TryParse(_source, out _data))
-            {
-                throw new SyntaxException(String.Format("'{0}' is invalid byte value.", _source), SyntaxErrorType.SYNTAX_ERROR_DATA_INVALID);
-            }
-            _dataType = PScriptDataType.Byte;
-            _value = _data;
+            var calc = new RPNIntegerCalculator();
+            _data = Convert.ToByte(calc.Calculate(_source));
         }
 
         #region Overrides
-        protected override void Compile(SyntaxContext context, BinaryWriter writer)
-        {
-            writer.Write(_data);
-        }
+        public override bool Compileable => true;
 
         public override string ToString()
         {
             return _data.ToString();
+        }
+
+        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        {
+            writer.Write(_data);
         }
         #endregion
 

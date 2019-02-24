@@ -34,10 +34,39 @@ namespace CompileSupport.Syntax.PScript
 
     public abstract class PScriptToken : ISyntaxToken
     {
-        #region ISyntaxNode
+        #region ISyntaxToken
         public String Source => _source;
-        public Object Value => _value; 
+        public abstract bool Compileable { get; }
+        /// <summary>
+        /// 通用编译逻辑，不使用自身编译的时候需要重写这个方法
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="compileRuler"></param>
+        /// <param name="writer"></param>
+        public virtual void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        {
+            if (Compileable)
+            {
+                compileRuler.Precompile(context, writer);
+                if (compileRuler.OverrideCompile)
+                {
+                    compileRuler.Compile(context, writer);
+                }
+                else
+                {
+                    Compile(context, writer);
+                }
+                compileRuler.Postcompile(context, writer);
+            }
+        }
         #endregion
+
+        /// <summary>
+        /// 自身编译逻辑
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="writer"></param>
+        protected abstract void Compile(ISyntaxContext context, BinaryWriter writer);
 
         public PScriptTokenType TokenType => _tokenType;
 
@@ -53,7 +82,6 @@ namespace CompileSupport.Syntax.PScript
         }
 
         protected String _source;
-        protected Object _value;
         protected PScriptTokenType _tokenType;
     }
 }

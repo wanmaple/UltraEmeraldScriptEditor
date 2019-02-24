@@ -8,7 +8,7 @@ namespace EditorSupport.Document
     /// <summary>
     /// 方便临时使用的片段对象。
     /// </summary>
-    internal sealed class SimpleSegment : ISegment, IEquatable<SimpleSegment>
+    public sealed class SimpleSegment : ISegment, IEquatable<SimpleSegment>
     {
         public static SimpleSegment Invalid = new SimpleSegment(-1, -1);
 

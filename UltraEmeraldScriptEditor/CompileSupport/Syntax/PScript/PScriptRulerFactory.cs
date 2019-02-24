@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace CompileSupport.Syntax
+namespace CompileSupport.Syntax.PScript
 {
-    public class SyntaxContext
+    public sealed class PScriptRulerFactory
     {
     }
 }

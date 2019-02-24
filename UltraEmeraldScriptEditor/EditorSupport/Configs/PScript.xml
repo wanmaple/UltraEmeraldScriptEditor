@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
-  <ruler type="regex" splitter=" ,+-*/&amp;|^~&lt;&gt;">
+  <ruler type="regex" splitter=" ,+-*/&amp;|^&lt;&gt;">
     <!--keyword-->
     <rule type="regex">
       <keyword>^.equ$</keyword>

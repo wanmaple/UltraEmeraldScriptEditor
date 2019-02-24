@@ -8,11 +8,20 @@ using System.Threading.Tasks;
 
 namespace CompileSupport.Syntax
 {
-    public interface IStatement<T> where T : ISyntaxToken
+    /// <summary>
+    /// 表达式。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IStatement<T> : ICompileable
+        where T : ISyntaxToken
     {
-        SyntaxContext Context { get; }
+        /// <summary>
+        /// 所属上下文
+        /// </summary>
+        ISyntaxContext Context { get; }
+        /// <summary>
+        /// 成员
+        /// </summary>
         ReadOnlyCollection<T> Tokens { get; }
-
-        void Compile(BinaryWriter writer);
     }
 }

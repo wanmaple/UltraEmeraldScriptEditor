@@ -11,6 +11,6 @@ namespace CompileSupport.Syntax
     /// </summary>
     public interface ICompileable
     {
-        void Compile(SyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer);
+        void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer);
     }
 }

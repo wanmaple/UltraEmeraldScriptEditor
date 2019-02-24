@@ -6,6 +6,9 @@ using System.Text;
 
 namespace CompileSupport.Syntax
 {
+    /// <summary>
+    /// 编译规则。
+    /// </summary>
     public interface ICompileRuler
     {
         /// <summary>
@@ -22,18 +25,18 @@ namespace CompileSupport.Syntax
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Precompile(SyntaxContext context, BinaryWriter writer);
+        void Precompile(ISyntaxContext context, BinaryWriter writer);
         /// <summary>
         /// 覆盖的编译方式，仅当OverrideCompile为true时生效
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Compile(SyntaxContext context, BinaryWriter writer);
+        void Compile(ISyntaxContext context, BinaryWriter writer);
         /// <summary>
         /// 编译后
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Postcompile(SyntaxContext context, BinaryWriter writer);
+        void Postcompile(ISyntaxContext context, BinaryWriter writer);
     }
 }
