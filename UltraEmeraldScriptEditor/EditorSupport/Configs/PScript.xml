@@ -34,7 +34,7 @@
     </rule>
     <!--string-->
     <rule type="regex">
-      <keyword>\"([^\"\\]|\")*\"</keyword>
+      <keyword>^\"([^\"\\]|\")*\"$</keyword>
     </rule>
   </ruler>
   <styles>

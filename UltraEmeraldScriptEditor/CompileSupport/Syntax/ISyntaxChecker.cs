@@ -16,6 +16,6 @@ namespace CompileSupport.Syntax
         TextDocument Document { get; }
         SyntaxCheckException Exception { get; }
 
-        void Check();
+        void Check(Int32 startOffset);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using CompileSupport.Syntax.Exceptions;
@@ -7,17 +8,44 @@ using EditorSupport.Document;
 
 namespace CompileSupport.Syntax.PScript
 {
-    public sealed class PScriptSyntaxChecker : ISyntaxChecker
+    public sealed class PScriptSyntaxChecker : ISyntaxChecker, IDisposable
     {
-        public ISyntaxContext Context => throw new NotImplementedException();
-
-        public TextDocument Document => throw new NotImplementedException();
-
-        public SyntaxCheckException Exception => throw new NotImplementedException();
-
-        public void Check()
+        public PScriptSyntaxChecker(TextDocument document)
         {
-            throw new NotImplementedException();
+            _doc = document ?? throw new ArgumentNullException("document");
+            _reader = _doc.CreateReader();
+            _context = new PScriptSyntaxContext();
+            _buffer = new Char[1024];
+            _exception = null;
         }
+
+        #region ISyntaxChecker
+        public ISyntaxContext Context => _context;
+
+        public TextDocument Document => _doc;
+
+        public SyntaxCheckException Exception => _exception;
+
+        public void Check(Int32 startOffset)
+        {
+            ITextSource snapshot = _doc.CreateSnapshot();
+        }
+        #endregion
+
+        #region IDisposable
+        public void Dispose()
+        {
+            if (_reader != null)
+            {
+                _reader.Dispose();
+            }
+        } 
+        #endregion
+
+        private ISyntaxContext _context;
+        private TextDocument _doc;
+        private SyntaxCheckException _exception;
+        private TextReader _reader;
+        private Char[] _buffer;
     }
 }
