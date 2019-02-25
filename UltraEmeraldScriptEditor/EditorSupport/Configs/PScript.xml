@@ -10,6 +10,7 @@
       <keyword>^.hword$</keyword>
       <keyword>^.endm$</keyword>
       <keyword>^.global$</keyword>
+      <keyword>^.string$</keyword>
     </rule>
     <!--comment-->
     <rule type="prefix">

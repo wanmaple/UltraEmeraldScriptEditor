@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace CompileSupport.Syntax
 {
     /// <summary>
-    /// 面向过程作用域。
+    /// 面向过程上下文。
     /// </summary>
     public interface ISyntaxContext
     {

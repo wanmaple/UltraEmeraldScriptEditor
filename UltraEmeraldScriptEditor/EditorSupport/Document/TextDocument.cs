@@ -159,32 +159,39 @@ namespace EditorSupport.Document
                 Changing(this, EventArgs.Empty);
             }
 
-            var docUpdate = new DocumentUpdate();
-            docUpdate.Offset = offset;
-            docUpdate.InsertionLength = content.Length;
-            docUpdate.RemovalLength = length;
-            docUpdate.InsertionText = content;
-            docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
+            var updates = new List<DocumentUpdate>();
+            DocumentUpdate update4insertion = null, update4deletion = null;
+            if (length > 0)
+            {
+                update4insertion = GenerateUpdate(offset, length, content);
+                updates.Add(update4insertion);
+            }
+            if (content.Length > 0)
+            {
+                update4deletion = GenerateUpdate(offset, length, content);
+                updates.Add(update4deletion);
+            }
 
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 //_anchorTree.RemoveText(offset, length);
-                _lineMgr.Remove(offset, length, docUpdate);
+                _lineMgr.Remove(offset, length, update4insertion);
             }
             if (content.Length > 0)
             {
                 //_anchorTree.InsertText(offset, content.Length);
-                _lineMgr.Insert(offset, content, docUpdate);
+                _lineMgr.Insert(offset, content, update4deletion);
             }
+            var e = new DocumentUpdateEventArgs(updates);
             if (Changed != null)
             {
-                Changed(this, new DocumentUpdateEventArgs(docUpdate));
+                Changed(this, e);
             }
 
             if (!_undoing)
             {
-                _undoStack.AddOperation(new DocumentEditingOperation(this, docUpdate));
+                _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
             }
 #if DEBUG
             _anchorTree.VerifySelf();
@@ -198,6 +205,18 @@ namespace EditorSupport.Document
                 throw new ArgumentNullException("content");
             }
             Replace(offset, length, content.Text);
+        }
+
+        private DocumentUpdate GenerateUpdate(Int32 offset, Int32 length, String content)
+        {
+            var docUpdate = new DocumentUpdate();
+            docUpdate.Offset = offset;
+            docUpdate.InsertionLength = content.Length;
+            docUpdate.RemovalLength = length;
+            docUpdate.InsertionText = content;
+            docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
+
+            return docUpdate;
         }
         #endregion
 
