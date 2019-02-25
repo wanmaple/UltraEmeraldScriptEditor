@@ -26,6 +26,7 @@ namespace CompileSupport.Syntax.PScript
             _readonlyStatements = new ReadOnlyCollection<IStatement<PScriptToken>>(_statements);
             _parameters = new List<PScriptParameter>();
             _readonlyParameters = new ReadOnlyCollection<PScriptParameter>(_parameters);
+            _tokenType = PScriptTokenType.Macro;
         }
 
         public override bool Visitable => throw new NotImplementedException();

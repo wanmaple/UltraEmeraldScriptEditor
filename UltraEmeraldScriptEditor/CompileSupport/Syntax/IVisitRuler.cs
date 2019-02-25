@@ -27,7 +27,7 @@ namespace CompileSupport.Syntax
         /// <param name="writer"></param>
         void Previsit(ISyntaxContext context, BinaryWriter writer);
         /// <summary>
-        /// 覆盖的访问方式，仅当OverrideCompile为true时生效
+        /// 覆盖的访问方式，仅当Override为true时生效
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>

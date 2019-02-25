@@ -10,19 +10,19 @@ namespace CompileSupport.Utils
     /// <summary>
     /// 使用逆波兰(Reverse Polish Notation)算法的计算器（整数）。
     /// </summary>
+    /// <remarks>
+    /// 将中缀表达式转换为后缀表达式
+    /// 1+2-3 => 12+3-
+    /// 1+2*3 => 123*+
+    /// (1+2)*3 => 12+3*
+    /// 4*(1+2-3)/5 => 412+3-*5/
+    /// (1+2*3)+4*5 => 123*+45*+
+    /// </remarks>
     public class RPNIntegerCalculator
     {
         /// <summary>
         /// 括号，仅仅用于标记。
         /// </summary>
-        /// <remarks>
-        /// 将中缀表达式转换为后缀表达式
-        /// 1+2-3 => 12+3-
-        /// 1+2*3 => 123*+
-        /// (1+2)*3 => 12+3*
-        /// 4*(1+2-3)/5 => 412+3-*5/
-        /// (1+2*3)+4*5 => 123*+45*+
-        /// </remarks>
         private class Parenthese : IIntegerBinaryOperator
         {
             public Parenthese(Char ch)

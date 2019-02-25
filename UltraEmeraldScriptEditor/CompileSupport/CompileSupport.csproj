@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiler\ICompiler.cs" />
     <Compile Include="Syntax\EmptyVisitRuler.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxCheckException.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxErrorMessages.cs" />

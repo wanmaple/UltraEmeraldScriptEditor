@@ -18,6 +18,7 @@ namespace CompileSupport.Syntax.PScript
         {
             var calc = new RPNIntegerCalculator();
             _data = Convert.ToByte(calc.Calculate(_source));
+            _tokenType = PScriptTokenType.Data;
         }
 
         #region Overrides

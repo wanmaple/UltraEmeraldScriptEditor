@@ -127,10 +127,5 @@ namespace UltraEmeraldScriptEditor
             editor.Document = doc;
             editor.Focus();
         }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

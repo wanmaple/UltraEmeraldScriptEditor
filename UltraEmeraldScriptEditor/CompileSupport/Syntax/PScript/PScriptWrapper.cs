@@ -17,6 +17,7 @@ namespace CompileSupport.Syntax.PScript
             : base(source)
         {
             _innerToken = innerToken?? throw new ArgumentNullException("innerToken");
+            _tokenType = _innerToken.TokenType;
         }
 
         public override bool Visitable => _innerToken.Visitable;

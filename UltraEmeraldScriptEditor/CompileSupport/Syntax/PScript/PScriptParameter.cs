@@ -20,6 +20,7 @@ namespace CompileSupport.Syntax.PScript
         {
             _name = name ?? throw new ArgumentNullException("name");
             _index = index;
+            _tokenType = PScriptTokenType.Parameter;
         }
 
         public override bool Visitable => true;

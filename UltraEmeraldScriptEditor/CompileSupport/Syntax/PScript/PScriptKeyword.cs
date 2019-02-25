@@ -7,6 +7,9 @@ using System.Text;
 
 namespace CompileSupport.Syntax.PScript
 {
+    /// <summary>
+    /// 关键字。
+    /// </summary>
     public sealed class PScriptKeyword : PScriptToken
     {
         public IEnumerable<PScriptDataType> ParamTypes => _paramTypes;
@@ -17,6 +20,7 @@ namespace CompileSupport.Syntax.PScript
             : base(source)
         {
             _paramTypes = paramTypes ?? throw new ArgumentNullException("paramTypes");
+            _tokenType = PScriptTokenType.Keyword;
         }
 
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)

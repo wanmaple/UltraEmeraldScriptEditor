@@ -17,7 +17,6 @@ namespace CompileSupport.Syntax.PScript
             : base(name, innerToken)
         {
             _name = name ?? throw new ArgumentNullException("name");
-            _innerToken = innerToken ?? throw new ArgumentNullException("innerData");
         }
 
         private PScriptToken _innerToken;

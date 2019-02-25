@@ -38,7 +38,7 @@ namespace CompileSupport.Syntax.PScript
         public String Source => _source;
         public abstract bool Visitable { get; }
         /// <summary>
-        /// 通用编译逻辑，不使用自身编译的时候需要重写这个方法
+        /// 通用访问逻辑
         /// </summary>
         /// <param name="context"></param>
         /// <param name="visitRuler"></param>

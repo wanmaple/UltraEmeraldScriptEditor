@@ -31,6 +31,7 @@ namespace CompileSupport.Syntax.PScript
                     throw new FormatException(String.Format(SyntaxErrorMessages.InvalidCharacterValue, ch));
                 }
             }
+            _tokenType = PScriptTokenType.Data;
         }
 
         #region Overrides
