@@ -37,13 +37,14 @@ namespace CompileSupport.Syntax
         /// </summary>
         Dictionary<String, ISyntaxToken> Functions { get; }
         /// <summary>
-        /// 实参
+        /// 所有表达式
         /// </summary>
-        List<ISyntaxToken> Arguments { get; }
+        List<IStatement<ISyntaxToken>> Statements { get; }
+
         /// <summary>
         /// 获取当前作用域
         /// </summary>
-        ISyntaxContext Current { get; }
+        IVisitScope Current { get; }
 
         /// <summary>
         /// 入栈新的作用域

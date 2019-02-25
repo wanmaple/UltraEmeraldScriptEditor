@@ -33,9 +33,9 @@ namespace CompileSupport.Syntax.PScript
 
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
-            if (context.Arguments.Count != _parameters.Count)
+            if (context.Current.Arguments.Count != _parameters.Count)
             {
-                throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckArgumentCountNotMatch, context.Arguments.Count, _parameters.Count), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
+                throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckArgumentCountNotMatch, context.Current.Arguments.Count, _parameters.Count), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
             }
             foreach (var statement in _statements)
             {

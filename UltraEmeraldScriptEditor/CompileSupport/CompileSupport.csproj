@@ -51,6 +51,7 @@
     <Compile Include="Syntax\ISyntaxChecker.cs" />
     <Compile Include="Syntax\ISyntaxToken.cs" />
     <Compile Include="Syntax\IStatement.cs" />
+    <Compile Include="Syntax\IVisitScope.cs" />
     <Compile Include="Syntax\PScript\PScriptByte.cs" />
     <Compile Include="Syntax\PScript\PScriptDataType.cs" />
     <Compile Include="Syntax\PScript\PScriptConstant.cs" />

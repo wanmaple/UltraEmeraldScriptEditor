@@ -20,9 +20,9 @@ namespace CompileSupport.Syntax.PScript
 
         public Dictionary<string, ISyntaxToken> Functions => throw new NotImplementedException();
 
-        public List<ISyntaxToken> Arguments => throw new NotImplementedException();
+        public List<IStatement<ISyntaxToken>> Statements => throw new NotImplementedException();
 
-        public ISyntaxContext Current => throw new NotImplementedException();
+        public IVisitScope Current => throw new NotImplementedException();
 
         public void Pop()
         {
