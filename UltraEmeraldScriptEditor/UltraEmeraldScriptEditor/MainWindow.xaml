@@ -115,5 +115,6 @@
                 </TabItem>
             </TabControl>
         </Grid>
+        <Button Grid.Row="2" Content="Test" Click="Button_Click" />
     </Grid>
 </Window>
