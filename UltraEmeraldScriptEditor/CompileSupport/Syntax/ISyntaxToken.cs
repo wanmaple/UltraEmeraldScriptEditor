@@ -9,15 +9,15 @@ namespace CompileSupport.Syntax
     /// <summary>
     /// 基本元素。
     /// </summary>
-    public interface ISyntaxToken : ICompileable
+    public interface ISyntaxToken : IVisitable
     {
         /// <summary>
         /// 源码
         /// </summary>
         String Source { get; }
         /// <summary>
-        /// 是否参与编译过程
+        /// 是否参与访问过程
         /// </summary>
-        Boolean Compileable { get; }
+        Boolean Visitable { get; }
     }
 }

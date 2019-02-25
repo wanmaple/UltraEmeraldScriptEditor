@@ -21,14 +21,14 @@ namespace CompileSupport.Syntax.PScript
         }
 
         #region Overrides
-        public override bool Compileable => true;
+        public override bool Visitable => true;
 
         public override string ToString()
         {
             return _data.ToString();
         }
 
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             writer.Write(_data);
         }

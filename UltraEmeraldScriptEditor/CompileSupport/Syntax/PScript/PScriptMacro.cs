@@ -28,9 +28,9 @@ namespace CompileSupport.Syntax.PScript
             _readonlyParameters = new ReadOnlyCollection<PScriptParameter>(_parameters);
         }
 
-        public override bool Compileable => throw new NotImplementedException();
+        public override bool Visitable => throw new NotImplementedException();
 
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             if (context.Arguments.Count != _parameters.Count)
             {
@@ -38,7 +38,7 @@ namespace CompileSupport.Syntax.PScript
             }
             foreach (var statement in _statements)
             {
-                statement.Compile(context, new EmptyCompileRuler(), writer);
+                statement.Visit(context, new EmptyVisitRuler(), writer);
             }
         }
         

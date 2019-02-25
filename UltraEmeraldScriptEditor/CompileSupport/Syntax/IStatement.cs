@@ -12,7 +12,7 @@ namespace CompileSupport.Syntax
     /// 表达式。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IStatement<T> : ICompileable
+    public interface IStatement<T> : IVisitable
         where T : ISyntaxToken
     {
         /// <summary>

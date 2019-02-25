@@ -26,13 +26,13 @@ namespace CompileSupport.Syntax.PScript
             _arguments = new List<PScriptToken>(arguments);
         }
         
-        public void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        public void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
             foreach (var arg in _arguments)
             {
-                if (arg.Compileable)
+                if (arg.Visitable)
                 {
-                    arg.Compile(context, Keyword.CompileRuler, writer);
+                    arg.Visit(context, Keyword.VisitRuler, writer);
                 }
             }
         }

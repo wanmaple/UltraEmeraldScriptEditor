@@ -41,11 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Syntax\EmptyCompileRuler.cs" />
+    <Compile Include="Syntax\EmptyVisitRuler.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxCheckException.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxErrorMessages.cs" />
-    <Compile Include="Syntax\ICompileable.cs" />
-    <Compile Include="Syntax\ICompileRuler.cs" />
+    <Compile Include="Syntax\IVisitable.cs" />
+    <Compile Include="Syntax\IVisitRuler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Syntax\ISyntaxChecker.cs" />
     <Compile Include="Syntax\ISyntaxToken.cs" />

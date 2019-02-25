@@ -22,22 +22,22 @@ namespace CompileSupport.Syntax.PScript
             _index = index;
         }
 
-        public override bool Compileable => true;
+        public override bool Visitable => true;
 
-        public override void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        public override void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
             if (_index < 0 || _index >= context.Arguments.Count)
             {
                 throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckParameterIndexInvalid, _index), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
             }
             var argument = context.Arguments[_index];
-            if (argument.Compileable)
+            if (argument.Visitable)
             {
-                argument.Compile(context, compileRuler, writer);
+                argument.Visit(context, visitRuler, writer);
             }
         }
 
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             // 自身没有编译逻辑，只是替换参数编译而已。
         }
