@@ -1,4 +1,5 @@
 ﻿using EditorSupport.Undo;
+using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -113,8 +114,6 @@ namespace EditorSupport.Document
         #endregion
 
         #region Text modification
-        public event EventHandler<EventArgs> UpdateStarted;
-        public event EventHandler<DocumentUpdateEventArgs> UpdateFinished;
         public event EventHandler<EventArgs> Changing;
         public event EventHandler<DocumentUpdateEventArgs> Changed;
 
@@ -151,6 +150,9 @@ namespace EditorSupport.Document
             {
                 return;
             }
+            BeginUpdate();
+
+            _isChanging = true;
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
 
@@ -193,6 +195,9 @@ namespace EditorSupport.Document
             {
                 _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
             }
+            _isChanging = false;
+
+            EndUpdate();
 #if DEBUG
             _anchorTree.VerifySelf();
             _lineTree.VerifySelf();
@@ -218,6 +223,71 @@ namespace EditorSupport.Document
 
             return docUpdate;
         }
+
+        private Boolean _isChanging = false;
+        #endregion
+
+        #region Async updating
+        public event EventHandler<EventArgs> UpdateStarted;
+        public event EventHandler<EventArgs> UpdateFinished;
+
+        /// <summary>
+        /// 通过<see cref="CallbackOnDispose"/>实现自动更新的逻辑
+        /// </summary>
+        /// <returns></returns>
+        public CallbackOnDispose AutoUpdate()
+        {
+            BeginUpdate();
+            return new CallbackOnDispose(EndUpdate);
+        }
+
+        /// <summary>
+        /// 开始更新，引用计数为1时才触发真正的开始逻辑
+        /// </summary>
+        public void BeginUpdate()
+        {
+            VerifyAccess();
+            if (_isChanging)
+            {
+                throw new InvalidOperationException("Can't change document within another document change.");
+            }
+            ++_updateCount;
+            if (_updateCount == 1)
+            {
+                _undoStack.StartGrouping();
+                if (UpdateStarted != null)
+                {
+                    UpdateStarted(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 结束更新，引用计数为0时触发真正的结束逻辑
+        /// </summary>
+        public void EndUpdate()
+        {
+            VerifyAccess();
+            if (_isChanging)
+            {
+                throw new InvalidOperationException("Can't change document within another document change.");
+            }
+            if (_updateCount <= 0)
+            {
+                throw new InvalidOperationException("No update is active.");
+            }
+            --_updateCount;
+            if (_updateCount == 0)
+            {
+                _undoStack.EndGrouping();
+                if (UpdateFinished != null)
+                {
+                    UpdateFinished(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        private Int32 _updateCount = 0;
         #endregion
 
         #region Line getters

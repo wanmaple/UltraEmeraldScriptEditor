@@ -114,9 +114,11 @@
     <Compile Include="Undo\EditingOperation.cs" />
     <Compile Include="Undo\IUndoableOperation.cs" />
     <Compile Include="Undo\DocumentEditingOperation.cs" />
+    <Compile Include="Undo\UndoOperationGroup.cs" />
     <Compile Include="Undo\UndoStack.cs" />
     <Compile Include="Utils\AutoFilterObservableCollection.cs" />
     <Compile Include="Utils\Boxes.cs" />
+    <Compile Include="Utils\CallbackOnDispose.cs" />
     <Compile Include="Utils\CommonUtilities.cs" />
     <Compile Include="Utils\MouseHook.cs" />
     <Compile Include="Utils\ValueSequence.cs" />

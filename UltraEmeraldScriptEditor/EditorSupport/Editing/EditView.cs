@@ -702,7 +702,7 @@ namespace EditorSupport.Editing
             }
             else if (managerType == typeof(TextDocumentWeakEventManager.UpdateFinished))
             {
-                OnDocumentUpdateFinished(sender as TextDocument, e as DocumentUpdateEventArgs);
+                OnDocumentUpdateFinished(sender as TextDocument, e);
                 return true;
             }
             return false;
@@ -725,7 +725,7 @@ namespace EditorSupport.Editing
 
         }
 
-        private void OnDocumentUpdateFinished(TextDocument document, DocumentUpdateEventArgs e)
+        private void OnDocumentUpdateFinished(TextDocument document, EventArgs e)
         {
 
         }
@@ -743,6 +743,11 @@ namespace EditorSupport.Editing
             {
                 DocumentChanging(this, EventArgs.Empty);
             }
+            // 优先设置content的事件
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                (Content as IEditInfo).ChangeDocument(newDoc);
+            }
             if (oldDoc != null)
             {
                 TextDocumentWeakEventManager.Changing.RemoveListener(oldDoc, this);
@@ -756,10 +761,6 @@ namespace EditorSupport.Editing
                 TextDocumentWeakEventManager.Changed.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateStarted.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateFinished.AddListener(newDoc, this);
-            }
-            if (CanContentEdit && Content is IEditInfo)
-            {
-                (Content as IEditInfo).ChangeDocument(newDoc);
             }
             _caret.DocumentOffset = 0;
             _selection.Reset();

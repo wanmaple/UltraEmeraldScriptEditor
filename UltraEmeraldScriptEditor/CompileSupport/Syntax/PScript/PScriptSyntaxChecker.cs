@@ -26,7 +26,7 @@ namespace CompileSupport.Syntax.PScript
 
         public SyntaxCheckException Exception => _exception;
 
-        public void Check(Int32 startOffset)
+        public void Check()
         {
             ITextSource snapshot = _doc.CreateSnapshot();
         }

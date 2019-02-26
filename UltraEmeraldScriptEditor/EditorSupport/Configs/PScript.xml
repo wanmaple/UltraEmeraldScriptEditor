@@ -43,7 +43,7 @@
       <foreground>#FF0000FF</foreground>
       <background>#00000000</background>
       <fontstyle>normal</fontstyle>
-      <fontweight>normal</fontweight>
+      <fontweight>bold</fontweight>
       <fontstretch>normal</fontstretch>
     </style>
     <!--comment-->
@@ -67,7 +67,7 @@
       <foreground>#FF7D7D7D</foreground>
       <background>#00000000</background>
       <fontstyle>normal</fontstyle>
-      <fontweight>normal</fontweight>
+      <fontweight>bold</fontweight>
       <fontstretch>normal</fontstretch>
     </style>
     <!--address search-->
@@ -75,7 +75,7 @@
       <foreground>#FF4EC9B0</foreground>
       <background>#00000000</background>
       <fontstyle>normal</fontstyle>
-      <fontweight>normal</fontweight>
+      <fontweight>bold</fontweight>
       <fontstretch>normal</fontstretch>
     </style>
     <!--string-->
