@@ -614,17 +614,13 @@ namespace EditorSupport.Editing
         #region Undo / Redo
         public void Undo()
         {
-            Document._undoing = true;
             Document.Undo();
-            Document._undoing = false;
             _undoStack.Undo();
         }
 
         public void Redo()
         {
-            Document._undoing = true;
             Document.Redo();
-            Document._undoing = false;
             _undoStack.Redo();
         }
 

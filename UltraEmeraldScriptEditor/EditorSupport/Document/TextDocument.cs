@@ -342,14 +342,18 @@ namespace EditorSupport.Document
         #endregion
 
         #region Undo / Redo
-        public Boolean Undo()
+        public void Undo()
         {
-            return _undoStack.Undo();
+            _undoing = true;
+            _undoStack.Undo();
+            _undoing = false;
         }
 
-        public Boolean Redo()
+        public void Redo()
         {
-            return _undoStack.Redo();
+            _undoing = true;
+            _undoStack.Redo();
+            _undoing = false;
         }
 
         public Boolean CanUndo()
@@ -362,7 +366,7 @@ namespace EditorSupport.Document
             return _undoStack.CanRedo();
         }
 
-        internal Boolean _undoing = false;
+        private Boolean _undoing = false;
         #endregion
 
         #region Locations <=> Offsets
