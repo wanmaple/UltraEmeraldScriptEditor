@@ -11,6 +11,7 @@ namespace EditorSupport.Undo
         {
             _operations = new List<IUndoableOperation>();
             _undoProcess = 0;
+            _group = null;
         }
 
         public virtual void AddOperation(IUndoableOperation operation)

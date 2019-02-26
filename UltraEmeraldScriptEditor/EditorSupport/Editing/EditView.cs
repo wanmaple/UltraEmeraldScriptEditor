@@ -163,10 +163,11 @@ namespace EditorSupport.Editing
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
-            BeginUpdating();
-            InsertText(e.Text);
-            EndUpdating();
-            Redraw();
+            using (Document.AutoUpdate())
+            {
+                InsertText(e.Text);
+                Redraw();
+            }
         }
         #endregion
 
@@ -634,32 +635,6 @@ namespace EditorSupport.Editing
             return _undoStack.CanRedo();
         }
 
-        internal void BeginUpdating()
-        {
-            if (_updating)
-            {
-                return;
-            }
-            _updating = true;
-            _update.CaretOffsetEarlier = _caret.DocumentOffset;
-            _update.SelectionStartEarlier = _selection.StartOffset;
-            _update.SelectionEndEarlier = _selection.EndOffset;
-        }
-
-        internal void EndUpdating()
-        {
-            if (!_updating)
-            {
-                return;
-            }
-            _updating = false;
-            _update.CaretOffsetLater = _caret.DocumentOffset;
-            _update.SelectionStartLater = _selection.StartOffset;
-            _update.SelectionEndLater = _selection.EndOffset;
-            _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
-        }
-
-        private Boolean _updating = false;
         private EditingOffsetUpdate _update = new EditingOffsetUpdate();
         #endregion
 
@@ -718,12 +693,17 @@ namespace EditorSupport.Editing
 
         private void OnDocumentUpdateStarted(TextDocument document, EventArgs e)
         {
-
+            _update.CaretOffsetEarlier = _caret.DocumentOffset;
+            _update.SelectionStartEarlier = _selection.StartOffset;
+            _update.SelectionEndEarlier = _selection.EndOffset;
         }
 
         private void OnDocumentUpdateFinished(TextDocument document, EventArgs e)
         {
-
+            _update.CaretOffsetLater = _caret.DocumentOffset;
+            _update.SelectionStartLater = _selection.StartOffset;
+            _update.SelectionEndLater = _selection.EndOffset;
+            _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
         }
         #endregion
 

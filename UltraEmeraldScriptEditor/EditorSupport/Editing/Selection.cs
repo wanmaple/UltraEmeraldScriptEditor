@@ -121,6 +121,23 @@ namespace EditorSupport.Editing
             TriggerOffsetChanged();
         }
 
+        public void Set(Int32 startOffset, Int32 endOffset)
+        {
+            if (startOffset < 0 || startOffset > _owner.Document.Length)
+            {
+                throw new ArgumentException(String.Format("{0} <= startOffset <= {1}", startOffset, _owner.Document.Length));
+            }
+            if (endOffset < 0 || endOffset > _owner.Document.Length)
+            {
+                throw new ArgumentException(String.Format("{0} <= endOffset <= {1}", endOffset, _owner.Document.Length));
+            }
+            _noTrigging = true;
+            StartOffset = startOffset;
+            EndOffset = endOffset;
+            _noTrigging = false;
+            TriggerOffsetChanged();
+        }
+
         public void Reset()
         {
             SetEmpty(0);

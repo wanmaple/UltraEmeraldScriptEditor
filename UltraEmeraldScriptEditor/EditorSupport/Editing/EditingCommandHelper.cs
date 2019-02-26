@@ -72,14 +72,15 @@ namespace EditorSupport.Editing
                 EditView editor = sender as EditView;
                 if (editor != null && editor.Document != null)
                 {
-                    editor.BeginUpdating();
-                    if (editor.Selection.IsEmpty)
+                    using (editor.Document.AutoUpdate())
                     {
-                        command.Execute(e.Parameter, editor);
+                        if (editor.Selection.IsEmpty)
+                        {
+                            command.Execute(e.Parameter, editor);
+                        }
+                        editor.RemoveSelection();
+                        editor.Redraw();
                     }
-                    editor.RemoveSelection();
-                    editor.EndUpdating();
-                    editor.Redraw();
                     e.Handled = true;
                 }
             };
@@ -94,11 +95,12 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
-                editor.BeginUpdating();
-                editor.InsertText(CommonUtilities.LineBreak);
-                editor.EndUpdating();
-                editor.Caret.RestartAnimation();
-                editor.Redraw();
+                using (editor.Document.AutoUpdate())
+                {
+                    editor.InsertText(CommonUtilities.LineBreak);
+                    editor.Caret.RestartAnimation();
+                    editor.Redraw();
+                }
                 e.Handled = true;
             }
         }
@@ -170,10 +172,11 @@ namespace EditorSupport.Editing
                     // 剪切选中的文字
                     CopySelectedText(editor);
                 }
-                editor.BeginUpdating();
-                editor.RemoveSelection();
-                editor.EndUpdating();
-                editor.Redraw();
+                using (editor.Document.AutoUpdate())
+                {
+                    editor.RemoveSelection();
+                    editor.Redraw();
+                }
                 e.Handled = true;
             }
         }
@@ -200,19 +203,20 @@ namespace EditorSupport.Editing
                 text = CommonUtilities.NormalizeText(new StringReader(text));
                 if (!String.IsNullOrEmpty(text))
                 {
-                    editor.BeginUpdating();
-                    if (obj.GetDataPresent(LineCopyFormat))
+                    using (editor.Document.AutoUpdate())
                     {
-                        // 粘贴整行
-                        editor.InsertLine(text);
-                        editor.Redraw();
+                        if (obj.GetDataPresent(LineCopyFormat))
+                        {
+                            // 粘贴整行
+                            editor.InsertLine(text);
+                            editor.Redraw();
+                        }
+                        else
+                        {
+                            editor.InsertText(text);
+                            editor.Redraw();
+                        }
                     }
-                    else
-                    {
-                        editor.InsertText(text);
-                        editor.Redraw();
-                    }
-                    editor.EndUpdating();
                 }
                 e.Handled = true;
             }
@@ -251,11 +255,12 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
-                editor.BeginUpdating();
-                editor.TabForward();
-                editor.EndUpdating();
-                editor.Caret.RestartAnimation();
-                editor.Redraw();
+                using (editor.Document.AutoUpdate())
+                {
+                    editor.TabForward();
+                    editor.Caret.RestartAnimation();
+                    editor.Redraw();
+                }
                 e.Handled = true;
             }
         }
@@ -269,11 +274,12 @@ namespace EditorSupport.Editing
             EditView editor = sender as EditView;
             if (editor != null && editor.Document != null)
             {
-                editor.BeginUpdating();
-                editor.TabBackward();
-                editor.EndUpdating();
-                editor.Caret.RestartAnimation();
-                editor.Redraw();
+                using (editor.Document.AutoUpdate())
+                {
+                    editor.TabBackward();
+                    editor.Caret.RestartAnimation();
+                    editor.Redraw();
+                }
                 e.Handled = true;
             }
         }

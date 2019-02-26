@@ -150,7 +150,6 @@ namespace EditorSupport.Document
             {
                 return;
             }
-            BeginUpdate();
 
             _isChanging = true;
             VerifyOffsetRange(offset);
@@ -165,25 +164,25 @@ namespace EditorSupport.Document
             DocumentUpdate update4insertion = null, update4deletion = null;
             if (length > 0)
             {
-                update4insertion = GenerateUpdate(offset, length, content);
-                updates.Add(update4insertion);
+                update4deletion = GenerateUpdate(offset, length, String.Empty);
+                updates.Add(update4deletion);
             }
             if (content.Length > 0)
             {
-                update4deletion = GenerateUpdate(offset, length, content);
-                updates.Add(update4deletion);
+                update4insertion = GenerateUpdate(offset, 0, content);
+                updates.Add(update4insertion);
             }
 
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 //_anchorTree.RemoveText(offset, length);
-                _lineMgr.Remove(offset, length, update4insertion);
+                _lineMgr.Remove(offset, length, update4deletion);
             }
             if (content.Length > 0)
             {
                 //_anchorTree.InsertText(offset, content.Length);
-                _lineMgr.Insert(offset, content, update4deletion);
+                _lineMgr.Insert(offset, content, update4insertion);
             }
             var e = new DocumentUpdateEventArgs(updates);
             if (Changed != null)
@@ -196,8 +195,6 @@ namespace EditorSupport.Document
                 _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
             }
             _isChanging = false;
-
-            EndUpdate();
 #if DEBUG
             _anchorTree.VerifySelf();
             _lineTree.VerifySelf();
