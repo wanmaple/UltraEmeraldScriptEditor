@@ -185,7 +185,7 @@ namespace EditorSupport.Document
         }
 
         /// <summary>
-        /// 插入文本的时候修复Anchor的偏移f
+        /// 插入文本的时候修复Anchor的偏移
         /// </summary>
         /// <param name="offset"></param>
         /// <param name="length"></param>

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using EditorSupport.Document;
 
 namespace CompileSupport.Syntax.PScript
 {
@@ -16,6 +17,7 @@ namespace CompileSupport.Syntax.PScript
 
         public PScriptKeyword Keyword => _tokens[0] as PScriptKeyword;
         public List<PScriptToken> Arguments => _arguments;
+        public ISegment Segment => throw new NotImplementedException();
 
         public PScriptStatement(ISyntaxContext context, PScriptKeyword keyword, params PScriptToken[] arguments)
         {

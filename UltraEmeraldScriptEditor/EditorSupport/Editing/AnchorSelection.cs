@@ -8,15 +8,19 @@ using EditorSupport.Rendering;
 
 namespace EditorSupport.Editing
 {
+    /// <summary>
+    /// 由前后锚点组成的选中框。
+    /// </summary>
     public sealed class AnchorSelection : Selection
     {
         public AnchorSelection(EditView owner, TextAnchor startAnchor, TextAnchor endAnchor)
             : base(owner)
         {
+            // 锚点的偏移完全由自身控制，所以设置为AnchorMovementType.Ignore
             _startAnchor = startAnchor ?? throw new ArgumentNullException("startAnchor");
-            _startAnchor.MovementType = AnchorMovementType.Default;
+            _startAnchor.MovementType = AnchorMovementType.Ignore;
             _endAnchor = endAnchor ?? throw new ArgumentNullException("endAnchor");
-            _endAnchor.MovementType = AnchorMovementType.Default;
+            _endAnchor.MovementType = AnchorMovementType.Ignore;
         }
 
         #region Overrides

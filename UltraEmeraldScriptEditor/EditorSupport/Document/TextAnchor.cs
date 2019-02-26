@@ -8,8 +8,17 @@ namespace EditorSupport.Document
 {
     public enum AnchorMovementType : Byte
     {
-        Default,
+        /// <summary>
+        /// 忽略TextAnchorTree的更新
+        /// </summary>
+        Ignore,
+        /// <summary>
+        /// 永远处于插入文本左侧
+        /// </summary>
         BeforeInsertion,
+        /// <summary>
+        /// 永远处于插入文本右侧
+        /// </summary>
         AfterInsertion,
     }
 

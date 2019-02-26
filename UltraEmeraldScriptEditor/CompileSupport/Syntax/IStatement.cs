@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EditorSupport.Document;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -23,5 +24,9 @@ namespace CompileSupport.Syntax
         /// 成员
         /// </summary>
         ReadOnlyCollection<T> Tokens { get; }
+        /// <summary>
+        /// 所属Document中的片段
+        /// </summary>
+        ISegment Segment { get; }
     }
 }

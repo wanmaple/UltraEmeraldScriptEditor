@@ -224,7 +224,7 @@ namespace EditorSupport.Document
         private Boolean _isChanging = false;
         #endregion
 
-        #region Async updating
+        #region Grouped updating
         public event EventHandler<EventArgs> UpdateStarted;
         public event EventHandler<EventArgs> UpdateFinished;
 
