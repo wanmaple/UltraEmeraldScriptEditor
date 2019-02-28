@@ -22,8 +22,6 @@ namespace CompileSupport.Syntax.PScript
         }
 
         #region Overrides
-        public override bool Visitable => true;
-
         public override string ToString()
         {
             return _data.ToString();

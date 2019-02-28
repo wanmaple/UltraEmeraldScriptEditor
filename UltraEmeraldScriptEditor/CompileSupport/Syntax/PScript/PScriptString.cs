@@ -35,8 +35,6 @@ namespace CompileSupport.Syntax.PScript
         }
 
         #region Overrides
-        public override bool Visitable => true;
-
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             foreach (Char ch in _data)

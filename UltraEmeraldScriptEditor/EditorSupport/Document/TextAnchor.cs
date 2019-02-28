@@ -11,7 +11,7 @@ namespace EditorSupport.Document
         /// <summary>
         /// 忽略TextAnchorTree的更新
         /// </summary>
-        Ignore,
+        Default,
         /// <summary>
         /// 永远处于插入文本左侧
         /// </summary>

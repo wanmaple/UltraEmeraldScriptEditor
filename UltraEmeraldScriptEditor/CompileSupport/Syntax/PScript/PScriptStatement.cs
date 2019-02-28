@@ -27,15 +27,12 @@ namespace CompileSupport.Syntax.PScript
             _tokens.AddRange(arguments);
             _arguments = new List<PScriptToken>(arguments);
         }
-        
+
         public void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
             foreach (var arg in _arguments)
             {
-                if (arg.Visitable)
-                {
-                    arg.Visit(context, Keyword.VisitRuler, writer);
-                }
+                arg.Visit(context, Keyword.VisitRuler, writer);
             }
         }
 

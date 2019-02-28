@@ -36,7 +36,6 @@ namespace CompileSupport.Syntax.PScript
     {
         #region ISyntaxToken
         public String Source => _source;
-        public abstract bool Visitable { get; }
         /// <summary>
         /// 通用访问逻辑
         /// </summary>
@@ -45,19 +44,16 @@ namespace CompileSupport.Syntax.PScript
         /// <param name="writer"></param>
         public virtual void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
-            if (Visitable)
+            visitRuler.Previsit(context, writer);
+            if (visitRuler.Override)
             {
-                visitRuler.Previsit(context, writer);
-                if (visitRuler.Override)
-                {
-                    visitRuler.Visit(context, writer);
-                }
-                else
-                {
-                    Visit(context, writer);
-                }
-                visitRuler.Postvisit(context, writer);
+                visitRuler.Visit(context, writer);
             }
+            else
+            {
+                Visit(context, writer);
+            }
+            visitRuler.Postvisit(context, writer);
         }
         #endregion
 

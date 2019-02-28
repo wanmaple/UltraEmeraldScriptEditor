@@ -76,7 +76,8 @@ namespace EditorSupport.Editing
 
             _caret = new Caret(this);
             _caret.PositionChanged += OnCaretPositionChanged;
-            _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            //_selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            _selection = new FreeSelection(this);
             _selection.OffsetChanged += OnSelectionOffsetChanged;
             _undoStack = new UndoStack();
             _inputHandlers = new InputHandlerGroup(this);

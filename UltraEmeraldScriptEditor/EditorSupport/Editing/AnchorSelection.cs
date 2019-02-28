@@ -13,15 +13,16 @@ namespace EditorSupport.Editing
     /// </summary>
     public sealed class AnchorSelection : Selection
     {
+        #region Constructor
         public AnchorSelection(EditView owner, TextAnchor startAnchor, TextAnchor endAnchor)
-            : base(owner)
+    : base(owner)
         {
-            // 锚点的偏移完全由自身控制，所以设置为AnchorMovementType.Ignore
             _startAnchor = startAnchor ?? throw new ArgumentNullException("startAnchor");
-            _startAnchor.MovementType = AnchorMovementType.Ignore;
+            _startAnchor.MovementType = AnchorMovementType.AfterInsertion;
             _endAnchor = endAnchor ?? throw new ArgumentNullException("endAnchor");
-            _endAnchor.MovementType = AnchorMovementType.Ignore;
-        }
+            _endAnchor.MovementType = AnchorMovementType.AfterInsertion;
+        } 
+        #endregion
 
         #region Overrides
         public override int StartOffset
@@ -41,7 +42,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_startAnchor, -diff);
                     }
-                    TriggerOffsetChanged();
+                    RaiseOffsetChangedEvent();
                 }
             }
         }
@@ -74,7 +75,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_endAnchor, -diff);
                     }
-                    TriggerOffsetChanged();
+                    RaiseOffsetChangedEvent();
                 }
             }
         }

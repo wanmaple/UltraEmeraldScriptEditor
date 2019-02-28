@@ -11,11 +11,16 @@ namespace EditorSupport.Undo
         {
             _operations = new List<IUndoableOperation>();
             _undoProcess = 0;
+            _undoing = false;
             _group = null;
         }
 
         public virtual void AddOperation(IUndoableOperation operation)
         {
+            if (_undoing)
+            {
+                return;
+            }
             if (_group != null)
             {
                 _group.Operations.Add(operation);
@@ -34,8 +39,10 @@ namespace EditorSupport.Undo
             {
                 return false;
             }
+            _undoing = true;
             _operations[_undoProcess - 1].Undo();
             --_undoProcess;
+            _undoing = false;
             return true;
         }
 
@@ -45,8 +52,10 @@ namespace EditorSupport.Undo
             {
                 return false;
             }
+            _undoing = true;
             _operations[_undoProcess].Redo();
             ++_undoProcess;
+            _undoing = false;
             return true;
         }
 
@@ -87,7 +96,8 @@ namespace EditorSupport.Undo
         }
 
         protected List<IUndoableOperation> _operations;
-        private UndoOperationGroup _group;
+        protected UndoOperationGroup _group;
+        protected Boolean _undoing;
         protected Int32 _undoProcess;
     }
 }

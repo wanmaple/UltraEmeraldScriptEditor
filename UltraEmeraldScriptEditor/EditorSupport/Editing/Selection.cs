@@ -102,7 +102,7 @@ namespace EditorSupport.Editing
                 }
             } 
             _noTrigging = false;
-            TriggerOffsetChanged();
+            RaiseOffsetChangedEvent();
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace EditorSupport.Editing
             _noTrigging = true;
             EndOffset = StartOffset = offset;
             _noTrigging = false;
-            TriggerOffsetChanged();
+            RaiseOffsetChangedEvent();
         }
 
         public void Set(Int32 startOffset, Int32 endOffset)
@@ -135,7 +135,7 @@ namespace EditorSupport.Editing
             StartOffset = startOffset;
             EndOffset = endOffset;
             _noTrigging = false;
-            TriggerOffsetChanged();
+            RaiseOffsetChangedEvent();
         }
 
         public void Reset()
@@ -155,7 +155,7 @@ namespace EditorSupport.Editing
             }
         }
 
-        protected void TriggerOffsetChanged()
+        protected void RaiseOffsetChangedEvent()
         {
             if (!_noTrigging && OffsetChanged != null)
             {

@@ -14,7 +14,6 @@ namespace CompileSupport.Syntax.PScript
     {
         public IEnumerable<PScriptDataType> ParamTypes => _paramTypes;
         public IVisitRuler VisitRuler => _visitRuler;
-        public override bool Visitable => false;
 
         public PScriptKeyword(String source, PScriptDataType[] paramTypes)
             : base(source)

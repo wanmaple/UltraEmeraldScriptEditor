@@ -29,8 +29,6 @@ namespace CompileSupport.Syntax.PScript
             _tokenType = PScriptTokenType.Macro;
         }
 
-        public override bool Visitable => throw new NotImplementedException();
-
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             if (context.Current.Arguments.Count != _parameters.Count)

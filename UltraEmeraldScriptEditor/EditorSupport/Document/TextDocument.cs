@@ -176,12 +176,12 @@ namespace EditorSupport.Document
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
-                //_anchorTree.RemoveText(offset, length);
+                _anchorTree.RemoveText(offset, length);
                 _lineMgr.Remove(offset, length, update4deletion);
             }
             if (content.Length > 0)
             {
-                //_anchorTree.InsertText(offset, content.Length);
+                _anchorTree.InsertText(offset, content.Length);
                 _lineMgr.Insert(offset, content, update4insertion);
             }
             var e = new DocumentUpdateEventArgs(updates);
@@ -190,10 +190,7 @@ namespace EditorSupport.Document
                 Changed(this, e);
             }
 
-            if (!_undoing)
-            {
-                _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
-            }
+            _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
             _isChanging = false;
 #if DEBUG
             _anchorTree.VerifySelf();
@@ -341,16 +338,12 @@ namespace EditorSupport.Document
         #region Undo / Redo
         public void Undo()
         {
-            _undoing = true;
             _undoStack.Undo();
-            _undoing = false;
         }
 
         public void Redo()
         {
-            _undoing = true;
             _undoStack.Redo();
-            _undoing = false;
         }
 
         public Boolean CanUndo()
@@ -363,7 +356,6 @@ namespace EditorSupport.Document
             return _undoStack.CanRedo();
         }
 
-        private Boolean _undoing = false;
         #endregion
 
         #region Locations <=> Offsets

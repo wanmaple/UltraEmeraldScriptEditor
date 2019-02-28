@@ -15,9 +15,5 @@ namespace CompileSupport.Syntax
         /// 源码
         /// </summary>
         String Source { get; }
-        /// <summary>
-        /// 是否参与访问过程
-        /// </summary>
-        Boolean Visitable { get; }
     }
 }

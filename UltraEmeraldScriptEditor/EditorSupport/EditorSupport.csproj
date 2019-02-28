@@ -79,6 +79,7 @@
     <Compile Include="Editing\EditingCommandHelper.cs" />
     <Compile Include="Editing\EditingOffsetUpdate.cs" />
     <Compile Include="Editing\EditView.cs" />
+    <Compile Include="Editing\FreeSelection.cs" />
     <Compile Include="Editing\IEditInfo.cs" />
     <Compile Include="Editing\IInputHandler.cs" />
     <Compile Include="Editing\InputCommandsHandler.cs" />

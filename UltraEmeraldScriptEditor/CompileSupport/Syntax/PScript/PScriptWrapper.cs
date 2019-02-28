@@ -16,18 +16,13 @@ namespace CompileSupport.Syntax.PScript
         public PScriptWrapper(String source, T innerToken)
             : base(source)
         {
-            _innerToken = innerToken?? throw new ArgumentNullException("innerToken");
+            _innerToken = innerToken ?? throw new ArgumentNullException("innerToken");
             _tokenType = _innerToken.TokenType;
         }
 
-        public override bool Visitable => _innerToken.Visitable;
-
         public override void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
-            if (_innerToken.Visitable)
-            {
-                _innerToken.Visit(context, visitRuler, writer);
-            }
+            _innerToken.Visit(context, visitRuler, writer);
         }
 
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)

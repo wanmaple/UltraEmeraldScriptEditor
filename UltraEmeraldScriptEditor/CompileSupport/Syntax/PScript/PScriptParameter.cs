@@ -23,8 +23,6 @@ namespace CompileSupport.Syntax.PScript
             _tokenType = PScriptTokenType.Parameter;
         }
 
-        public override bool Visitable => true;
-
         public override void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
             if (_index < 0 || _index >= context.Current.Arguments.Count)
@@ -32,10 +30,7 @@ namespace CompileSupport.Syntax.PScript
                 throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckParameterIndexInvalid, _index), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
             }
             var argument = context.Current.Arguments[_index];
-            if (argument.Visitable)
-            {
-                argument.Visit(context, visitRuler, writer);
-            }
+            argument.Visit(context, visitRuler, writer);
         }
 
         protected override void Visit(ISyntaxContext context, BinaryWriter writer)
