@@ -42,6 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler\ICompiler.cs" />
+    <Compile Include="Matcher\ConnectDocumentMatcher.cs" />
+    <Compile Include="Matcher\IDocumentMatcher.cs" />
     <Compile Include="Syntax\EmptyVisitRuler.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxCheckException.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxErrorMessages.cs" />
