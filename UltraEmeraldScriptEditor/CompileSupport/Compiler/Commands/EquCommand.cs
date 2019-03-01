@@ -36,9 +36,7 @@ namespace CompileSupport.Compiler.Commands
 				Token t = base.Dequeue();
 				if (t.Column > 1 && _Pool.TryGetValue(t.Text, out Token value))
 				{
-					t.Text = value.Text;
-					t.Type = value.Type;
-					t.intValue = value.intValue;
+					return value;
 				}
 				return t;
 			}

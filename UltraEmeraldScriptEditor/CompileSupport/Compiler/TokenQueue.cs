@@ -8,7 +8,7 @@ namespace CompileSupport.Compiler
 
 	public class TokenQueue : Queue<Token>
 	{
-		public TokenQueue(int capacity):base(capacity){}
+		public TokenQueue(int capacity) : base(capacity){}
 		
 		public TokenQueue() {}
 		
@@ -19,7 +19,7 @@ namespace CompileSupport.Compiler
 				tmp = new List<Token>();
 			}
 			tmp.Clear();
-			while (!Empty() && (Peek()).Type != TokenType.SEPARATOR)
+			while (!Empty() && Peek().Type != TokenType.SEPARATOR)
 			{
 				tmp.Add(Dequeue());
 			}

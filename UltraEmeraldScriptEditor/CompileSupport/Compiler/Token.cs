@@ -16,9 +16,10 @@ namespace CompileSupport.Compiler
 		WORD,
 		OPERATOR,
 		PARAMETER,
-		PARAMTER_INDEX,
+		PARAMETER_INDEX,
 		COMMAND,
-		MACRO_COMMAND
+		MACRO_COMMAND,
+		LABEL
 	}
 
 	public class Token
@@ -28,13 +29,13 @@ namespace CompileSupport.Compiler
 		public int Column { get; }
 		public TokenType Type { get; set; }
 
-		public string Text { get; set; }
+		public string Text { get; }
 
 		public int IntValue
 		{
 			get
 			{
-				if (Type == TokenType.NUMBER) 
+				if (Type == TokenType.NUMBER || Type == TokenType.PARAMETER_INDEX) 
 					return intValue;
 				return Convert.ToInt32(Line);
 			}
@@ -139,14 +140,11 @@ namespace CompileSupport.Compiler
 				return false;
 			}
 
-			// TODO: write your implementation of Equals() here
 			return Text.Equals(((Token)obj).Text);
 		}
 
-		// override object.GetHashCode
 		public override int GetHashCode()
 		{
-			// TODO: write your implementation of GetHashCode() here
 			return Text.GetHashCode();
 		}
 	}

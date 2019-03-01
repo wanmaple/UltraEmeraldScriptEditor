@@ -49,7 +49,7 @@ namespace CompileSupport.Compiler.Commands
 					if (param.Type == TokenType.PARAMETER)
 					{
 						param.IntValue = Find(parameters, param);
-						param.Type = TokenType.PARAMTER_INDEX;
+						param.Type = TokenType.PARAMETER_INDEX;
 					}
 					
 				}
@@ -74,8 +74,8 @@ namespace CompileSupport.Compiler.Commands
 			{
 				for (int i = 0; i < cmd.parameters.Length; i++)
 				{
-					if (cmd.parameters[i].Type == TokenType.PARAMTER_INDEX)
-						cmd.parameters[i].Text = parameters[cmd.parameters[i].intValue].Text;
+					if (cmd.parameters[i].Type == TokenType.PARAMETER_INDEX)
+						cmd.parameters[i].intValue = parameters[cmd.parameters[i].intValue].intValue;
 				}
 				cmd.ToTempData(writer);
 			}
@@ -85,7 +85,7 @@ namespace CompileSupport.Compiler.Commands
 
 
 	public class EndmCommand : Command
-	{		
+	{
 		public override ExcutableCommand Create(TokenQueue seq, Token first)
 		{
 			List<ExcutableCommand> result = CompilerContext.Parser.Results;

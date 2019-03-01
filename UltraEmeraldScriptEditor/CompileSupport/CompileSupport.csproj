@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiler\Commands\OrgCommand.cs" />
     <Compile Include="Compiler\TempData.cs" />
     <Compile Include="Compiler\TokenQueue.cs" />
     <Compile Include="Compiler\Commands\EquCommand.cs" />
