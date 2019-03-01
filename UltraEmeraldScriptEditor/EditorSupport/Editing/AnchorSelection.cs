@@ -8,16 +8,21 @@ using EditorSupport.Rendering;
 
 namespace EditorSupport.Editing
 {
+    /// <summary>
+    /// 由前后锚点组成的选中框。
+    /// </summary>
     public sealed class AnchorSelection : Selection
     {
+        #region Constructor
         public AnchorSelection(EditView owner, TextAnchor startAnchor, TextAnchor endAnchor)
-            : base(owner)
+    : base(owner)
         {
             _startAnchor = startAnchor ?? throw new ArgumentNullException("startAnchor");
-            _startAnchor.MovementType = AnchorMovementType.Default;
+            _startAnchor.MovementType = AnchorMovementType.AfterInsertion;
             _endAnchor = endAnchor ?? throw new ArgumentNullException("endAnchor");
-            _endAnchor.MovementType = AnchorMovementType.Default;
-        }
+            _endAnchor.MovementType = AnchorMovementType.AfterInsertion;
+        } 
+        #endregion
 
         #region Overrides
         public override int StartOffset
@@ -37,7 +42,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_startAnchor, -diff);
                     }
-                    TriggerOffsetChanged();
+                    RaiseOffsetChangedEvent();
                 }
             }
         }
@@ -70,7 +75,7 @@ namespace EditorSupport.Editing
                     {
                         _owner.Document.MoveAnchorLeft(_endAnchor, -diff);
                     }
-                    TriggerOffsetChanged();
+                    RaiseOffsetChangedEvent();
                 }
             }
         }

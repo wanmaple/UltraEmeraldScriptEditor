@@ -31,12 +31,11 @@ namespace CompileSupport.Syntax.PScript
                     throw new FormatException(String.Format(SyntaxErrorMessages.InvalidCharacterValue, ch));
                 }
             }
+            _tokenType = PScriptTokenType.Data;
         }
 
         #region Overrides
-        public override bool Compileable => true;
-
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             foreach (Char ch in _data)
             {

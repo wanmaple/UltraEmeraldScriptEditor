@@ -1,5 +1,6 @@
 ﻿using EditorSupport.Document;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +9,11 @@ using System.Threading.Tasks;
 namespace CompileSupport.Syntax
 {
     /// <summary>
-    /// 面向过程作用域。
+    /// 面向过程上下文。
     /// </summary>
+    /// <remarks>
+    /// 一般而言，语法检查器是在工作线程构建上下文的，而智能提示需要读取上下文，所以需要保证线程安全。
+    /// </remarks>
     public interface ISyntaxContext
     {
         /// <summary>
@@ -27,28 +31,29 @@ namespace CompileSupport.Syntax
         /// <summary>
         /// 常量
         /// </summary>
-        Dictionary<String, ISyntaxToken> Constants { get; }
+        IDictionary<String, ISyntaxToken> Constants { get; }
         /// <summary>
         /// 宏
         /// </summary>
-        Dictionary<String, ISyntaxToken> Macros { get; }
+        IDictionary<String, ISyntaxToken> Macros { get; }
         /// <summary>
         /// 函数
         /// </summary>
-        Dictionary<String, ISyntaxToken> Functions { get; }
+        IDictionary<String, ISyntaxToken> Functions { get; }
         /// <summary>
-        /// 实参
+        /// 所有表达式
         /// </summary>
-        List<ISyntaxToken> Arguments { get; }
+        IList<IStatement<ISyntaxToken>> Statements { get; }
+
         /// <summary>
         /// 获取当前作用域
         /// </summary>
-        ISyntaxContext Current { get; }
+        IVisitScope Current { get; }
 
         /// <summary>
         /// 入栈新的作用域
         /// </summary>
-        void Push();
+        void Push(IVisitScope scope);
         /// <summary>
         /// 出栈当前作用域
         /// </summary>

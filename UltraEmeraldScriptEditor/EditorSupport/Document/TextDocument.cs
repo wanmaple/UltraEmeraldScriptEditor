@@ -1,4 +1,5 @@
 ﻿using EditorSupport.Undo;
+using EditorSupport.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -113,8 +114,6 @@ namespace EditorSupport.Document
         #endregion
 
         #region Text modification
-        public event EventHandler<EventArgs> UpdateStarted;
-        public event EventHandler<DocumentUpdateEventArgs> UpdateFinished;
         public event EventHandler<EventArgs> Changing;
         public event EventHandler<DocumentUpdateEventArgs> Changed;
 
@@ -151,6 +150,8 @@ namespace EditorSupport.Document
             {
                 return;
             }
+
+            _isChanging = true;
             VerifyOffsetRange(offset);
             VerifyLengthRange(offset, length);
 
@@ -159,33 +160,38 @@ namespace EditorSupport.Document
                 Changing(this, EventArgs.Empty);
             }
 
-            var docUpdate = new DocumentUpdate();
-            docUpdate.Offset = offset;
-            docUpdate.InsertionLength = content.Length;
-            docUpdate.RemovalLength = length;
-            docUpdate.InsertionText = content;
-            docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
+            var updates = new List<DocumentUpdate>();
+            DocumentUpdate update4insertion = null, update4deletion = null;
+            if (length > 0)
+            {
+                update4deletion = GenerateUpdate(offset, length, String.Empty);
+                updates.Add(update4deletion);
+            }
+            if (content.Length > 0)
+            {
+                update4insertion = GenerateUpdate(offset, 0, content);
+                updates.Add(update4insertion);
+            }
 
             _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
-                //_anchorTree.RemoveText(offset, length);
-                _lineMgr.Remove(offset, length, docUpdate);
+                _anchorTree.RemoveText(offset, length);
+                _lineMgr.Remove(offset, length, update4deletion);
             }
             if (content.Length > 0)
             {
-                //_anchorTree.InsertText(offset, content.Length);
-                _lineMgr.Insert(offset, content, docUpdate);
+                _anchorTree.InsertText(offset, content.Length);
+                _lineMgr.Insert(offset, content, update4insertion);
             }
+            var e = new DocumentUpdateEventArgs(updates);
             if (Changed != null)
             {
-                Changed(this, new DocumentUpdateEventArgs(docUpdate));
+                Changed(this, e);
             }
 
-            if (!_undoing)
-            {
-                _undoStack.AddOperation(new DocumentEditingOperation(this, docUpdate));
-            }
+            _undoStack.AddOperation(new DocumentEditingOperation(this, updates));
+            _isChanging = false;
 #if DEBUG
             _anchorTree.VerifySelf();
             _lineTree.VerifySelf();
@@ -199,6 +205,83 @@ namespace EditorSupport.Document
             }
             Replace(offset, length, content.Text);
         }
+
+        private DocumentUpdate GenerateUpdate(Int32 offset, Int32 length, String content)
+        {
+            var docUpdate = new DocumentUpdate();
+            docUpdate.Offset = offset;
+            docUpdate.InsertionLength = content.Length;
+            docUpdate.RemovalLength = length;
+            docUpdate.InsertionText = content;
+            docUpdate.RemovalText = length > 0 ? GetTextAt(offset, length) : String.Empty;
+
+            return docUpdate;
+        }
+
+        private Boolean _isChanging = false;
+        #endregion
+
+        #region Grouped updating
+        public event EventHandler<EventArgs> UpdateStarted;
+        public event EventHandler<EventArgs> UpdateFinished;
+
+        /// <summary>
+        /// 通过<see cref="CallbackOnDispose"/>实现自动更新的逻辑
+        /// </summary>
+        /// <returns></returns>
+        public CallbackOnDispose AutoUpdate()
+        {
+            BeginUpdate();
+            return new CallbackOnDispose(EndUpdate);
+        }
+
+        /// <summary>
+        /// 开始更新，引用计数为1时才触发真正的开始逻辑
+        /// </summary>
+        public void BeginUpdate()
+        {
+            VerifyAccess();
+            if (_isChanging)
+            {
+                throw new InvalidOperationException("Can't change document within another document change.");
+            }
+            ++_updateCount;
+            if (_updateCount == 1)
+            {
+                _undoStack.StartGrouping();
+                if (UpdateStarted != null)
+                {
+                    UpdateStarted(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 结束更新，引用计数为0时触发真正的结束逻辑
+        /// </summary>
+        public void EndUpdate()
+        {
+            VerifyAccess();
+            if (_isChanging)
+            {
+                throw new InvalidOperationException("Can't change document within another document change.");
+            }
+            if (_updateCount <= 0)
+            {
+                throw new InvalidOperationException("No update is active.");
+            }
+            --_updateCount;
+            if (_updateCount == 0)
+            {
+                _undoStack.EndGrouping();
+                if (UpdateFinished != null)
+                {
+                    UpdateFinished(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        private Int32 _updateCount = 0;
         #endregion
 
         #region Line getters
@@ -253,14 +336,14 @@ namespace EditorSupport.Document
         #endregion
 
         #region Undo / Redo
-        public Boolean Undo()
+        public void Undo()
         {
-            return _undoStack.Undo();
+            _undoStack.Undo();
         }
 
-        public Boolean Redo()
+        public void Redo()
         {
-            return _undoStack.Redo();
+            _undoStack.Redo();
         }
 
         public Boolean CanUndo()
@@ -273,7 +356,6 @@ namespace EditorSupport.Document
             return _undoStack.CanRedo();
         }
 
-        internal Boolean _undoing = false;
         #endregion
 
         #region Locations <=> Offsets

@@ -102,7 +102,7 @@ namespace EditorSupport.Editing
                 }
             } 
             _noTrigging = false;
-            TriggerOffsetChanged();
+            RaiseOffsetChangedEvent();
         }
 
         /// <summary>
@@ -118,7 +118,24 @@ namespace EditorSupport.Editing
             _noTrigging = true;
             EndOffset = StartOffset = offset;
             _noTrigging = false;
-            TriggerOffsetChanged();
+            RaiseOffsetChangedEvent();
+        }
+
+        public void Set(Int32 startOffset, Int32 endOffset)
+        {
+            if (startOffset < 0 || startOffset > _owner.Document.Length)
+            {
+                throw new ArgumentException(String.Format("{0} <= startOffset <= {1}", startOffset, _owner.Document.Length));
+            }
+            if (endOffset < 0 || endOffset > _owner.Document.Length)
+            {
+                throw new ArgumentException(String.Format("{0} <= endOffset <= {1}", endOffset, _owner.Document.Length));
+            }
+            _noTrigging = true;
+            StartOffset = startOffset;
+            EndOffset = endOffset;
+            _noTrigging = false;
+            RaiseOffsetChangedEvent();
         }
 
         public void Reset()
@@ -138,7 +155,7 @@ namespace EditorSupport.Editing
             }
         }
 
-        protected void TriggerOffsetChanged()
+        protected void RaiseOffsetChangedEvent()
         {
             if (!_noTrigging && OffsetChanged != null)
             {

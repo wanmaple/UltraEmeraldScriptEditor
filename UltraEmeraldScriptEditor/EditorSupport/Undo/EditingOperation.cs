@@ -21,15 +21,13 @@ namespace EditorSupport.Undo
         public void Redo()
         {
             _view.Caret.DocumentOffset = _update.CaretOffsetLater;
-            _view.Caret.DocumentOffset = _update.SelectionStartLater;
-            _view.Caret.DocumentOffset = _update.SelectionEndLater;
+            _view.Selection.Set(_update.SelectionStartLater, _update.SelectionEndLater);
         }
 
         public void Undo()
         {
             _view.Caret.DocumentOffset = _update.CaretOffsetEarlier;
-            _view.Caret.DocumentOffset = _update.SelectionStartEarlier;
-            _view.Caret.DocumentOffset = _update.SelectionEndEarlier;
+            _view.Selection.Set(_update.SelectionStartEarlier, _update.SelectionEndEarlier);
         }
         #endregion
 

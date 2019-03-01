@@ -76,7 +76,8 @@ namespace EditorSupport.Editing
 
             _caret = new Caret(this);
             _caret.PositionChanged += OnCaretPositionChanged;
-            _selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            //_selection = new AnchorSelection(this, Document.CreateAnchor(0), Document.CreateAnchor(0));
+            _selection = new FreeSelection(this);
             _selection.OffsetChanged += OnSelectionOffsetChanged;
             _undoStack = new UndoStack();
             _inputHandlers = new InputHandlerGroup(this);
@@ -163,10 +164,11 @@ namespace EditorSupport.Editing
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
             base.OnTextInput(e);
-            BeginUpdating();
-            InsertText(e.Text);
-            EndUpdating();
-            Redraw();
+            using (Document.AutoUpdate())
+            {
+                InsertText(e.Text);
+                Redraw();
+            }
         }
         #endregion
 
@@ -614,17 +616,13 @@ namespace EditorSupport.Editing
         #region Undo / Redo
         public void Undo()
         {
-            Document._undoing = true;
             Document.Undo();
-            Document._undoing = false;
             _undoStack.Undo();
         }
 
         public void Redo()
         {
-            Document._undoing = true;
             Document.Redo();
-            Document._undoing = false;
             _undoStack.Redo();
         }
 
@@ -638,32 +636,6 @@ namespace EditorSupport.Editing
             return _undoStack.CanRedo();
         }
 
-        internal void BeginUpdating()
-        {
-            if (_updating)
-            {
-                return;
-            }
-            _updating = true;
-            _update.CaretOffsetEarlier = _caret.DocumentOffset;
-            _update.SelectionStartEarlier = _selection.StartOffset;
-            _update.SelectionEndEarlier = _selection.EndOffset;
-        }
-
-        internal void EndUpdating()
-        {
-            if (!_updating)
-            {
-                return;
-            }
-            _updating = false;
-            _update.CaretOffsetLater = _caret.DocumentOffset;
-            _update.SelectionStartLater = _selection.StartOffset;
-            _update.SelectionEndLater = _selection.EndOffset;
-            _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
-        }
-
-        private Boolean _updating = false;
         private EditingOffsetUpdate _update = new EditingOffsetUpdate();
         #endregion
 
@@ -702,7 +674,7 @@ namespace EditorSupport.Editing
             }
             else if (managerType == typeof(TextDocumentWeakEventManager.UpdateFinished))
             {
-                OnDocumentUpdateFinished(sender as TextDocument, e as DocumentUpdateEventArgs);
+                OnDocumentUpdateFinished(sender as TextDocument, e);
                 return true;
             }
             return false;
@@ -722,12 +694,17 @@ namespace EditorSupport.Editing
 
         private void OnDocumentUpdateStarted(TextDocument document, EventArgs e)
         {
-
+            _update.CaretOffsetEarlier = _caret.DocumentOffset;
+            _update.SelectionStartEarlier = _selection.StartOffset;
+            _update.SelectionEndEarlier = _selection.EndOffset;
         }
 
-        private void OnDocumentUpdateFinished(TextDocument document, DocumentUpdateEventArgs e)
+        private void OnDocumentUpdateFinished(TextDocument document, EventArgs e)
         {
-
+            _update.CaretOffsetLater = _caret.DocumentOffset;
+            _update.SelectionStartLater = _selection.StartOffset;
+            _update.SelectionEndLater = _selection.EndOffset;
+            _undoStack.AddOperation(new EditingOperation(this, _update.Clone()));
         }
         #endregion
 
@@ -743,6 +720,11 @@ namespace EditorSupport.Editing
             {
                 DocumentChanging(this, EventArgs.Empty);
             }
+            // 优先设置content的事件
+            if (CanContentEdit && Content is IEditInfo)
+            {
+                (Content as IEditInfo).ChangeDocument(newDoc);
+            }
             if (oldDoc != null)
             {
                 TextDocumentWeakEventManager.Changing.RemoveListener(oldDoc, this);
@@ -756,10 +738,6 @@ namespace EditorSupport.Editing
                 TextDocumentWeakEventManager.Changed.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateStarted.AddListener(newDoc, this);
                 TextDocumentWeakEventManager.UpdateFinished.AddListener(newDoc, this);
-            }
-            if (CanContentEdit && Content is IEditInfo)
-            {
-                (Content as IEditInfo).ChangeDocument(newDoc);
             }
             _caret.DocumentOffset = 0;
             _selection.Reset();

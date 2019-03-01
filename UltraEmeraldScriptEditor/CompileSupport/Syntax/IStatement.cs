@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EditorSupport.Document;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -12,7 +13,7 @@ namespace CompileSupport.Syntax
     /// 表达式。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IStatement<T> : ICompileable
+    public interface IStatement<T> : IVisitable
         where T : ISyntaxToken
     {
         /// <summary>
@@ -23,5 +24,9 @@ namespace CompileSupport.Syntax
         /// 成员
         /// </summary>
         ReadOnlyCollection<T> Tokens { get; }
+        /// <summary>
+        /// 所属Document中的片段
+        /// </summary>
+        ISegment Segment { get; }
     }
 }

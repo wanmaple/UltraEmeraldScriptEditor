@@ -7,10 +7,10 @@ using System.Text;
 namespace CompileSupport.Syntax
 {
     /// <summary>
-    /// 指一个可编译对象。
+    /// 指一个可访问对象。
     /// </summary>
-    public interface ICompileable
+    public interface IVisitable
     {
-        void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer);
+        void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer);
     }
 }

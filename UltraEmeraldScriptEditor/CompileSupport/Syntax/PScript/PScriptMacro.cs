@@ -26,19 +26,18 @@ namespace CompileSupport.Syntax.PScript
             _readonlyStatements = new ReadOnlyCollection<IStatement<PScriptToken>>(_statements);
             _parameters = new List<PScriptParameter>();
             _readonlyParameters = new ReadOnlyCollection<PScriptParameter>(_parameters);
+            _tokenType = PScriptTokenType.Macro;
         }
 
-        public override bool Compileable => throw new NotImplementedException();
-
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
-            if (context.Arguments.Count != _parameters.Count)
+            if (context.Current.Arguments.Count != _parameters.Count)
             {
-                throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckArgumentCountNotMatch, context.Arguments.Count, _parameters.Count), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
+                throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckArgumentCountNotMatch, context.Current.Arguments.Count, _parameters.Count), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
             }
             foreach (var statement in _statements)
             {
-                statement.Compile(context, new EmptyCompileRuler(), writer);
+                statement.Visit(context, new EmptyVisitRuler(), writer);
             }
         }
         

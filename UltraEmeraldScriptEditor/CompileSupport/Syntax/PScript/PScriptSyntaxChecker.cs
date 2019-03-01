@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using CompileSupport.Syntax.Exceptions;
@@ -9,15 +10,28 @@ namespace CompileSupport.Syntax.PScript
 {
     public sealed class PScriptSyntaxChecker : ISyntaxChecker
     {
-        public ISyntaxContext Context => throw new NotImplementedException();
+        public PScriptSyntaxChecker(TextDocument document)
+        {
+            _doc = document ?? throw new ArgumentNullException("document");
+            _context = new PScriptSyntaxContext();
+            _exception = null;
+        }
 
-        public TextDocument Document => throw new NotImplementedException();
+        #region ISyntaxChecker
+        public ISyntaxContext Context => _context;
 
-        public SyntaxCheckException Exception => throw new NotImplementedException();
+        public TextDocument Document => _doc;
+
+        public SyntaxCheckException Exception => _exception;
 
         public void Check()
         {
-            throw new NotImplementedException();
+            ITextSource snapshot = _doc.CreateSnapshot();
         }
+        #endregion
+
+        private ISyntaxContext _context;
+        private TextDocument _doc;
+        private SyntaxCheckException _exception;
     }
 }

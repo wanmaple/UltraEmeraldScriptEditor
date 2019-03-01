@@ -114,6 +114,7 @@ namespace UltraEmeraldScriptEditor
             completionWindow.Completions.Add(new StringCompletion(".word", ".word description"));
             completionWindow.Completions.Add(new StringCompletion(".hword", ".hword description"));
             completionWindow.Completions.Add(new StringCompletion(".byte", ".byte description"));
+            completionWindow.Completions.Add(new StringCompletion(".string", ".string description"));
             completionWindow.Completions.Add(new StringCompletion(".include", ".include description"));
             completionWindow.Completions.Add(new StringCompletion(".macro", ".macro description"));
             completionWindow.Completions.Add(new StringCompletion(".freespace", ".freespace description"));

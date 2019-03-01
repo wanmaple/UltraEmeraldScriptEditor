@@ -16,20 +16,16 @@ namespace CompileSupport.Syntax.PScript
         public PScriptWrapper(String source, T innerToken)
             : base(source)
         {
-            _innerToken = innerToken?? throw new ArgumentNullException("innerToken");
+            _innerToken = innerToken ?? throw new ArgumentNullException("innerToken");
+            _tokenType = _innerToken.TokenType;
         }
 
-        public override bool Compileable => _innerToken.Compileable;
-
-        public override void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        public override void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
-            if (_innerToken.Compileable)
-            {
-                _innerToken.Compile(context, compileRuler, writer);
-            }
+            _innerToken.Visit(context, visitRuler, writer);
         }
 
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             // 自身没有编译逻辑
         }

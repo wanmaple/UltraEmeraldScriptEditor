@@ -7,36 +7,36 @@ using System.Text;
 namespace CompileSupport.Syntax
 {
     /// <summary>
-    /// 编译规则。
+    /// 访问规则。
     /// </summary>
-    public interface ICompileRuler
+    public interface IVisitRuler
     {
         /// <summary>
-        /// 编译中的参数索引
+        /// 访问中的参数索引
         /// </summary>
         Int32 ParamIndex { get; }
         /// <summary>
-        /// 是否覆盖原有的编译方式
+        /// 是否覆盖原有的访问方式
         /// </summary>
-        Boolean OverrideCompile { get; }
+        Boolean Override { get; }
 
         /// <summary>
-        /// 编译前
+        /// 访问前
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Precompile(ISyntaxContext context, BinaryWriter writer);
+        void Previsit(ISyntaxContext context, BinaryWriter writer);
         /// <summary>
-        /// 覆盖的编译方式，仅当OverrideCompile为true时生效
+        /// 覆盖的访问方式，仅当Override为true时生效
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Compile(ISyntaxContext context, BinaryWriter writer);
+        void Visit(ISyntaxContext context, BinaryWriter writer);
         /// <summary>
-        /// 编译后
+        /// 访问后
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        void Postcompile(ISyntaxContext context, BinaryWriter writer);
+        void Postvisit(ISyntaxContext context, BinaryWriter writer);
     }
 }

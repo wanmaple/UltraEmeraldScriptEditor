@@ -36,37 +36,33 @@ namespace CompileSupport.Syntax.PScript
     {
         #region ISyntaxToken
         public String Source => _source;
-        public abstract bool Compileable { get; }
         /// <summary>
-        /// 通用编译逻辑，不使用自身编译的时候需要重写这个方法
+        /// 通用访问逻辑
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="compileRuler"></param>
+        /// <param name="visitRuler"></param>
         /// <param name="writer"></param>
-        public virtual void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        public virtual void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
-            if (Compileable)
+            visitRuler.Previsit(context, writer);
+            if (visitRuler.Override)
             {
-                compileRuler.Precompile(context, writer);
-                if (compileRuler.OverrideCompile)
-                {
-                    compileRuler.Compile(context, writer);
-                }
-                else
-                {
-                    Compile(context, writer);
-                }
-                compileRuler.Postcompile(context, writer);
+                visitRuler.Visit(context, writer);
             }
+            else
+            {
+                Visit(context, writer);
+            }
+            visitRuler.Postvisit(context, writer);
         }
         #endregion
 
         /// <summary>
-        /// 自身编译逻辑
+        /// 自身访问逻辑
         /// </summary>
         /// <param name="context"></param>
         /// <param name="writer"></param>
-        protected abstract void Compile(ISyntaxContext context, BinaryWriter writer);
+        protected abstract void Visit(ISyntaxContext context, BinaryWriter writer);
 
         public PScriptTokenType TokenType => _tokenType;
 

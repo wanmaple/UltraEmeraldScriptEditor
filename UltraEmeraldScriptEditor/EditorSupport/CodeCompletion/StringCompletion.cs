@@ -52,15 +52,13 @@ namespace EditorSupport.CodeCompletion
         public void PerformCompletion(EditView editview, int startOffset, int endOffset)
         {
             // 合并操作
-            editview.BeginUpdating();
-
-            editview.Caret.DocumentOffset = startOffset;
-            editview.Selection.StartOffset = startOffset;
-            editview.Selection.EndOffset = endOffset;
-            editview.InsertText(Text);
-            editview.Redraw();
-
-            editview.EndUpdating();
+            using (editview.Document.AutoUpdate())
+            {
+                editview.Caret.DocumentOffset = startOffset;
+                editview.Selection.Set(startOffset, endOffset);
+                editview.InsertText(Text);
+                editview.Redraw();
+            }
         }
         #endregion
 

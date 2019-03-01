@@ -20,24 +20,20 @@ namespace CompileSupport.Syntax.PScript
         {
             _name = name ?? throw new ArgumentNullException("name");
             _index = index;
+            _tokenType = PScriptTokenType.Parameter;
         }
 
-        public override bool Compileable => true;
-
-        public override void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+        public override void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
-            if (_index < 0 || _index >= context.Arguments.Count)
+            if (_index < 0 || _index >= context.Current.Arguments.Count)
             {
                 throw new SyntaxCheckException(String.Format(SyntaxErrorMessages.CheckParameterIndexInvalid, _index), SyntaxErrorType.SYNTAX_ERROR_ARGUMENTS, context.Document, context.CheckingOffset, context.CheckingLength);
             }
-            var argument = context.Arguments[_index];
-            if (argument.Compileable)
-            {
-                argument.Compile(context, compileRuler, writer);
-            }
+            var argument = context.Current.Arguments[_index];
+            argument.Visit(context, visitRuler, writer);
         }
 
-        protected override void Compile(ISyntaxContext context, BinaryWriter writer)
+        protected override void Visit(ISyntaxContext context, BinaryWriter writer)
         {
             // 自身没有编译逻辑，只是替换参数编译而已。
         }

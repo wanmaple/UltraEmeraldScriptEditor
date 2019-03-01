@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using EditorSupport.Document;
 
 namespace CompileSupport.Syntax.PScript
 {
@@ -16,6 +17,7 @@ namespace CompileSupport.Syntax.PScript
 
         public PScriptKeyword Keyword => _tokens[0] as PScriptKeyword;
         public List<PScriptToken> Arguments => _arguments;
+        public ISegment Segment => throw new NotImplementedException();
 
         public PScriptStatement(ISyntaxContext context, PScriptKeyword keyword, params PScriptToken[] arguments)
         {
@@ -25,15 +27,12 @@ namespace CompileSupport.Syntax.PScript
             _tokens.AddRange(arguments);
             _arguments = new List<PScriptToken>(arguments);
         }
-        
-        public void Compile(ISyntaxContext context, ICompileRuler compileRuler, BinaryWriter writer)
+
+        public void Visit(ISyntaxContext context, IVisitRuler visitRuler, BinaryWriter writer)
         {
             foreach (var arg in _arguments)
             {
-                if (arg.Compileable)
-                {
-                    arg.Compile(context, Keyword.CompileRuler, writer);
-                }
+                arg.Visit(context, Keyword.VisitRuler, writer);
             }
         }
 
