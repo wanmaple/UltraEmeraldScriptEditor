@@ -42,8 +42,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler\ICompiler.cs" />
-    <Compile Include="Matcher\ConnectDocumentMatcher.cs" />
-    <Compile Include="Matcher\IDocumentMatcher.cs" />
+    <Compile Include="Grammar\IContextFreeGrammar.cs" />
+    <Compile Include="Grammar\Lexer\ILexer.cs" />
+    <Compile Include="Grammar\Lexer\IToken.cs" />
+    <Compile Include="Grammar\Lexer\Token.cs" />
+    <Compile Include="Grammar\Parser\IParser.cs" />
     <Compile Include="Syntax\EmptyVisitRuler.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxCheckException.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxErrorMessages.cs" />
