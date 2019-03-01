@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -41,6 +43,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiler\Commands\OrgCommand.cs" />
+    <Compile Include="Compiler\TempData.cs" />
+    <Compile Include="Compiler\TokenQueue.cs" />
+    <Compile Include="Compiler\Commands\EquCommand.cs" />
+    <Compile Include="Compiler\Commands\MacroCommand.cs" />
+    <Compile Include="Compiler\Commands\NumberCommand.cs" />
+    <Compile Include="Compiler\Command.cs" />
+    <Compile Include="Compiler\CompilerContext.cs" />
+    <Compile Include="Compiler\Parser.cs" />
+    <Compile Include="Compiler\Token.cs" />
+    <Compile Include="Compiler\Tokenizer.cs" />
     <Compile Include="Compiler\ICompiler.cs" />
     <Compile Include="Grammar\IContextFreeGrammar.cs" />
     <Compile Include="Grammar\Lexer\ILexer.cs" />
