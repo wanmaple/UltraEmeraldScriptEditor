@@ -53,5 +53,6 @@ namespace CompileSupport.Compiler.Commands
 			}
 			writer.Write(result);
 		}
+		
 	}
 }

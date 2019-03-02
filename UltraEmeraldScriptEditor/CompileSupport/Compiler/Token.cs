@@ -35,7 +35,7 @@ namespace CompileSupport.Compiler
 		{
 			get
 			{
-				if (Type == TokenType.NUMBER || Type == TokenType.PARAMETER_INDEX) 
+				if (Type == TokenType.NUMBER || Type == TokenType.PARAMETER_INDEX)
 					return intValue;
 				return Convert.ToInt32(Line);
 			}
@@ -44,20 +44,22 @@ namespace CompileSupport.Compiler
 
 		public static Token SEPERATOR = new Token("separator", TokenType.SEPARATOR);
 
-		private static readonly string[] Operators = {"+", "-", "*", "/", "&", "|", "^"};
+		private static readonly string[] Operators = {"+", "-", "*", "/",":", "&", "|", "^"};
 
 		public static bool IsOperator(char ch, out int i)
 		{
 			i = 0;
 			if (char.IsPunctuation(ch)) return true;
-			for (; i < Operators.Length; i++) {
+			for (; i < Operators.Length; i++)
+			{
 				if (Operators[i][0] != ch) continue;
 				return true;
 			}
+
 			return false;
 		}
 
-		public Token(char[] source, int start, int end, int line ,int column)
+		public Token(char[] source, int start, int end, int line, int column)
 		{
 			int length = end - start;
 			if (length == 0) return;
@@ -65,18 +67,21 @@ namespace CompileSupport.Compiler
 			Column = column;
 			if (length == 1)
 			{
-				if(IsOperator(source[start],out int index)) {
+				if (IsOperator(source[start], out int index))
+				{
 					Text = Operators[index];
 					Type = TokenType.OPERATOR;
 					return;
 				}
 			}
+
 			Text = new string(source, start, end - start);
 			CheckOtherTypes();
 		}
-		
-		
-		public Token(string source, TokenType type){ 
+
+
+		public Token(string source, TokenType type)
+		{
 			Text = source;
 			Type = type;
 		}
@@ -92,6 +97,7 @@ namespace CompileSupport.Compiler
 			{
 				return false;
 			}
+
 			for (var i = start + 1; i < Text.Length; i++)
 			{
 				if (!(char.IsLetterOrDigit(Text[i]) || Text[i] == '_')) return false;
@@ -105,13 +111,13 @@ namespace CompileSupport.Compiler
 			Type = TokenType.INVALID;
 			char first = Text[0];
 			bool isAddorSub = first == '-' || first == '+';
-			if (char.IsNumber(first) || isAddorSub  && Text.Length > 1)
+			if (char.IsNumber(first) || isAddorSub && Text.Length > 1)
 			{
 				int firstindex = 0;
 				if (isAddorSub) firstindex++;
-				if(Text[firstindex] == '0' && Text.Length > firstindex + 2 && char.ToLower(Text[firstindex + 1]) == 'x' 
-				&& int.TryParse(Text.Replace("0x", ""), 
-					   NumberStyles.HexNumber,NumberFormatInfo.CurrentInfo,out intValue))
+				if (Text[firstindex] == '0' && Text.Length > firstindex + 2 && char.ToLower(Text[firstindex + 1]) == 'x'
+				    && int.TryParse(Text.Replace("0x", ""),
+					    NumberStyles.HexNumber, NumberFormatInfo.CurrentInfo, out intValue))
 				{
 					Type = TokenType.NUMBER;
 				}
@@ -120,27 +126,29 @@ namespace CompileSupport.Compiler
 					Type = TokenType.NUMBER;
 				}
 			}
-			else if(first == '\\' && IsWord(1))
+			else if (first == '\\' && IsWord(1))
 			{
 				Type = TokenType.PARAMETER;
 			}
 			else if (first == '.' && IsWord(1))
 			{
 				Type = TokenType.COMMAND;
-			}else if (IsWord(0))
+			}
+			else if (IsWord(0))
 			{
 				Type = TokenType.WORD;
 			}
 		}
 
-	public override bool Equals(object obj)
+		public override bool Equals(object obj)
 		{
-
-			if (obj == null || GetType() != obj.GetType()) {
+			if (obj == this) return true;
+			if (obj == null || GetType() != obj.GetType())
+			{
 				return false;
 			}
 
-			return Text.Equals(((Token)obj).Text);
+			return Text.Equals(((Token) obj).Text);
 		}
 
 		public override int GetHashCode()

@@ -5,38 +5,41 @@ namespace CompileSupport.Compiler.Commands
 {
 	public class EquCommand : Command,Interceptor
 	{
-		private static readonly Dictionary<string, Token> _Pool = new Dictionary<string, Token>();
-
 		private EquTokenQueue replaced;
 		
-		public override ExcutableCommand Create(TokenQueue seq, Token first)
+		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
 		{
 			string key = seq.Dequeue().Text;
 			seq.Dequeue();
 			Token value = seq.Dequeue();
-			_Pool[key] = value;
+			context.SetEqu(key, value);
 			if (replaced != null) return null;
-			EquTokenQueue queue = new EquTokenQueue(seq.Count);
+			EquTokenQueue queue = new EquTokenQueue(seq.Count, context);
 			foreach (var c in seq)
 			{
 				queue.Enqueue(c);
 			}
 			seq.Clear();
-			CompilerContext.Parser.Tokens = queue;
+			context.Tokens = queue;
 			replaced = queue;
 			return null;
 		}
 
 		public class EquTokenQueue : TokenQueue
 		{
-			public EquTokenQueue(int capacity):base(capacity){}
+			public EquTokenQueue(int capacity, ICompilerContext _pool) : base(capacity)
+			{
+				this._pool = _pool;
+			}
+
+			internal ICompilerContext _pool;
 			
 			public override Token Dequeue()
 			{
 				Token t = base.Dequeue();
-				if (t.Column > 1 && _Pool.TryGetValue(t.Text, out Token value))
+				if (t.Column > 1 && _pool.GetEqu(t.Text) != null) 
 				{
-					return value;
+					return _pool.GetEqu(t.Text);
 				}
 				return t;
 			}
@@ -44,7 +47,7 @@ namespace CompileSupport.Compiler.Commands
 
 		public void AfterParse()
 		{
-			_Pool.Clear();
+			replaced._pool = null;
 		}
 	}
 }
