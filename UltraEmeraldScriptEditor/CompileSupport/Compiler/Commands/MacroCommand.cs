@@ -5,39 +5,32 @@ using System.Text;
 
 namespace CompileSupport.Compiler.Commands
 {
-	public class MacroCommand : ExcutableCommand,Interceptor
+	public class MacroCommand : ExcutableCommand
 	{
 
 		internal ExcutableCommand[] content;
 
-		private static readonly Dictionary<Token, Command> _Pool = new Dictionary<Token, Command>();
-
-		public override bool Match(Token first)
+		public override bool Match(Token first, ICompilerContext context)
 		{
-			if (base.Match(first) || _Pool.ContainsKey(first))
+			if (base.Match(first, context) || context.GetMacro(first.Text) != null)
 			{
 				return true;
 			}
 			return false;
 		}
 
-		public void AfterParse()
+		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
 		{
-			_Pool.Clear();
-		}
-
-		public override ExcutableCommand Create(TokenQueue seq, Token first)
-		{
-			if (base.Match(first))
+			if (base.Match(first,context))
 			{
 				MacroCommand c = (MacroCommand) Clone();
 				c.keyword = seq.Dequeue();
 				c.keyword.Type = TokenType.MACRO_COMMAND;
 				c.parameters = seq.DeQueueLine();
-				_Pool[c.keyword] = c;
+				context.SetMacro(c.keyword.Text, c);
 				return c;
 			}
-			return (MacroCommand) Clone(seq, _Pool[first]);
+			return (MacroCommand) Clone(seq, context.GetMacro(first.Text));
 		}
 
 		internal void CompileMacro()
@@ -86,9 +79,9 @@ namespace CompileSupport.Compiler.Commands
 
 	public class EndmCommand : Command
 	{
-		public override ExcutableCommand Create(TokenQueue seq, Token first)
+		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
 		{
-			List<ExcutableCommand> result = CompilerContext.Parser.Results;
+			List<ExcutableCommand> result = context.Results;
 			int i;
 			for (i = result.Count - 1; i >= 0; i--)
 			{
