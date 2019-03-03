@@ -58,8 +58,10 @@
     <Compile Include="Grammar\IContextFreeGrammar.cs" />
     <Compile Include="Grammar\Lexer\ILexer.cs" />
     <Compile Include="Grammar\Lexer\IToken.cs" />
+    <Compile Include="Grammar\Lexer\LexicalAnalyzer.cs" />
     <Compile Include="Grammar\Lexer\Token.cs" />
     <Compile Include="Grammar\Parser\IParser.cs" />
+    <Compile Include="Grammar\Parser\ISymbolTable.cs" />
     <Compile Include="Syntax\EmptyVisitRuler.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxCheckException.cs" />
     <Compile Include="Syntax\Exceptions\SyntaxErrorMessages.cs" />
@@ -86,8 +88,12 @@
     <Compile Include="Syntax\PScript\PScriptWord.cs" />
     <Compile Include="Syntax\ISyntaxContext.cs" />
     <Compile Include="Syntax\PScript\PScriptWrapper.cs" />
+    <Compile Include="Utils\ACAutomata.cs" />
+    <Compile Include="Utils\DoubleBuffer.cs" />
+    <Compile Include="Utils\KMP.cs" />
     <Compile Include="Utils\RPNIntegerCalculator.cs" />
     <Compile Include="Utils\StringCodes.cs" />
+    <Compile Include="Utils\Trie.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EditorSupport\EditorSupport.csproj">
