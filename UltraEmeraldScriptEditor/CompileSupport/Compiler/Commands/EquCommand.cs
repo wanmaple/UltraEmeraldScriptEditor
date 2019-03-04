@@ -7,7 +7,7 @@ namespace CompileSupport.Compiler.Commands
 	{
 		private EquTokenQueue replaced;
 		
-		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
+		public override ExcutableCommand Create(TokenQueue seq, Token first, CompilerApplication context)
 		{
 			string key = seq.Dequeue().Text;
 			seq.Dequeue();
@@ -20,26 +20,27 @@ namespace CompileSupport.Compiler.Commands
 				queue.Enqueue(c);
 			}
 			seq.Clear();
-			context.Tokens = queue;
+			context.context.Tokens = queue;
 			replaced = queue;
 			return null;
 		}
 
 		public class EquTokenQueue : TokenQueue
 		{
-			public EquTokenQueue(int capacity, ICompilerContext _pool) : base(capacity)
+			public EquTokenQueue(int capacity, CompilerApplication _pool) : base(capacity)
 			{
 				this._pool = _pool;
 			}
 
-			internal ICompilerContext _pool;
+			internal CompilerApplication _pool;
 			
 			public override Token Dequeue()
 			{
 				Token t = base.Dequeue();
-				if (t.Column > 1 && _pool.GetEqu(t.Text) != null) 
+				Token result = _pool.GetEqu(t.Text);
+				if (t.Column > 1 && result != null)
 				{
-					return _pool.GetEqu(t.Text);
+					return result;
 				}
 				return t;
 			}
@@ -47,7 +48,7 @@ namespace CompileSupport.Compiler.Commands
 
 		public void AfterParse()
 		{
-			replaced._pool = null;
+			replaced = null;
 		}
 	}
 }

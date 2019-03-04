@@ -4,14 +4,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+// ReSharper disable All
 
 namespace CompileSupport.Compiler
 {
-	public class Compiler : ICompilerContext
+	public class CompilerContext
 	{
-		private readonly Dictionary<string, Token> _equs = new Dictionary<string, Token>();
-		private readonly Dictionary<string, Command> _macros = new Dictionary<string, Command>();
-		private readonly Dictionary<string, Token> _lables = new Dictionary<string, Token>();
+		public readonly Dictionary<string, Token> _equs = new Dictionary<string, Token>();
+		public readonly Dictionary<string, Command> _macros = new Dictionary<string, Command>();
+		public readonly Dictionary<string, Token> _lables = new Dictionary<string, Token>();
 
 		public Tokenizer Tokenizer { get; }
 
@@ -27,7 +28,7 @@ namespace CompileSupport.Compiler
 
 		private static readonly List<Interceptor> _interceptors = new List<Interceptor>();
 
-		static Compiler()
+		static CompilerContext()
 		{
 			Type[] types = Assembly.GetExecutingAssembly().GetTypes();
 			FieldInfo property = typeof(Command).GetField("keyword", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -58,7 +59,7 @@ namespace CompileSupport.Compiler
 		}
 
 
-		public Compiler(string source)
+		public CompilerContext(string source)
 		{
 			Tokenizer = new Tokenizer(source.ToCharArray());
 			Tokens = new TokenQueue();
@@ -66,37 +67,7 @@ namespace CompileSupport.Compiler
 			Results = new List<ExcutableCommand>();
 		}
 
-		public void SetEqu(string key, Token value)
-		{
-			_equs[key] = value;
-		}
-
-		public Token GetEqu(string key)
-		{
-			return _equs[key];
-		}
-
-		public Dictionary<string, Token> Equs => _equs;
-
-		public void SetMacro(string key, Command value)
-		{
-			_macros[key] = value;
-		}
-
-		public Command GetMacro(string key)
-		{
-			return _macros[key];
-		}
-
-		public void SetLabel(string key, Token value)
-		{
-			_lables[key] = value;
-		}
-
-		public Token GetLabel(string key)
-		{
-			return _lables[key];
-		}
+		
 
 		public void Clear()
 		{
@@ -106,34 +77,50 @@ namespace CompileSupport.Compiler
 		}
 	}
 
-	public interface ICompilerContext
+	public class CompilerApplication
 	{
-		void SetEqu(string key, Token value);
+		public CompilerContext context { get; set; }
 
-		Token GetEqu(string key);
+		public CompilerApplication(string str)
+		{
+			context = new CompilerContext(str);
+		}
 		
-		void SetMacro(string key, Command value);
+		public void SetEqu(string key, Token value)
+		{
+			context._equs[key] = value;
+		}
 
-		Command GetMacro(string key);
+		public Token GetEqu(string key)
+		{
+			context._equs.TryGetValue(key, out Token v);
+			return v;
+		}
 
-		void SetLabel(string key, Token value);
+		public void SetMacro(string key, Command value)
+		{
+			context._macros[key] = value;
+		}
 
-		Token GetLabel(string key);
+		public Command GetMacro(string key)
+		{
+			context._macros.TryGetValue(key, out Command value);
+			return value;
+		}
 
-		void Clear();
+		public void SetLabel(string key, Token value)
+		{
+			context._lables[key] = value;
+		}
 
-		Tokenizer Tokenizer { get; }
-
-		TokenQueue Tokens { get; set; }
-
-		List<ExcutableCommand> Results { get; }
-
-		TempDataWriter TempData { get; }
-
-		List<Command> SystemCommands { get; }
-		
-		List<Interceptor> Interceptors { get; }
+		public Token GetLabel(string key)
+		{
+			context._lables.TryGetValue(key, out Token t);
+			return t;
+		}
 	}
+
+	
 
 	public interface Interceptor
 	{

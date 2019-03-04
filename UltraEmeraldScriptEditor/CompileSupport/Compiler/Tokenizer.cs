@@ -17,12 +17,12 @@ namespace CompileSupport.Compiler
 			sourceText = text;
 		}
 
-		public TokenQueue StartParse(TokenQueue tokens)
+		public TokenQueue Init(TokenQueue tokens)
 		{
 			pos = 0;
 			linenumber = 1;
 			columnnumber = 1;
-			return Init(tokens);
+			return Init0(tokens);
 		}
 
 		private void SkipWhiteSpace()
@@ -45,7 +45,7 @@ namespace CompileSupport.Compiler
 			columnnumber = 1;
 		}
 
-		private TokenQueue Init(TokenQueue tokens)
+		private TokenQueue Init0(TokenQueue tokens)
 		{
 			while (pos < sourceText.Length) {
 				SkipWhiteSpace();

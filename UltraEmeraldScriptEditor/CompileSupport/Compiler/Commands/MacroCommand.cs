@@ -10,7 +10,7 @@ namespace CompileSupport.Compiler.Commands
 
 		internal ExcutableCommand[] content;
 
-		public override bool Match(Token first, ICompilerContext context)
+		public override bool Match(Token first, CompilerApplication context)
 		{
 			if (base.Match(first, context) || context.GetMacro(first.Text) != null)
 			{
@@ -19,7 +19,7 @@ namespace CompileSupport.Compiler.Commands
 			return false;
 		}
 
-		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
+		public override ExcutableCommand Create(TokenQueue seq, Token first, CompilerApplication context)
 		{
 			if (base.Match(first,context))
 			{
@@ -79,9 +79,9 @@ namespace CompileSupport.Compiler.Commands
 
 	public class EndmCommand : Command
 	{
-		public override ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
+		public override ExcutableCommand Create(TokenQueue seq, Token first, CompilerApplication context)
 		{
-			List<ExcutableCommand> result = context.Results;
+			List<ExcutableCommand> result = context.context.Results;
 			int i;
 			for (i = result.Count - 1; i >= 0; i--)
 			{

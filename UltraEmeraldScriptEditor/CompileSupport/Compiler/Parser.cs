@@ -11,16 +11,18 @@ namespace CompileSupport.Compiler
 {
 	public class Parser
 	{
-		private ICompilerContext context;
+		readonly CompilerApplication _application;
+		readonly CompilerContext context;
 		
-		public Parser(ICompilerContext context)
+		public Parser(CompilerApplication context)
 		{
-			this.context = context;
+			_application = context;
+			this.context = _application.context;
 		}
 
 		public void TryParse()
 		{
-			context.Tokenizer.StartParse(context.Tokens);
+			context.Tokenizer.Init(context.Tokens);
 			ParseCommands();
 			WriteTempDatas();
 		}
@@ -41,8 +43,8 @@ namespace CompileSupport.Compiler
 				Token t = context.Tokens.Dequeue();
 				for (int i = 0; i < length; i++)
 				{
-					if (!context.SystemCommands[i].Match(t,context)) continue;
-					ExcutableCommand result = context.SystemCommands[i].Create(context.Tokens, t, context);
+					if (!context.SystemCommands[i].Match(t,_application)) continue;
+					ExcutableCommand result = context.SystemCommands[i].Create(context.Tokens, t, _application);
 					if(result != null) context.Results.Add(result);
 					context.Tokens.DequeueSeparator();
 					goto End;

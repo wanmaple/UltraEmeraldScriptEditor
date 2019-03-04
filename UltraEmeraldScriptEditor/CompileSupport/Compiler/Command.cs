@@ -17,7 +17,7 @@ namespace CompileSupport.Compiler
 		
 		public Command(){}
 
-		public virtual ExcutableCommand Create(TokenQueue seq, Token first, ICompilerContext context)
+		public virtual ExcutableCommand Create(TokenQueue seq, Token first, CompilerApplication context)
 		{
 			 return Clone(seq, this);
 		}
@@ -29,7 +29,7 @@ namespace CompileSupport.Compiler
 			return (ExcutableCommand) r;
 		}
 		
-		public virtual bool Match(Token first, ICompilerContext context)
+		public virtual bool Match(Token first, CompilerApplication context)
 		{
 			if (keyword.Equals(first))
 			{
