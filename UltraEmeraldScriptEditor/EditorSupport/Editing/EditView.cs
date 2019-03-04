@@ -217,7 +217,7 @@ namespace EditorSupport.Editing
             {
                 return;
             }
-            Document.Remove(_selection.StartOffset, _selection.Length);
+           Document.Remove(_selection.StartOffset, _selection.Length);
             _caret.DocumentOffset = _selection.StartOffset;
             SelectionFollowCaret(false, FlowDirection.LeftToRight);
         }

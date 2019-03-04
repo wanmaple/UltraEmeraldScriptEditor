@@ -16,7 +16,7 @@ namespace CompileSupport.Utils
             /// <summary>
             /// 子节点
             /// </summary>
-            internal HashSet<TrieNode> Children => _children;
+            internal SortedDictionary<Char, TrieNode> Children => _children;
             /// <summary>
             /// 父节点
             /// </summary>
@@ -38,7 +38,7 @@ namespace CompileSupport.Utils
             {
                 Character = ch;
                 Accepted = false;
-                _children = new HashSet<TrieNode>();
+                _children = new SortedDictionary<char, TrieNode>();
             }
 
             public override string ToString()
@@ -50,7 +50,7 @@ namespace CompileSupport.Utils
                 return Character.ToString() + ":" + Accepted.ToString();
             }
 
-            private HashSet<TrieNode> _children;
+            private SortedDictionary<Char, TrieNode> _children;
         }
 
         public Trie()
@@ -86,7 +86,7 @@ namespace CompileSupport.Utils
             Boolean ret = false;
             while (true)
             {
-                TrieNode matchNode = curNode.Children.SingleOrDefault(node => node.Character == input[idx]);
+                TrieNode matchNode = curNode.Children.ContainsKey(input[idx]) ? curNode.Children[input[idx]] : null;
                 if (matchNode != null)
                 {
                     ++idx;
@@ -134,12 +134,12 @@ namespace CompileSupport.Utils
                     curNode = _root;
                     for (int j = 0; j < literal.Length; j++)
                     {
-                        TrieNode child = curNode.Children.SingleOrDefault(node => node.Character == literal[j]);
+                        TrieNode child = curNode.Children.ContainsKey(literal[j]) ? curNode.Children[literal[j]] : null;
                         if (child == null)
                         {
                             child = new TrieNode(literal[j]);
                             child.Parent = curNode;
-                            curNode.Children.Add(child);
+                            curNode.Children.Add(literal[j], child);
                         }
                         curNode = child;
                         if (j == literal.Length - 1)
@@ -178,7 +178,7 @@ namespace CompileSupport.Utils
                     TrieNode nodeToRemove = null;
                     while (idx < literal.Length)
                     {
-                        TrieNode matchNode = curNode.Children.SingleOrDefault(node => node.Character == literal[idx]);
+                        TrieNode matchNode = curNode.Children.ContainsKey(literal[idx]) ? curNode.Children[literal[idx]] : null;
                         Debug.Assert(matchNode != null);
                         if (nodeToRemove == null && matchNode.Children.Count <= 1)
                         {
@@ -194,7 +194,7 @@ namespace CompileSupport.Utils
                     if (nodeToRemove != null)
                     {
                         var parent = nodeToRemove.Parent;
-                        parent.Children.Remove(nodeToRemove);
+                        parent.Children.Remove(nodeToRemove.Character);
                     }
                 }
                 _literals.RemoveAll(literal => literals.Contains(literal));
@@ -217,8 +217,9 @@ namespace CompileSupport.Utils
             while (nodeQueue.Count > 0)
             {
                 curNode = nodeQueue.Dequeue();
-                foreach (var child in curNode.Children)
+                foreach (var pair in curNode.Children)
                 {
+                    TrieNode child = pair.Value;
                     nodeQueue.Enqueue(child);
                     if (child.Parent == _root)
                     {
@@ -231,7 +232,7 @@ namespace CompileSupport.Utils
                         TrieNode tmp = curNode.Failure;
                         while (tmp != null)
                         {
-                            TrieNode failure = tmp.Children.SingleOrDefault(node => node.Character == child.Character);
+                            TrieNode failure = tmp.Children.ContainsKey(child.Character) ? tmp.Children[child.Character] : null;
                             if (failure != null)
                             {
                                 child.Failure = failure;

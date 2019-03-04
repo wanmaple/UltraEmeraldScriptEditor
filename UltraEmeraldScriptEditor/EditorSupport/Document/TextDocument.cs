@@ -173,7 +173,6 @@ namespace EditorSupport.Document
                 updates.Add(update4insertion);
             }
 
-            _rope.Replace(offset, length, content.ToArray());
             if (length > 0)
             {
                 _anchorTree.RemoveText(offset, length);
@@ -184,6 +183,7 @@ namespace EditorSupport.Document
                 _anchorTree.InsertText(offset, content.Length);
                 _lineMgr.Insert(offset, content, update4insertion);
             }
+            _rope.Replace(offset, length, content.ToArray());
             var e = new DocumentUpdateEventArgs(updates);
             if (Changed != null)
             {
