@@ -90,7 +90,10 @@
     <Compile Include="Syntax\PScript\PScriptWrapper.cs" />
     <Compile Include="Utils\ACAutomata.cs" />
     <Compile Include="Utils\DoubleBuffer.cs" />
+    <Compile Include="Utils\INdfa.cs" />
+    <Compile Include="Utils\IPairKey.cs" />
     <Compile Include="Utils\KMP.cs" />
+    <Compile Include="Utils\NonDeterminedFiniteAutomata.cs" />
     <Compile Include="Utils\RPNIntegerCalculator.cs" />
     <Compile Include="Utils\StringCodes.cs" />
     <Compile Include="Utils\Trie.cs" />
