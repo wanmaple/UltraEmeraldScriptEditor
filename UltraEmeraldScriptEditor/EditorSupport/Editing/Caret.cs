@@ -12,7 +12,7 @@ using System.Windows.Threading;
 namespace EditorSupport.Editing
 {
     /// <summary>
-    /// 编辑光标
+    /// 编辑光标。
     /// </summary>
     public class Caret : IRenderable
     {

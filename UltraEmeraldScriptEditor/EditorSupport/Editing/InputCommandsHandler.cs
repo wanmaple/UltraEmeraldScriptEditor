@@ -24,7 +24,7 @@ namespace EditorSupport.Editing
             _attached = false;
         }
 
-        #region IEditKeyboardHandler
+        #region IInputHandler
         public EditView Owner => _owner;
 
         public void Attach()

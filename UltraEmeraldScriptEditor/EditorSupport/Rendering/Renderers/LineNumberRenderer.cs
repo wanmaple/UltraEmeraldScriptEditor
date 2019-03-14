@@ -46,6 +46,8 @@ namespace EditorSupport.Rendering.Renderers
             drawingContext.DrawLine(new Pen(brush, 2.0), new Point(_editor._lineRenderer.RenderOffset.X + maxNumberWidth + 5.0, _editor._lineRenderer.RenderOffset.Y), new Point(_editor._lineRenderer.RenderOffset.X + maxNumberWidth + 5.0, 2000.0));
             
             RenderWidth = maxNumberWidth + 10.0;
+
+            renderContext.PushTranslation(RenderWidth, 0.0);
         }
         #endregion
 

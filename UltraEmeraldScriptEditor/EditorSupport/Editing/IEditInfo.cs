@@ -8,6 +8,9 @@ using System.Windows;
 
 namespace EditorSupport.Editing
 {
+    /// <summary>
+    /// EditView的Content需要实现的接口。
+    /// </summary>
     public interface IEditInfo
     {
         /// <summary>

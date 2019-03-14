@@ -27,6 +27,7 @@ namespace EditorSupport.Rendering.Renderers
         {
             if (VisibleLines.Count > 0)
             {
+                renderContext.PushTranslation(RenderOffset.X, RenderOffset.Y);
                 foreach (var visualLine in VisibleLines)
                 {
                     if (visualLine.VisualLength + renderContext.Offset.X > 0)

@@ -54,8 +54,7 @@ namespace EditorSupport.Rendering
             get { return (String)GetValue(SyntaxProperty); }
             set { SetValue(SyntaxProperty, value); }
         }
-        [Obsolete("BackgroundRenderer is no longer used.")]
-        public List<BackgroundRenderer> BackgroundRenderers
+        public List<IRenderable> BackgroundRenderers
         {
             get { return _bgRenderers; }
         }
@@ -69,7 +68,7 @@ namespace EditorSupport.Rendering
         public RenderView()
         {
             _renderContext = new RenderContext();
-            _bgRenderers = new List<BackgroundRenderer>();
+            _bgRenderers = new List<IRenderable>();
             _lineRenderer = new VisualLineRenderer(this);
             _lineNumRenderer = new LineNumberRenderer(this);
             _allVisualLines = new List<VisualLine>();
@@ -84,6 +83,13 @@ namespace EditorSupport.Rendering
         #region Overrides
         protected override void OnRender(DrawingContext drawingContext)
         {
+            if (_bgRenderers.Count > 0)
+            {
+                _renderContext.PrepareRendering();
+                RenderBackground(drawingContext);
+                _renderContext.FinishRendering();
+            }
+
             _renderContext.PrepareRendering();
 
             RenderLineNumbers(drawingContext);
@@ -138,10 +144,9 @@ namespace EditorSupport.Rendering
         #endregion
 
         #region Rendering
-        [Obsolete("Background renderers are already obsoleted.")]
         private void RenderBackground(DrawingContext drawingContext)
         {
-            foreach (var renderer in BackgroundRenderers)
+            foreach (var renderer in _bgRenderers)
             {
                 renderer.Render(drawingContext, _renderContext);
             }
@@ -149,7 +154,7 @@ namespace EditorSupport.Rendering
 
         private void RenderLines(DrawingContext drawingContext)
         {
-            _renderContext.PushTranslation(Padding.Left + _lineNumRenderer.RenderWidth + _lineRenderer.RenderOffset.X, Padding.Top + _lineRenderer.RenderOffset.Y);
+            _renderContext.PushTranslation(Padding.Left, Padding.Top);
             _lineRenderer.Render(drawingContext, _renderContext);
         }
 
@@ -159,7 +164,7 @@ namespace EditorSupport.Rendering
         }
 
         private RenderContext _renderContext;
-        private List<BackgroundRenderer> _bgRenderers;
+        private List<IRenderable> _bgRenderers;
         internal VisualLineRenderer _lineRenderer;
         private LineNumberRenderer _lineNumRenderer;
         #endregion
